@@ -1,169 +1,252 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import { fabric } from 'fabric';
+import React, { useState, useEffect } from 'react';
+import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
+import { useEditorCanvas } from '@/hooks/useEditorCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Image as ImageIcon, Type, Trash2, ShoppingCart } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Image as ImageIcon,
+    Type,
+    Trash2,
+    ShoppingCart,
+    BringToFront,
+    SendToBack,
+    Download,
+    Layers
+} from 'lucide-react';
+import { ProductTemplate, ProductView, CanvasDesignState } from '@/types/editor';
 
 export default function EditorUI() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-    const [selectedColor, setSelectedColor] = useState('#ffffff');
+    const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(PRODUCT_TEMPLATES[0]);
+    const [selectedColor, setSelectedColor] = useState<string>(PRODUCT_TEMPLATES[0].defaultColorHex);
+    const [selectedView, setSelectedView] = useState<ProductView>(PRODUCT_TEMPLATES[0].views.find(v => v.id === PRODUCT_TEMPLATES[0].defaultViewId) || PRODUCT_TEMPLATES[0].views[0]);
 
-    // Initialize canvas
-    useEffect(() => {
-        if (canvasRef.current && !canvas) {
-            const initCanvas = new fabric.Canvas(canvasRef.current, {
-                width: 300,
-                height: 400,
-                backgroundColor: 'transparent',
-            });
+    // Store canvas state per view internally if needed, normally would be complex. 
+    // For MVP we just keep the active canvas, switching views clears/loads from a state map.
+    const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>({});
+    const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
 
-            // Add a default print area boundary (optional visual guide)
-            const clipPath = new fabric.Rect({
-                width: 300,
-                height: 400,
-                left: 0,
-                top: 0,
-                absolutePositioned: true,
-                selectable: false,
-                evented: false,
-                stroke: '#ccc',
-                strokeWidth: 1,
-                strokeDashArray: [5, 5],
-                fill: 'transparent'
-            });
-            initCanvas.add(clipPath);
+    const printArea = selectedView.printAreas[0]; // Assuming 1 print area per view for simplicity
 
-            setCanvas(initCanvas);
+    const {
+        canvasRef,
+        canvas,
+        addText,
+        addImage,
+        deleteSelected,
+        bringForward,
+        sendBackward,
+        updateActiveObject
+    } = useEditorCanvas({
+        printArea,
+        onSelectionChange: setActiveObject,
+        initialState: viewStates[selectedView.id]
+    });
 
-            return () => {
-                initCanvas.dispose();
-            };
+    // Handle View Change
+    const handleViewChange = (viewId: string) => {
+        // Save current canvas state before switching
+        if (canvas) {
+            setViewStates(prev => ({
+                ...prev,
+                [selectedView.id]: { objects: canvas.toJSON().objects }
+            }));
         }
-    }, [canvasRef, canvas]);
 
-    // Handle keyboard deletes
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.key === 'Delete' || e.key === 'Backspace') && canvas) {
-                // Prevent deleting if user is editing text
-                if (canvas.getActiveObject() && canvas.getActiveObject()?.isEditing) return;
-                deleteSelected();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canvas]);
-
-    const addText = () => {
-        if (!canvas) return;
-        const text = new fabric.IText('Your Text Here', {
-            left: 50,
-            top: 150,
-            fontFamily: 'sans-serif',
-            fontSize: 28,
-            fill: selectedColor === '#000000' ? '#ffffff' : '#000000',
-            fontWeight: 'bold',
-            textAlign: 'center'
-        });
-        canvas.add(text);
-        canvas.setActiveObject(text);
-        canvas.renderAll();
+        const newView = selectedProduct.views.find(v => v.id === viewId);
+        if (newView) setSelectedView(newView);
     };
 
+    // Handle Product Change
+    const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const prodId = e.target.value;
+        const newProd = PRODUCT_TEMPLATES.find(p => p.id === prodId);
+        if (newProd) {
+            setSelectedProduct(newProd);
+            setSelectedColor(newProd.defaultColorHex);
+            setSelectedView(newView => newProd.views.find(v => v.id === newProd.defaultViewId) || newProd.views[0]);
+            setViewStates({}); // Reset states on new product
+        }
+    };
+
+    // Handle Image Upload
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!canvas || !e.target.files?.[0]) return;
+        if (!e.target.files?.[0]) return;
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = (f) => {
-            const data = f.target?.result;
-            if (typeof data === 'string') {
-                fabric.Image.fromURL(data, (img) => {
-                    // Scale down image if it's too large
-                    if (img.width && img.width > 200) {
-                        img.scaleToWidth(200);
-                    }
-                    canvas.add(img);
-                    canvas.centerObject(img);
-                    canvas.setActiveObject(img);
-                    canvas.renderAll();
-                });
-            }
+            const data = f.target?.result as string;
+            if (data) addImage(data);
         };
         reader.readAsDataURL(file);
-        // Reset file input
         e.target.value = '';
     };
 
-    const deleteSelected = () => {
+    // Handle Export
+    const handleExport = () => {
         if (!canvas) return;
-        const activeObjects = canvas.getActiveObjects();
-        if (activeObjects.length) {
-            canvas.discardActiveObject();
-            activeObjects.forEach(function (object) {
-                // Don't delete the boundary box
-                if (object.selectable !== false) {
-                    canvas.remove(object);
-                }
-            });
-        }
+        const dataURL = canvas.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 3 // High-res export
+        });
+
+        // Trigger download
+        const link = document.createElement('a');
+        link.download = `printora-design-${selectedView.id}.png`;
+        link.href = dataURL;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 h-full max-w-6xl mx-auto">
-            {/* Editor Main Area */}
-            <div className="flex-1 bg-gray-50/50 rounded-2xl shadow-inner border border-gray-100 flex flex-col items-center justify-center relative overflow-hidden min-h-[500px] p-8">
+        <div className="flex flex-col xl:flex-row gap-6 h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto">
 
-                {/* Mock T-shirt Background */}
-                <div className="absolute inset-0 flex items-center justify-center transition-colors duration-500" style={{ backgroundColor: selectedColor }}>
-                    {/* Simple Mockup Shape (T-shirt SVG) */}
-                    <svg
-                        className="w-full max-w-[500px] h-full opacity-90 drop-shadow-xl"
-                        viewBox="0 0 500 600"
-                        fill={selectedColor === '#ffffff' ? '#f8fafc' : selectedColor}
-                        stroke={selectedColor === '#ffffff' ? '#e2e8f0' : 'transparent'}
-                        strokeWidth="2"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path d="M 150 40 Q 250 100 350 40 L 480 120 L 440 240 L 400 220 L 400 580 L 100 580 L 100 220 L 60 240 L 20 120 Z" />
-                    </svg>
-                </div>
-
-                {/* Fabric Canvas Container */}
-                <div className="relative z-10 bg-transparent border-none mt-16 scale-90 md:scale-100">
-                    <canvas ref={canvasRef} className="rounded-lg shadow-sm" />
-                    <div className="absolute -top-8 left-0 text-xs font-semibold text-gray-500 bg-white/80 px-2 py-1 rounded backdrop-blur border shadow-sm">
-                        Print Area (Front)
-                    </div>
-                </div>
-            </div>
-
-            {/* Tools Panel */}
-            <Card className="w-full md:w-80 flex-shrink-0 border-gray-100 shadow-md flex flex-col h-[calc(100vh-8rem)]">
-                <CardHeader className="bg-green-50/50 border-b pb-4">
-                    <CardTitle className="text-xl">Design Editor</CardTitle>
+            {/* LEFT PANEL: Elements & Products */}
+            <Card className="w-full xl:w-72 flex-shrink-0 flex flex-col h-full border-gray-200 shadow-sm overflow-hidden">
+                <CardHeader className="bg-gray-50 border-b pb-4 shrink-0">
+                    <CardTitle className="text-lg">Design Tools</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6 flex-1 overflow-y-auto">
-                    {/* Colors */}
+
+                    {/* Product Selection */}
                     <div className="space-y-3">
-                        <Label className="text-gray-600 font-semibold uppercase text-xs tracking-wider">Garment Color</Label>
-                        <div className="flex flex-wrap gap-3">
-                            {[
-                                { hex: '#ffffff', name: 'White' },
-                                { hex: '#0f172a', name: 'Black' },
-                                { hex: '#16a34a', name: 'AMU Green' },
-                                { hex: '#ef4444', name: 'Red' },
-                                { hex: '#fcd34d', name: 'Yellow' }
-                            ].map(c => (
+                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</Label>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background"
+                            value={selectedProduct.id}
+                            onChange={handleProductChange}
+                        >
+                            {PRODUCT_TEMPLATES.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="w-full h-px bg-gray-100" />
+
+                    {/* Add Elements */}
+                    <div className="space-y-3">
+                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Add Elements</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button variant="outline" onClick={() => addText()} className="flex flex-col gap-2 items-center h-20 bg-white hover:bg-green-50 hover:text-primary hover:border-green-200 transition-colors">
+                                <Type className="w-6 h-6" />
+                                <span className="text-xs">Text</span>
+                            </Button>
+                            <div className="relative">
+                                <Button variant="outline" className="flex flex-col gap-2 items-center h-20 w-full bg-white hover:bg-green-50 hover:text-primary hover:border-green-200 transition-colors">
+                                    <ImageIcon className="w-6 h-6" />
+                                    <span className="text-xs">Upload</span>
+                                </Button>
+                                <input
+                                    type="file"
+                                    accept="image/svg+xml, image/png, image/jpeg"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={handleImageUpload}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                </CardContent>
+            </Card>
+
+            {/* CENTER PANEL: Canvas Area */}
+            <div className="flex-1 bg-gray-100 rounded-xl shadow-inner border border-gray-200 flex flex-col items-center relative overflow-hidden h-full">
+
+                {/* View Tabs */}
+                <div className="absolute top-4 z-20">
+                    <Tabs value={selectedView.id} onValueChange={handleViewChange} className="w-auto bg-white rounded-lg shadow-sm p-1">
+                        <TabsList className="h-10">
+                            {selectedProduct.views.map(view => (
+                                <TabsTrigger key={view.id} value={view.id} className="min-w-[80px]">
+                                    {view.name}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </Tabs>
+                </div>
+
+                {/* Editor Surface */}
+                <div className="relative w-full h-full flex items-center justify-center p-8 transition-all">
+
+                    {/* The physical product dimensions (mocked to 500x600 for typical apparel, or scaled dynamically based on mockupUrl in reality) */}
+                    <div className="relative w-[500px] h-[600px] shadow-sm rounded-md overflow-hidden bg-white/50 backdrop-blur"
+                        style={{
+                            // If product is a t-shirt/hoodie, we can tint the background. 
+                            // If it's a mug, it might be white. We use selectedColor.
+                            backgroundColor: selectedProduct.category === 'accessories' ? '#f8fafc' : selectedColor
+                        }}
+                    >
+
+                        {/* 1. Mockup Layer (Shading & Overlays) */}
+                        {/* We use an img tag pointing to a generic transparent product mockup here */}
+                        <div
+                            className="absolute inset-0 z-0 pointer-events-none opacity-90 mix-blend-multiply flex items-center justify-center"
+                        >
+                            {/* Temporary SVG placeholder taking the place of mockupUrl since we don't have images yet */}
+                            <svg viewBox="0 0 500 600" fill="currentColor" stroke="rgba(0,0,0,0.1)" strokeWidth="2" className="w-[80%] h-[80%] text-white">
+                                <path d="M 150 40 Q 250 100 350 40 L 480 120 L 440 240 L 400 220 L 400 580 L 100 580 L 100 220 L 60 240 L 20 120 Z" />
+                            </svg>
+                        </div>
+
+                        {/* 2. Print Area Boundary Box (Visual) */}
+                        <div
+                            className="absolute z-10 border-2 border-dashed border-gray-300 pointer-events-none"
+                            style={{
+                                width: printArea?.width || 200,
+                                height: printArea?.height || 300,
+                                left: printArea?.left || 150,
+                                top: printArea?.top || 150,
+                            }}
+                        />
+
+                        {/* 3. The Fabric Canvas Layer */}
+                        <div
+                            className="absolute z-20 outline-none focus:outline-none"
+                            style={{
+                                width: printArea?.width || 200,
+                                height: printArea?.height || 300,
+                                left: printArea?.left || 150,
+                                top: printArea?.top || 150,
+                            }}
+                        >
+                            <canvas ref={canvasRef} className="outline-none" />
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {/* Bottom Zoom/Undo Bar (Placeholder) */}
+                <div className="absolute bottom-4 z-20 bg-white/90 backdrop-blur rounded-full shadow-sm px-4 py-2 flex items-center gap-2 border">
+                    <span className="text-xs font-semibold text-gray-500">Note: Keep designs within dashed box.</span>
+                </div>
+
+            </div>
+
+            {/* RIGHT PANEL: Object Controls & Layers */}
+            <Card className="w-full xl:w-80 flex-shrink-0 flex flex-col h-full border-gray-200 shadow-sm overflow-hidden">
+                <CardHeader className="bg-gray-50 border-b pb-4 shrink-0">
+                    <CardTitle className="text-lg">Properties</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6 flex-1 overflow-y-auto">
+
+                    {/* Garment Color Selection */}
+                    <div className="space-y-3">
+                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Garment Color</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {selectedProduct.variants.map(c => (
                                 <button
-                                    key={c.hex}
-                                    title={c.name}
-                                    className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === c.hex ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-gray-200 shadow-sm'}`}
-                                    style={{ backgroundColor: c.hex }}
-                                    onClick={() => setSelectedColor(c.hex)}
+                                    key={c.id}
+                                    title={c.colorName}
+                                    className={`w-8 h-8 rounded-full border shadow-sm transition-all hover:scale-110 ${selectedColor === c.colorHex ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-gray-200'}`}
+                                    style={{ backgroundColor: c.colorHex }}
+                                    onClick={() => setSelectedColor(c.colorHex)}
                                 />
                             ))}
                         </div>
@@ -171,72 +254,124 @@ export default function EditorUI() {
 
                     <div className="w-full h-px bg-gray-100" />
 
-                    {/* Design Elements */}
-                    <div className="space-y-3">
-                        <Label className="text-gray-600 font-semibold uppercase text-xs tracking-wider">Add Elements</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button variant="outline" onClick={addText} className="flex gap-2 items-center h-12 bg-white hover:bg-green-50 hover:text-primary hover:border-green-200 transition-colors">
-                                <Type className="w-4 h-4" /> Text
-                            </Button>
-                            <div className="relative">
-                                <Button variant="outline" className="flex gap-2 items-center h-12 w-full bg-white hover:bg-green-50 hover:text-primary hover:border-green-200 transition-colors">
-                                    <ImageIcon className="w-4 h-4" /> Upload
-                                </Button>
-                                <input
-                                    type="file"
-                                    accept="image/png, image/jpeg"
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    onChange={handleImageUpload}
-                                />
+                    {/* Active Object Controls */}
+                    <div className="space-y-4">
+                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <Layers className="w-4 h-4" /> Layer Controls
+                        </Label>
+
+                        {!activeObject ? (
+                            <div className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                Select an object on the canvas to view properties.
                             </div>
-                        </div>
-                        <p className="text-[10px] text-gray-500 text-center mt-1">Accepts PNG/JPG. High-res recommended.</p>
-                    </div>
+                        ) : (
+                            <div className="space-y-4">
 
-                    <div className="w-full h-px bg-gray-100" />
+                                {/* Object Type Specific Controls: Text */}
+                                {activeObject.type === 'i-text' && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Font Family</Label>
+                                            <select
+                                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
+                                                value={(activeObject as any).fontFamily || 'sans-serif'}
+                                                onChange={(e) => updateActiveObject({ fontFamily: e.target.value })}
+                                            >
+                                                <option value="sans-serif">Sans Serif</option>
+                                                <option value="serif">Serif</option>
+                                                <option value="monospace">Monospace</option>
+                                                <option value="Arial">Arial</option>
+                                                <option value="Impact">Impact</option>
+                                                <option value="Georgia">Georgia</option>
+                                            </select>
+                                        </div>
 
-                    {/* Actions */}
-                    <div className="space-y-3">
-                        <Label className="text-gray-600 font-semibold uppercase text-xs tracking-wider">Canvas Actions</Label>
-                        <Button variant="ghost" onClick={deleteSelected} className="w-full flex gap-2 items-center text-red-600 hover:text-red-700 hover:bg-red-50">
-                            <Trash2 className="w-4 h-4" /> Delete Selected Item
-                        </Button>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Text Color</Label>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="color"
+                                                    value={(activeObject as any).fill || '#000000'}
+                                                    onChange={(e) => updateActiveObject({ fill: e.target.value })}
+                                                    className="h-8 w-12 cursor-pointer border-none bg-transparent"
+                                                />
+                                                <span className="text-xs text-gray-500 uppercase">{(activeObject as any).fill}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className={`flex-1 ${(activeObject as any).fontWeight === 'bold' ? 'bg-gray-100 border-gray-400' : ''}`}
+                                                onClick={() => {
+                                                    const current = (activeObject as any).fontWeight;
+                                                    updateActiveObject({ fontWeight: current === 'bold' ? 'normal' : 'bold' });
+                                                }}
+                                            >
+                                                <b>B</b>
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className={`flex-1 ${(activeObject as any).fontStyle === 'italic' ? 'bg-gray-100 border-gray-400' : ''}`}
+                                                onClick={() => {
+                                                    const current = (activeObject as any).fontStyle;
+                                                    updateActiveObject({ fontStyle: current === 'italic' ? 'normal' : 'italic' });
+                                                }}
+                                            >
+                                                <i>I</i>
+                                            </Button>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Opacity Control (All objects) */}
+                                <div className="space-y-2">
+                                    <Label className="text-xs flex justify-between">
+                                        <span>Opacity</span>
+                                        <span>{Math.round((activeObject.opacity || 1) * 100)}%</span>
+                                    </Label>
+                                    <input
+                                        type="range"
+                                        min="0" max="1" step="0.05"
+                                        value={activeObject.opacity || 1}
+                                        onChange={(e) => updateActiveObject({ opacity: parseFloat(e.target.value) })}
+                                        className="w-full accent-primary"
+                                    />
+                                </div>
+
+                                <div className="w-full h-px bg-gray-100" />
+
+                                {/* Stack Order & Delete */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button variant="outline" size="sm" onClick={bringForward} className="flex gap-1 text-xs h-9">
+                                        <BringToFront className="w-3 h-3" /> Forward
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={sendBackward} className="flex gap-1 text-xs h-9">
+                                        <SendToBack className="w-3 h-3" /> Back
+                                    </Button>
+                                </div>
+                                <Button variant="destructive" size="sm" onClick={deleteSelected} className="w-full flex gap-2 h-9 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200">
+                                    <Trash2 className="w-4 h-4" /> Delete Item
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                 </CardContent>
 
-                {/* Checkout fixed to bottom of panel */}
-                <div className="p-6 border-t bg-gray-50/50 mt-auto">
-                    <div className="flex gap-3 mb-4">
-                        <div className="flex-1">
-                            <Label className="text-xs mb-1 block text-gray-500">Size</Label>
-                            <select className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                <option>S</option>
-                                <option>M</option>
-                                <option>L</option>
-                                <option>XL</option>
-                                <option>XXL</option>
-                            </select>
-                        </div>
-                        <div className="flex-1">
-                            <Label className="text-xs mb-1 block text-gray-500">Qty</Label>
-                            <select className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                <option>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5+</option>
-                            </select>
-                        </div>
-                    </div>
-                    <Button className="w-full flex gap-2 items-center h-12 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-green-500/20 text-md font-bold">
-                        <ShoppingCart className="w-5 h-5" /> Proceed to Cart
+                {/* Checkout & Export fixed to bottom */}
+                <div className="p-4 border-t bg-gray-50 mt-auto flex flex-col gap-3">
+                    <Button variant="outline" onClick={handleExport} className="w-full flex gap-2 h-10 bg-white shadow-sm border-gray-300 text-gray-700 hover:bg-gray-50">
+                        <Download className="w-4 h-4" /> Download Mockup
                     </Button>
-                    <p className="text-xs text-center text-gray-500 mt-3 flex justify-center items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span> 50% deposit required
-                    </p>
+                    <Button className="w-full flex gap-2 items-center h-12 bg-primary hover:bg-primary/90 text-white shadow-md text-md font-bold">
+                        <ShoppingCart className="w-5 h-5" /> Save & Continue
+                    </Button>
                 </div>
             </Card>
+
         </div>
     );
 }

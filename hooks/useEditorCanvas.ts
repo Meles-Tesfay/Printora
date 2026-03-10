@@ -1,0 +1,199 @@
+"use client";
+
+import { useEffect, useRef, useState } from 'react';
+import { fabric } from 'fabric';
+import { PrintArea, CanvasDesignState } from '@/types/editor';
+
+interface UseEditorCanvasProps {
+    printArea: PrintArea | undefined;
+    onSelectionChange?: (activeObject: fabric.Object | null) => void;
+    initialState?: CanvasDesignState;
+}
+
+export function useEditorCanvas({ printArea, onSelectionChange, initialState }: UseEditorCanvasProps) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+
+    const onSelectionChangeRef = useRef(onSelectionChange);
+    useEffect(() => {
+        onSelectionChangeRef.current = onSelectionChange;
+    }, [onSelectionChange]);
+
+    // Initialize canvas
+    useEffect(() => {
+        if (!canvasRef.current) return;
+
+        // Create Fabric canvas
+        const newCanvas = new fabric.Canvas(canvasRef.current, {
+            preserveObjectStacking: true, // Crucial for z-index management
+            selection: true, // Allow multi-selection
+            backgroundColor: 'transparent',
+        });
+
+        // Default settings for objects
+        fabric.Object.prototype.transparentCorners = false;
+        fabric.Object.prototype.cornerColor = '#16a34a'; // Primary color
+        fabric.Object.prototype.cornerStyle = 'circle';
+        fabric.Object.prototype.borderColor = '#16a34a';
+        fabric.Object.prototype.cornerSize = 10;
+        fabric.Object.prototype.padding = 5;
+
+        // Event listeners for selection
+        newCanvas.on('selection:created', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
+        newCanvas.on('selection:updated', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
+        newCanvas.on('selection:cleared', () => onSelectionChangeRef.current?.(null));
+
+        setCanvas(newCanvas);
+
+        return () => {
+            newCanvas.dispose();
+            setCanvas(null);
+        };
+    }, []);
+
+    // Resize canvas when print area changes
+    useEffect(() => {
+        if (canvas && printArea) {
+            canvas.setWidth(printArea.width);
+            canvas.setHeight(printArea.height);
+            // Optional: add a grid or safe zone visual here
+            canvas.renderAll();
+        }
+    }, [canvas, printArea]);
+
+    // Handle restoring state (if we switch views and come back)
+    useEffect(() => {
+        if (canvas && initialState && initialState.objects) {
+            canvas.clear();
+            canvas.setBackgroundColor('transparent', () => { });
+            // Load from JSON
+            fabric.util.enlivenObjects(initialState.objects, (objects: fabric.Object[]) => {
+                objects.forEach((obj) => {
+                    canvas.add(obj);
+                });
+                canvas.renderAll();
+            }, "");
+        } else if (canvas && !initialState) {
+            canvas.clear();
+            canvas.setBackgroundColor('transparent', () => { });
+        }
+    }, [canvas, initialState]);
+
+    const addText = (textStr = 'Double click to edit', options: fabric.ITextOptions = {}) => {
+        if (!canvas || !printArea) return;
+
+        const text = new fabric.IText(textStr, {
+            left: printArea.width / 2,
+            top: printArea.height / 2,
+            originX: 'center',
+            originY: 'center',
+            fontFamily: 'sans-serif',
+            fontSize: 32,
+            fill: '#000000',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            ...options
+        });
+
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        canvas.renderAll();
+    };
+
+    const addImage = (url: string) => {
+        if (!canvas || !printArea) return;
+
+        fabric.Image.fromURL(url, (img) => {
+            // Scale down image if it's too large for the print area
+            const maxWidth = printArea.width * 0.8;
+            const maxHeight = printArea.height * 0.8;
+
+            if (img.width! > maxWidth || img.height! > maxHeight) {
+                const scale = Math.min(maxWidth / img.width!, maxHeight / img.height!);
+                img.scale(scale);
+            }
+
+            img.set({
+                left: printArea.width / 2,
+                top: printArea.height / 2,
+                originX: 'center',
+                originY: 'center',
+            });
+
+            canvas.add(img);
+            canvas.setActiveObject(img);
+            canvas.renderAll();
+        });
+    };
+
+    const deleteSelected = () => {
+        if (!canvas) return;
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length) {
+            canvas.discardActiveObject();
+            activeObjects.forEach((object) => {
+                canvas.remove(object);
+            });
+            canvas.renderAll();
+        }
+    };
+
+    const bringForward = () => {
+        if (!canvas) return;
+        const activeObject = canvas.getActiveObject();
+        if (activeObject) {
+            canvas.bringForward(activeObject);
+            canvas.renderAll();
+        }
+    };
+
+    const sendBackward = () => {
+        if (!canvas) return;
+        const activeObject = canvas.getActiveObject();
+        if (activeObject) {
+            canvas.sendBackwards(activeObject);
+            canvas.renderAll();
+        }
+    };
+
+    const updateActiveObject = (updates: Record<string, any>) => {
+        if (!canvas) return;
+        const activeObject = canvas.getActiveObject();
+        if (activeObject) {
+            activeObject.set(updates);
+            canvas.renderAll();
+        }
+    };
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!canvas) return;
+            const activeObject = canvas.getActiveObject();
+            if (!activeObject) return;
+
+            // Don't trigger if user is editing text
+            if (activeObject instanceof fabric.IText && activeObject.isEditing) {
+                return;
+            }
+
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                deleteSelected();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canvas]);
+
+    return {
+        canvasRef,
+        canvas,
+        addText,
+        addImage,
+        deleteSelected,
+        bringForward,
+        sendBackward,
+        updateActiveObject
+    };
+}
