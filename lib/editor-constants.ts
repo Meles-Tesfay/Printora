@@ -7,7 +7,7 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
         name: 'Classic Unisex T-Shirt',
         description: 'A comfortable, classic fit t-shirt.',
         category: 't-shirts',
-        defaultViewId: 'front',
+        defaultViewId: 'front-side',
         defaultColorHex: '#ffffff',
         variants: [
             { id: 'white', colorHex: '#ffffff', colorName: 'White' },
@@ -18,59 +18,48 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
         ],
         views: [
             {
-                id: 'front',
-                name: 'Front',
-                // In a real app, this would point to a high-res transparent PNG with shading
+                id: 'front-side',
+                name: 'Front side',
                 mockupUrl: '/images/products/tshirt/front.png',
                 printAreas: [
                     {
+                        // Centered in shirt body: body x=118–382 (w=264), body y=182–518
+                        // Print area: 210 wide → left=(500-210)/2=145, top=200, height=248
                         id: 'front-center',
-                        width: 200,   // px relative to 500x600 mockup
-                        height: 300,
-                        left: 150,    // (500-200)/2
-                        top: 150
+                        width: 210,
+                        height: 248,
+                        left: 145,
+                        top: 200
                     }
                 ]
             },
             {
-                id: 'back',
-                name: 'Back',
+                id: 'back-side',
+                name: 'Back side',
                 mockupUrl: '/images/products/tshirt/back.png',
                 printAreas: [
                     {
+                        // Back: same body but print area starts higher (no collar), y=148
                         id: 'back-center',
-                        width: 200,
-                        height: 300,
-                        left: 150,
-                        top: 150
+                        width: 210,
+                        height: 255,
+                        left: 145,
+                        top: 148
                     }
                 ]
             },
             {
-                id: 'left-sleeve',
-                name: 'Left Sleeve',
-                mockupUrl: '/images/products/tshirt/left-sleeve.png',
+                id: 'neck-label',
+                name: 'Neck label inner',
+                mockupUrl: '/images/products/tshirt/neck-label.png',
                 printAreas: [
                     {
-                        id: 'left-sleeve-area',
-                        width: 80,
-                        height: 100,
-                        left: 360,
-                        top: 180
-                    }
-                ]
-            },
-            {
-                id: 'right-sleeve',
-                name: 'Right Sleeve',
-                mockupUrl: '/images/products/tshirt/right-sleeve.png',
-                printAreas: [
-                    {
-                        id: 'right-sleeve-area',
-                        width: 80,
-                        height: 100,
-                        left: 60,
-                        top: 180
+                        // Centered below the collar band arc (which ends at ~y=152)
+                        id: 'neck-label-area',
+                        width: 168,
+                        height: 148,
+                        left: 166,
+                        top: 186
                     }
                 ]
             }

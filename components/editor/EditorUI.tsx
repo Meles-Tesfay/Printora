@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import TshirtMockup from './TshirtMockup';
 import {
     Image as ImageIcon,
     Type,
@@ -156,75 +157,32 @@ export default function EditorUI() {
             </Card>
 
             {/* CENTER PANEL: Canvas Area */}
-            <div className="flex-1 bg-gray-100 rounded-xl shadow-inner border border-gray-200 flex flex-col items-center relative overflow-hidden h-full">
-
-                {/* View Tabs */}
-                <div className="absolute top-4 z-20">
-                    <Tabs value={selectedView.id} onValueChange={handleViewChange} className="w-auto bg-white rounded-lg shadow-sm p-1">
-                        <TabsList className="h-10">
-                            {selectedProduct.views.map(view => (
-                                <TabsTrigger key={view.id} value={view.id} className="min-w-[80px]">
-                                    {view.name}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </Tabs>
-                </div>
+            <div className="flex-1 rounded-xl border border-gray-200 flex flex-col items-center relative overflow-hidden h-full" style={{ background: '#f4f4f4' }}>
 
                 {/* Editor Surface */}
-                <div className="relative w-full h-full flex items-center justify-center p-8 transition-all">
-
-                    {/* The physical product dimensions (mocked to 500x600 for typical apparel, or scaled dynamically based on mockupUrl in reality) */}
-                    <div className="relative w-[500px] h-[600px] shadow-sm rounded-md overflow-hidden bg-white/50 backdrop-blur"
-                        style={{
-                            // If product is a t-shirt/hoodie, we can tint the background. 
-                            // If it's a mug, it might be white. We use selectedColor.
-                            backgroundColor: selectedProduct.category === 'accessories' ? '#f8fafc' : selectedColor
-                        }}
-                    >
-
-                        {/* 1. Mockup Layer (Shading & Overlays) */}
-                        {/* We use an img tag pointing to a generic transparent product mockup here */}
-                        <div
-                            className="absolute inset-0 z-0 pointer-events-none opacity-90 mix-blend-multiply flex items-center justify-center"
-                        >
-                            {/* Temporary SVG placeholder taking the place of mockupUrl since we don't have images yet */}
-                            <svg viewBox="0 0 500 600" fill="currentColor" stroke="rgba(0,0,0,0.1)" strokeWidth="2" className="w-[80%] h-[80%] text-white">
-                                <path d="M 150 40 Q 250 100 350 40 L 480 120 L 440 240 L 400 220 L 400 580 L 100 580 L 100 220 L 60 240 L 20 120 Z" />
-                            </svg>
-                        </div>
-
-                        {/* 2. Print Area Boundary Box (Visual) */}
-                        <div
-                            className="absolute z-10 border-2 border-dashed border-gray-300 pointer-events-none"
-                            style={{
-                                width: printArea?.width || 200,
-                                height: printArea?.height || 300,
-                                left: printArea?.left || 150,
-                                top: printArea?.top || 150,
-                            }}
-                        />
-
-                        {/* 3. The Fabric Canvas Layer */}
-                        <div
-                            className="absolute z-20 outline-none focus:outline-none"
-                            style={{
-                                width: printArea?.width || 200,
-                                height: printArea?.height || 300,
-                                left: printArea?.left || 150,
-                                top: printArea?.top || 150,
-                            }}
-                        >
-                            <canvas ref={canvasRef} className="outline-none" />
-                        </div>
-
-                    </div>
-
+                <div className="relative w-full flex-1 flex items-center justify-center px-6 pt-6 pb-2 transition-all">
+                    <TshirtMockup
+                        selectedView={selectedView}
+                        selectedColor={selectedColor}
+                        printArea={printArea}
+                        canvasRef={canvasRef}
+                    />
                 </div>
 
-                {/* Bottom Zoom/Undo Bar (Placeholder) */}
-                <div className="absolute bottom-4 z-20 bg-white/90 backdrop-blur rounded-full shadow-sm px-4 py-2 flex items-center gap-2 border">
-                    <span className="text-xs font-semibold text-gray-500">Note: Keep designs within dashed box.</span>
+                {/* Bottom: View Tabs as pills */}
+                <div className="flex-shrink-0 pb-5 pt-3 flex items-center gap-3 z-20">
+                    {selectedProduct.views.map(view => (
+                        <button
+                            key={view.id}
+                            onClick={() => handleViewChange(view.id)}
+                            className={`px-5 py-2 rounded-full text-sm font-medium border transition-all ${selectedView.id === view.id
+                                ? 'bg-[#3d3d2e] text-white border-[#3d3d2e] shadow-md'
+                                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                                }`}
+                        >
+                            {view.name}
+                        </button>
+                    ))}
                 </div>
 
             </div>
