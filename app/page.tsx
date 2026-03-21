@@ -326,7 +326,7 @@ export default function Home() {
                   <div className="absolute inset-0 rounded-t-[1.5rem] overflow-hidden bg-[#e0f2fe] transition-transform duration-500 group-hover:scale-[1.03]" style={{ transformOrigin: 'bottom' }}>
 
                     {/* Sliding Photos Container */}
-                    <div className="w-[200%] h-full flex animate-slide-photos">
+                    <div className="w-[200%] h-full flex animate-slide-photos" style={{ animationDelay: '0s' }}>
                       {/* Photo 1: Orange Faith Hoodie */}
                       <div className="w-1/2 h-full relative">
                         <img src="/orange-hoodie.jpg" alt="Orange Faith Hoodie Placeholder" className="w-full h-full object-cover object-top" />
@@ -373,14 +373,14 @@ export default function Home() {
                 <div className="absolute bottom-0 left-0 right-0 h-[260px]">
                   <div className="absolute inset-0 rounded-t-[1.5rem] overflow-hidden bg-[#e8e4dc] transition-transform duration-500 group-hover:scale-[1.03]" style={{ transformOrigin: 'bottom' }}>
                     {/* Sliding Photos Container */}
-                    <div className="w-[200%] h-full flex animate-slide-photos">
+                    <div className="w-[200%] h-full flex animate-slide-photos" style={{ animationDelay: '2s' }}>
                       {/* Photo 1 */}
                       <div className="w-1/2 h-full relative">
-                        <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=400&fit=crop" alt="Canvas Bag" className="w-full h-full object-cover object-top" />
+                        <img src="/bag1.jpg" alt="Canvas Bag" className="w-full h-full object-cover object-top" />
                       </div>
                       {/* Photo 2 */}
                       <div className="w-1/2 h-full relative">
-                        <img src="https://images.unsplash.com/photo-1590874103328-eac38a683ce7?q=80&w=400&fit=crop" alt="Leather Bag" className="w-full h-full object-cover object-center" />
+                        <img src="/bag2.jpg" alt="Leather Bag" className="w-full h-full object-cover object-center" />
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
@@ -416,14 +416,14 @@ export default function Home() {
                 <div className="absolute bottom-0 left-0 right-0 h-[260px]">
                   <div className="absolute inset-0 rounded-t-[1.5rem] overflow-hidden bg-[#d8d4f0] transition-transform duration-500 group-hover:scale-[1.03]" style={{ transformOrigin: 'bottom' }}>
                     {/* Sliding Photos Container */}
-                    <div className="w-[200%] h-full flex animate-slide-photos">
+                    <div className="w-[200%] h-full flex animate-slide-photos" style={{ animationDelay: '1s' }}>
                       {/* Photo 1 */}
                       <div className="w-1/2 h-full relative">
-                        <img src="https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=400&fit=crop" alt="White Mug" className="w-full h-full object-cover object-bottom" />
+                        <img src="d1.jpg" alt="White Mug" className="w-full h-full object-cover object-bottom" />
                       </div>
                       {/* Photo 2 */}
                       <div className="w-1/2 h-full relative">
-                        <img src="https://images.unsplash.com/photo-1554620025-a1d2fb7bc547?q=80&w=400&fit=crop" alt="Latte Cup" className="w-full h-full object-cover object-center" />
+                        <img src="d2.jpg" alt="Latte Cup" className="w-full h-full object-cover object-center" />
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
@@ -451,16 +451,26 @@ export default function Home() {
                     </div>
                   </div>
                   {/* Title */}
-                  <h3 className="text-[36px] font-medium text-[#111] leading-[1.05] tracking-tight mb-3 font-sans">Posters &<br />Art Prints</h3>
+                  <h3 className="text-[36px] font-medium text-[#111] leading-[1.05] tracking-tight mb-3 font-sans">Posters &<br />ID badges</h3>
                   <p className="text-[15px] text-[#111]/80 leading-relaxed max-w-[90%] font-sans">Museum-quality prints of your artwork shipped directly to your customers worldwide.</p>
                 </div>
                 {/* Photo inset */}
                 <div className="absolute bottom-0 left-0 right-0 h-[260px]">
                   <div className="absolute inset-0 rounded-t-[1.5rem] overflow-hidden bg-[#e0f7fa] transition-transform duration-500 group-hover:scale-[1.03]" style={{ transformOrigin: 'bottom' }}>
-                    <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=400&fit=crop" alt="Posters" className="w-full h-full object-cover object-top" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                    {/* Sliding Photos Container */}
+                    <div className="w-[200%] h-full flex animate-slide-photos" style={{ animationDelay: '3s' }}>
+                      {/* Photo 1 */}
+                      <div className="w-1/2 h-full relative">
+                        <img src="i2.jpg" alt="Posters" className="w-full h-full object-cover object-top" />
+                      </div>
+                      {/* Photo 2 */}
+                      <div className="w-1/2 h-full relative">
+                        <img src="i1.jpg" alt="ID Badges" className="w-full h-full object-cover object-center" />
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3">
+                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
                       <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
@@ -491,14 +501,14 @@ export default function Home() {
                 <div className="absolute bottom-0 left-0 right-0 h-[260px]">
                   <div className="absolute inset-0 rounded-t-[1.5rem] overflow-hidden bg-[#dcd6f0] transition-transform duration-500 group-hover:scale-[1.03]" style={{ transformOrigin: 'bottom' }}>
                     {/* Sliding Photos Container */}
-                    <div className="w-[200%] h-full flex animate-slide-photos">
+                    <div className="w-[200%] h-full flex animate-slide-photos" style={{ animationDelay: '1.5s' }}>
                       {/* Photo 1: Hat */}
                       <div className="w-1/2 h-full relative">
-                        <img src="https://images.unsplash.com/photo-1521369909029-2afed882ba54?q=80&w=400&fit=crop" alt="Premium structured hat" className="w-full h-full object-cover object-center" />
+                        <img src="p1.jpg" alt="Premium structured hat" className="w-full h-full object-cover object-center" />
                       </div>
                       {/* Photo 2: Phone Case */}
                       <div className="w-1/2 h-full relative">
-                        <img src="https://images.unsplash.com/photo-1601972599720-36938d4ecd31?q=80&w=400&fit=crop" alt="Custom phone safety cover" className="w-full h-full object-cover object-center" />
+                        <img src="p2.jpg" alt="Custom phone safety cover" className="w-full h-full object-cover object-center" />
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
@@ -514,6 +524,108 @@ export default function Home() {
               </div>
 
             </div>
+          </div>
+        </section>
+
+        {/* Services Section */}
+        <section className="bg-[#f0ebe1] py-24 px-6 lg:px-10 flex flex-col justify-center items-center">
+          <div className="max-w-[1240px] w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Header Block */}
+            <div className="flex flex-col justify-center pr-2 md:pr-4 py-8">
+              <h2 className="text-[32px] md:text-[38px] font-extrabold text-[#202b2a] leading-tight mb-5 tracking-tight font-sans">
+                Simple guide
+              </h2>
+              <p className="text-[#64716e] text-[14px] md:text-[15px] font-medium leading-[1.6] mb-8 pr-4">
+                Follow this simple guide: choose your material, select a print house, design your product, and place your order.
+              </p>
+              <div>
+                <button className="bg-[#7ef98c] text-[#133227] px-8 py-3 rounded-xl font-bold text-[15px] hover:bg-[#6be079] transition-colors shadow-sm tracking-wide">
+                  Start designing
+                </button>
+              </div>
+            </div>
+
+            {/* Step 1 Card */}
+            <div className="bg-[#ccff00] text-[#111] p-7 md:p-8 rounded-[1.2rem] flex flex-col justify-between shadow-sm z-10 w-full hover-vibrate-trigger transition-transform">
+              <div>
+                <div className="flex items-center gap-3 mb-5 text-[#111]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                  <span className="font-bold text-[#111] text-[18px] md:text-[19px] tracking-tight">1. Choose Material</span>
+                </div>
+                <p className="text-[#222] text-[14px] leading-[1.6] mb-8 font-medium pr-2">
+                  First, choose the material or product you want to design on from our extensive catalog.
+                </p>
+              </div>
+              <div>
+                <Link href="#" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity underline decoration-1 underline-offset-4">Browse catalog</Link>
+              </div>
+            </div>
+
+            {/* Step 2 Card */}
+            <div className="bg-[#e6e0f8] p-7 md:p-8 rounded-[1.2rem] flex flex-col justify-between hover-vibrate-trigger transition-transform shadow-sm w-full">
+              <div>
+                <div className="flex items-center gap-3 mb-5 text-[#111]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <span className="font-bold text-[#111] text-[18px] md:text-[19px] tracking-tight">2. Select Print House</span>
+                </div>
+                <p className="text-[#444] text-[14px] leading-[1.6] mb-8 font-medium pr-2">
+                  Second, select the best seller or print house that fits your unique needs and location.
+                </p>
+              </div>
+              <div>
+                <Link href="#" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity">Find sellers</Link>
+              </div>
+            </div>
+
+            {/* Step 3 Card */}
+            <div className="bg-[#5bc2e7] p-7 md:p-8 rounded-[1.2rem] flex flex-col justify-between hover-vibrate-trigger transition-transform shadow-sm w-full">
+              <div>
+                <div className="flex items-center gap-3 mb-5 text-[#111]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                  <span className="font-bold text-[#111] text-[18px] md:text-[19px] tracking-tight">3. Design Material</span>
+                </div>
+                <p className="text-[#111]/80 text-[14px] leading-[1.6] mb-8 font-medium pr-2">
+                  Third, design the selected material using our powerful online designer tool.
+                </p>
+              </div>
+              <div>
+                <Link href="#" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity">Open designer</Link>
+              </div>
+            </div>
+
+            {/* Step 4 Card */}
+            <div className="bg-[#f0eae1] p-7 md:p-8 rounded-[1.2rem] flex flex-col justify-between hover-vibrate-trigger transition-transform shadow-sm w-full">
+              <div>
+                <div className="flex items-center gap-3 mb-5 text-[#111]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  <span className="font-bold text-[#111] text-[18px] md:text-[19px] tracking-tight">4. Payment & Order</span>
+                </div>
+                <p className="text-[#444] text-[14px] leading-[1.6] mb-8 font-medium pr-2">
+                  Then, securely make your payment and place your order directly through our platform.
+                </p>
+              </div>
+              <div>
+                <Link href="#" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity">Learn more</Link>
+              </div>
+            </div>
+
+            {/* Step 5 Card */}
+            <div className="bg-[#f6cdcd] p-7 md:p-8 rounded-[1.2rem] flex flex-col justify-between hover-vibrate-trigger transition-transform shadow-sm w-full">
+              <div>
+                <div className="flex items-center gap-3 mb-5 text-[#111]">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <span className="font-bold text-[#111] text-[18px] md:text-[19px] tracking-tight">5. Process Complete</span>
+                </div>
+                <p className="text-[#333] text-[14px] leading-[1.6] mb-8 font-medium pr-2">
+                  Finally, the process is complete! Your custom designed product will be on its way.
+                </p>
+              </div>
+              <div>
+                <Link href="#" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity">Track order</Link>
+              </div>
+            </div>
+
           </div>
         </section>
       </main>
