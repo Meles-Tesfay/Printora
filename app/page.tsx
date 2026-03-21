@@ -58,13 +58,17 @@ export default function Home() {
             </Link>
           </nav>
 
-          <div className="flex-1 flex items-center justify-end">
-            <button
-              className="rounded-md px-6 h-10 text-[15px] font-bold transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#9DF542', color: '#1B2412' }}
+          <div className="flex-1 flex items-center justify-end gap-3">
+            <Link href="/login" className="flex items-center justify-center rounded-md px-6 h-11 text-[16px] font-extrabold tracking-wide text-[#1B2412] bg-white border border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-gray-50 transition-colors">
+              Log in
+            </Link>
+            <Link 
+              href="/signup"
+              className="flex items-center justify-center rounded-md px-6 h-11 text-[16px] font-extrabold tracking-wide transition-opacity hover:opacity-80"
+              style={{ backgroundColor: '#A1FF4D', color: '#1B2412' }}
             >
-              My store
-            </button>
+              Sign up
+            </Link>
           </div>
         </header>
       </div>
@@ -760,7 +764,7 @@ export default function Home() {
 
             {/* Top Right Card (Image) */}
             <div className="col-span-1 lg:col-span-5 bg-[#e4a38f] rounded-[2.5rem] overflow-hidden relative min-h-[420px] lg:min-h-[500px] group">
-              <img src="/hustle-tee.jpg" alt="Model" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
+              <img src="/hustle-tee-new.jpg" alt="Model" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply opacity-80"></div>
               
               <div className="absolute top-8 left-8">
