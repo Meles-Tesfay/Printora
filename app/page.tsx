@@ -716,147 +716,118 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Why Stenvo — Immersive Dark Stats Section */}
-        <section className="relative w-full overflow-hidden bg-[#0d0d0d]" style={{ minHeight: '680px' }}>
-          {/* Full-width background image */}
-          <img
-            src="/tribal-bg.jpg"
-            alt="Custom merchandise creator"
-            className="absolute inset-0 w-full h-full object-cover object-center"
-            loading="lazy"
-          />
-
-
-          {/* Content */}
-          <div className="relative z-20 w-full px-6 md:px-12 lg:px-20 pt-14 pb-0 flex flex-col" style={{ minHeight: '680px' }}>
-
-            {/* Top row: Badge + Stats */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8 bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 lg:px-10 shadow-2xl">
-              {/* Badge */}
-              <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white font-semibold text-[13px] px-4 py-1.5 rounded-full tracking-wide w-fit shrink-0">
-                <span className="w-2 h-2 rounded-full bg-[#9DF542] animate-pulse inline-block" />
-                Why thousands choose Stenvo
-              </span>
-
-              {/* Stats row */}
-              <div className="flex items-center gap-6 md:gap-10 auto-cols-max flex-wrap">
-                {[
-                  { value: '10k+', label: 'Active Creators' },
-                  { value: '1,300+', label: 'Products' },
-                  { value: '50+', label: 'Countries' },
-                  { value: '$0', label: 'Upfront Cost' },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex flex-col">
-                    <span className="text-[28px] md:text-[32px] font-black text-[#9DF542] leading-none drop-shadow-lg">{stat.value}</span>
-                    <span className="text-white/80 text-[12px] font-medium tracking-wide mt-1">{stat.label}</span>
-                  </div>
-                ))}
+        {/* Modern Bento Box Section */}
+        <section className="bg-[#1e1e1e] w-full py-16 md:py-24 px-4 md:px-8 flex justify-center font-sans tracking-tight">
+          <div className="max-w-[1280px] w-full grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+            
+            {/* Top Left Card (White) */}
+            <div className="col-span-1 lg:col-span-7 bg-white rounded-[2.5rem] p-8 md:p-12 lg:p-14 flex flex-col justify-between min-h-[420px] lg:min-h-[500px]">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+                <div className="flex w-[26px] h-[34px] rounded-sm overflow-hidden flex-shrink-0">
+                  <div className="w-[10px] h-full bg-[#111]"></div>
+                  <div className="w-[16px] h-full bg-[#fced44]"></div>
+                </div>
+                <span className="font-bold text-[13px] tracking-widest text-[#111] uppercase whitespace-nowrap">
+                  TIME FOR CREATORS — 24
+                </span>
               </div>
-            </div>
-
-            {/* Middle: Left headline + Right features + CTA */}
-            <div className="flex flex-col lg:flex-row items-stretch justify-between gap-8 flex-1">
-
-              {/* Left: Big headline Card */}
-              <div className="w-full lg:w-[50%] max-w-[600px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl flex flex-col justify-center">
-                <h2
-                  className="text-[42px] md:text-[54px] lg:text-[64px] font-black text-white leading-[1.05] tracking-tight mb-6 drop-shadow-xl"
-                  style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                >
-                  Custom Merch,<br />
-                  <span className="text-[#9DF542]">Built for</span><br />
-                  Creators.
-                </h2>
-                <p className="text-white/80 text-[15px] md:text-[17px] leading-[1.75] mb-12 font-medium max-w-[420px] drop-shadow-md">
-                  Turn any idea into a premium product — we handle printing, quality control, and worldwide shipping so you can focus on creating and selling.
-                </p>
-                <div className="relative group inline-block mt-auto pb-4">
-                  {/* Animated outer aura */}
-                  <div className="absolute -inset-[2px] bg-gradient-to-r from-[#9DF542] to-[#e6e0f8] rounded-full blur-lg opacity-30 group-hover:opacity-70 transition duration-500 animate-pulse"></div>
-                  
-                  {/* Button body */}
-                  <button className="relative flex items-center bg-black/80 backdrop-blur-xl border border-white/20 text-white rounded-full p-1.5 pr-8 hover:bg-black transition-all duration-300">
-                    
-                    {/* Glowing orb icon */}
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DF542] to-[#ccff00] flex items-center justify-center text-[#111] mr-4 shadow-[0_0_20px_rgba(157,245,66,0.3)] group-hover:scale-105 group-hover:rotate-[15deg] transition-all duration-300 text-xl font-bold">
-                      ✦
-                    </div>
-                    
-                    {/* Text with animated underline */}
-                    <span className="font-semibold text-[16px] tracking-wide relative whitespace-nowrap">
-                      Start Creating Free
-                      <span className="absolute left-0 -bottom-1 w-full h-[2px] bg-gradient-to-r from-[#9DF542] to-transparent scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300"></span>
-                    </span>
-                    
-                    {/* Arrow */}
-                    <svg className="w-5 h-5 ml-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1.5 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  
-                  {/* Small trust text */}
-                  <p className="absolute -bottom-4 left-0 w-full text-center text-white/50 text-[11px] uppercase tracking-widest font-mono group-hover:text-white/80 transition-colors">
-                    No Credit Card Required
-                  </p>
+              
+              {/* Large Title */}
+              <h2 className="text-[60px] md:text-[88px] lg:text-[104px] font-black text-[#111] leading-[1.0] tracking-normal mb-10 md:mb-16 uppercase" style={{ fontFamily: 'Impact, sans-serif', fontStretch: 'condensed' }}>
+                OWN YOUR<br/>MERCH,<br/>OWN YOUR<br/>BRAND
+              </h2>
+              
+              {/* Footer */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6 mt-auto">
+                <button className="bg-[#111] text-white px-8 py-5 rounded-full font-extrabold text-[14px] tracking-wider hover:bg-gray-800 transition-transform hover:scale-105 active:scale-95 w-max">
+                  START YOUR JOURNEY
+                </button>
+                <div className="flex items-center gap-4 opacity-80">
+                  <div className="flex items-end gap-1 h-6">
+                    <div className="w-[2px] h-3 bg-gray-400"></div>
+                    <div className="w-[2px] h-4 bg-gray-600"></div>
+                    <div className="w-[2px] h-6 bg-gray-800"></div>
+                    <div className="w-[2px] h-5 bg-gray-500"></div>
+                    <div className="w-[2px] h-3 bg-gray-400"></div>
+                  </div>
+                  <div className="text-[10px] md:text-[11px] font-bold text-gray-800 leading-[1.2] tracking-widest uppercase">
+                    LUXURY MERCH<br/>EXPERIENCE
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Right: Elegant vertical numbered list Card */}
-              <div className="w-full lg:w-[45%] lg:max-w-[550px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl flex flex-col justify-center ml-auto">
-                {[
-                  {
-                    num: '01',
-                    title: 'Design with ease',
-                    desc: 'Use our free built-in design tool — no Photoshop or software required. Upload your art or build from scratch.',
-                  },
-                  {
-                    num: '02',
-                    title: 'Pick your print partner',
-                    desc: 'Choose from our network of verified, high-quality print houses near you or near your customers.',
-                  },
-                  {
-                    num: '03',
-                    title: 'We print & ship globally',
-                    desc: 'Every order is printed on-demand and shipped to 50+ countries — fast, tracked, and quality-checked.',
-                  },
-                  {
-                    num: '04',
-                    title: 'Zero risk, pure profit',
-                    desc: 'No inventory. No upfront cost. You only pay when a customer places an order — and keep the profit.',
-                  },
-                ].map((item, i) => (
-                  <div key={item.num} className={`flex items-start gap-5 py-5 ${i !== 3 ? 'border-b border-white/10' : ''} group`}>
-                    {/* Number */}
-                    <span
-                      className="text-[36px] font-black text-[#9DF542] leading-none w-[56px] shrink-0 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-lg"
-                      style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                    >
-                      {item.num}
-                    </span>
-                    {/* Text */}
-                    <div>
-                      <h4 className="text-white font-bold text-[17px] mb-1.5 tracking-tight group-hover:text-[#9DF542] transition-colors drop-shadow-md">
-                        {item.title}
-                      </h4>
-                      <p className="text-white/80 text-[14px] leading-[1.65] font-medium drop-shadow-md">
-                        {item.desc}
-                      </p>
+            {/* Top Right Card (Image) */}
+            <div className="col-span-1 lg:col-span-5 bg-[#e4a38f] rounded-[2.5rem] overflow-hidden relative min-h-[420px] lg:min-h-[500px] group">
+              <img src="/hustle-tee.jpg" alt="Model" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply opacity-80"></div>
+              
+              <div className="absolute top-8 left-8">
+                <div className="w-[52px] h-[52px] bg-[#111] rounded-2xl flex items-center justify-center p-[14px]">
+                  <svg width="100%" height="100%" viewBox="0 0 24 24" fill="white"><path d="M12 2L15 9l7 1-5 5.5L15.5 22 12 18.5 8.5 22 10 15.5 5 10l7-1z" /></svg>
+                </div>
+              </div>
+              
+              <div className="absolute bottom-10 inset-x-0 px-8">
+                <h3 className="text-white font-black text-[34px] md:text-[42px] leading-[1.05] tracking-tight uppercase" style={{ fontFamily: 'sans-serif' }}>
+                  DESIGN ON YOUR<br/>OWN TIME
+                </h3>
+              </div>
+            </div>
+
+            {/* Bottom Left Card (Peach) */}
+            <div className="col-span-1 lg:col-span-7 bg-[#eba79b] rounded-[2.5rem] p-6 lg:p-7 flex flex-col md:flex-row items-stretch gap-6 shadow-inset">
+              {/* Image Block */}
+              <div className="w-full md:w-[260px] aspect-video md:aspect-auto md:h-full bg-[#eecd1a] rounded-3xl overflow-hidden relative flex-shrink-0">
+                <img src="/orange-hoodie.jpg" alt="Hoodie mock" className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-95 grayscale" />
+                <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-10 h-32 bg-[#171717] rounded-l-2xl shadow-[-5px_0_15px_rgba(0,0,0,0.2)]"></div>
+              </div>
+              
+              {/* Text Block */}
+              <div className="flex flex-col justify-between w-full p-2 lg:p-4">
+                <div className="flex justify-between items-start mb-8 gap-4 flex-wrap">
+                  <span className="text-[12px] font-bold tracking-widest text-[#111]">24/7 SUPPORT</span>
+                  <div className="flex items-center gap-3 text-right">
+                    <span className="text-[11px] font-bold tracking-widest text-[#111] leading-tight opacity-90">12834 STENVO LN<br/>BROOKLYN, NY</span>
+                    <div className="w-9 h-9 rounded-full bg-[#111] flex items-center justify-center flex-shrink-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#fced44]"></div>
                     </div>
+                  </div>
+                </div>
+                <h3 className="text-[32px] md:text-[40px] lg:text-[46px] font-black text-[#111] leading-[1.0] tracking-tighter uppercase pr-4">
+                  CONTACT US &<br/>SCALE FASTER
+                </h3>
+              </div>
+            </div>
+
+            {/* Bottom Right Card (White Stats) */}
+            <div className="col-span-1 lg:col-span-5 bg-white rounded-[2.5rem] p-8 lg:p-10 flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-10 w-full">
+                <div className="flex items-end gap-5">
+                  <span className="text-[64px] md:text-[76px] font-black text-[#111] leading-[0.8] tracking-tighter">4.98</span>
+                  <div className="flex flex-col pb-1">
+                    <div className="flex gap-1 mb-1.5 text-[#fced44]">
+                      {[1,2,3,4,5].map(i => <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
+                    </div>
+                    <span className="text-[9px] md:text-[10px] font-bold tracking-widest text-[#999] uppercase">BASED ON 10K+ REVIEWS</span>
+                  </div>
+                </div>
+                {/* Logo icon */}
+                <div className="w-10 h-10 -mt-2">
+                  <svg viewBox="0 0 24 24" fill="#111"><path d="M11.66 22.84l-9.5-9.5a1 1 0 0 1 0-1.42l9.5-9.5a1 1 0 0 1 1.42 0l4.24 4.24-2.83 2.83-2.83-2.83L4.93 12l6.73 6.73 2.83-2.83 2.83 2.83-4.24 4.24a1 1 0 0 1-1.42 0z" /></svg>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 md:gap-3">
+                {['T-SHIRTS', 'HOODIES', 'O-NECK', 'PHONE CASES', 'MUGS', 'POSTERS'].map((tag, i) => (
+                  <div key={i} className="flex items-center justify-center px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-gray-200 text-[#333] text-[10px] md:text-[11px] font-bold tracking-widest uppercase whitespace-nowrap hover:border-black transition-colors cursor-pointer">
+                    {tag}
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Bottom: Massive ghost text */}
-            <div className="relative mt-8 -mb-2 overflow-hidden pointer-events-none select-none">
-              <span
-                className="block text-[120px] md:text-[170px] lg:text-[210px] font-black leading-none text-white/[0.05] whitespace-nowrap"
-                style={{ fontFamily: 'Inter, system-ui, sans-serif', letterSpacing: '-0.04em' }}
-              >
-                STENVO
-              </span>
-            </div>
-
+            
           </div>
         </section>
 
