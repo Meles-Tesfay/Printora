@@ -75,6 +75,17 @@ export default function SignupPage() {
           </div>
 
           <form className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[14px] font-bold text-gray-800">First name</label>
+                <input type="text" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" />
+              </div>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[14px] font-bold text-gray-800">Last name</label>
+                <input type="text" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <label className="text-[14px] font-bold text-gray-800">Email</label>
               <input type="email" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" />
@@ -90,32 +101,18 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Cloudflare Turnstile Mockup */}
-            <div className="w-[300px] bg-white border border-[#e5e5e5] rounded-sm p-4 mt-1 flex items-center justify-between shadow-sm self-center sm:self-start object-scale-down">
-              <div className="flex items-center gap-3">
-                <div className="w-[22px] h-[22px] rounded-full bg-[#32a852] flex items-center justify-center shadow-inner">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <span className="text-[14px] font-medium text-gray-700">Success!</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1 font-bold text-[10px] text-gray-700 uppercase tracking-tight">
-                  <span className="text-[#f48120] text-lg leading-none mt-[-4px]">☁</span> CLOUDFLARE
-                </div>
-                <div className="text-[8px] text-gray-500 mt-1 flex gap-1">
-                  <a href="#" className="hover:underline">Privacy</a> • <a href="#" className="hover:underline">Terms</a>
-                </div>
-              </div>
-            </div>
-
-            <button type="submit" className="w-full bg-[#B2FF66] md:bg-[#A1FF4C] hover:bg-[#8ee53f] transition-colors text-black font-bold text-[16px] py-4 rounded-md shadow-sm mt-3">
+            <button type="submit" className="w-full bg-[#B2FF66] md:bg-[#A1FF4C] hover:bg-[#8ee53f] transition-colors text-black font-bold text-[16px] py-4 rounded-md shadow-sm mt-5">
               Create account
             </button>
           </form>
 
-          <div className="mt-8 flex flex-col gap-6 text-center sm:text-left">
-            <p className="text-[14px] text-[#2B3118] font-medium sm:text-center mt-2">
-              Already have an account? <Link href="/login" className="font-bold underline decoration-gray-400 underline-offset-4 hover:decoration-[#2B3118] transition-colors ml-1 lg:ml-2">Log In</Link>
+          <div className="mt-8 flex justify-center border-t border-gray-200 pt-8">
+            <p className="text-[15px] text-gray-600 font-medium flex items-center gap-1">
+              Already have an account?
+              <Link href="/login" className="relative group inline-block font-black text-[#2B3118] hover:text-[#454c30] transition-colors ml-1">
+                Log In
+                <span className="absolute -bottom-1 left-0 w-full h-[2.5px] bg-[#A1FF4C] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full"></span>
+              </Link>
             </p>
           </div>
 
