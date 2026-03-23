@@ -5,23 +5,35 @@ export default function SignupPage() {
     <div className="min-h-screen w-full flex flex-row-reverse bg-[#f5f3e7] font-sans">
       
       {/* Right Column - Image & Marketing */}
-      <div className="hidden lg:flex flex-col relative w-[48%] xl:w-[45%] bg-white flex-shrink-0 min-h-screen overflow-hidden border-l border-gray-200">
+      <div className="hidden lg:flex flex-col relative w-[48%] xl:w-[45%] bg-zinc-900 flex-shrink-0 min-h-screen overflow-hidden">
         {/* Background Image Placeholder */}
-        <div className="absolute inset-0 z-0 bg-[#f5f3e7] overflow-hidden flex items-center justify-center">
-           <img src="/beno.jpg" alt="Background" className="w-[75%] max-w-none h-auto object-contain z-0" />
+        <div className="absolute inset-0 z-0 bg-white overflow-hidden">
+           <img src="/pointer-guy.jpg" alt="Background" className="w-[110%] max-w-none h-full object-cover object-right absolute left-0 md:left-2 lg:left-6 xl:left-8 2xl:left-12 z-0" />
+           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/80 z-10"></div>
+           <div className="absolute inset-y-0 left-0 w-24 md:w-40 bg-gradient-to-l from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-end pt-12 pb-16 px-10 xl:px-14 h-full w-full">
-          {/* Bottom Branding / Chat Icon */}
-          <div className="mt-auto flex items-center justify-between">
-            {/* Elegant high-contrast glassmorphism tag */}
-            <div className="backdrop-blur-xl bg-white/20 border border-white/30 text-[#2B3118] rounded-[24px] py-4 px-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)] w-max">
-              <span className="font-black text-[18px] tracking-tight uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>JOIN THE CREATIVE COMMUNITY.</span>
-            </div>
+        <div className="relative z-10 flex flex-col pt-16 px-12 xl:px-16 text-white h-full">
+          {/* Headline */}
+          <h1 className="text-[52px] xl:text-[62px] font-black leading-none uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+            <span className="block mb-1 drop-shadow-md">SMALL PRODUCT,</span>
+            <span className="bg-[#2DC1DB] text-white px-3 py-1 -ml-3 inline-block shadow-md">BIG PROFIT</span>
+            <span className="block mt-1 drop-shadow-md">POTENTIAL</span>
+          </h1>
+          
+          {/* Subtext */}
+          <p className="mt-8 text-[15.5px] xl:text-[17px] font-medium leading-[1.6] opacity-95 max-w-md drop-shadow-lg">
+            Phone cases are year-round profit-makers that smartphone users can't get enough of.
+          </p>
+          <p className="mt-4 text-[15.5px] xl:text-[17px] font-medium leading-[1.6] opacity-95 max-w-md drop-shadow-lg">
+            Add your designs to popular cases, like the new Samsung Galaxy S24 options, and plug them as the perfect add-on to any order.
+          </p>
 
-            <div className="w-16 h-16 bg-[#A1FF4C] text-[#2B3118] border-2 border-[#8ee53f] rounded-[22px] flex items-center justify-center cursor-pointer shadow-[0_12px_24px_rgba(161,255,76,0.4)] hover:bg-[#8ee53f] hover:-translate-y-2 transition-all duration-300">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          {/* Bottom Chat Icon */}
+          <div className="mt-auto pb-10">
+            <div className="w-14 h-14 bg-[#454c30] border border-white/20 rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-[#525a3a] transition-colors">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 <line x1="9" y1="9" x2="15" y2="9"></line>
                 <line x1="9" y1="13" x2="15" y2="13"></line>
