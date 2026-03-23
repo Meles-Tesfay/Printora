@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
 import { useEditorCanvas } from '@/hooks/useEditorCanvas';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -21,9 +22,13 @@ import {
 import { ProductTemplate, ProductView, CanvasDesignState } from '@/types/editor';
 
 export default function EditorUI() {
-    const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(PRODUCT_TEMPLATES[0]);
-    const [selectedColor, setSelectedColor] = useState<string>(PRODUCT_TEMPLATES[0].defaultColorHex);
-    const [selectedView, setSelectedView] = useState<ProductView>(PRODUCT_TEMPLATES[0].views.find(v => v.id === PRODUCT_TEMPLATES[0].defaultViewId) || PRODUCT_TEMPLATES[0].views[0]);
+    const searchParams = useSearchParams();
+    const requestedTemplate = searchParams.get('template');
+    const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
+
+    const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
+    const [selectedColor, setSelectedColor] = useState<string>(initialTemplate.defaultColorHex);
+    const [selectedView, setSelectedView] = useState<ProductView>(initialTemplate.views.find(v => v.id === initialTemplate.defaultViewId) || initialTemplate.views[0]);
 
     // Store canvas state per view internally if needed, normally would be complex. 
     // For MVP we just keep the active canvas, switching views clears/loads from a state map.
@@ -72,6 +77,17 @@ export default function EditorUI() {
             setViewStates({}); // Reset states on new product
         }
     };
+
+    // Sync selected product when template query changes
+    useEffect(() => {
+        const fromQuery = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate);
+        if (!fromQuery || fromQuery.id === selectedProduct.id) return;
+
+        setSelectedProduct(fromQuery);
+        setSelectedColor(fromQuery.defaultColorHex);
+        setSelectedView(fromQuery.views.find(v => v.id === fromQuery.defaultViewId) || fromQuery.views[0]);
+        setViewStates({});
+    }, [requestedTemplate, selectedProduct.id]);
 
     // Handle Image Upload
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
