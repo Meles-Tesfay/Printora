@@ -111,17 +111,7 @@ const ProductsPage = () => {
       {/* ── Main Dashboard Content ── */}
       <main className="flex-1 px-8 lg:px-12 py-8 bg-[#fbfaf6] overflow-y-auto">
         
-        {/* Top Navbar Style (Search) */}
-        <div className="flex items-center justify-end mb-10 text-right">
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a8670]" />
-            <input 
-              type="text" 
-              placeholder="Search for products, brands, categories..."
-              className="w-full h-11 pl-10 pr-4 bg-white border border-[#e5e3d7] rounded-lg text-sm focus:outline-none focus:border-[#4a4320] transition-colors"
-            />
-          </div>
-        </div>
+
 
         {/* New Collection Section */}
         <div className="mb-20">
