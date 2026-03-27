@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Heart, Star, ShoppingBag, Zap } from 'lucide-react';
 import Link from 'next/link';
 
-/* ── Stenvio-style tiled "CUSTOMIZE ME" overlay ── */
+/* ── Printora-style tiled "CUSTOMIZE ME" overlay ── */
 const DesignOverlay = () => {
   const COLS = 4;
   const ROWS = 5;
@@ -27,8 +27,8 @@ const DesignOverlay = () => {
             className="flex items-center justify-center border border-white/10"
           >
             <div className="flex flex-col items-center leading-none rotate-[-12deg] select-none opacity-40">
-              <span className="font-black text-white text-[6px] tracking-widest">STENVIO</span>
-              <span className="font-black text-white text-[6px] tracking-widest mt-0.5">ART</span>
+              <span className="font-black text-white text-[6px] tracking-widest">PRINTORA</span>
+              <span className="font-black text-white text-[6px] tracking-widest mt-0.5">STUDIO</span>
             </div>
           </div>
         ))}
@@ -135,7 +135,7 @@ const ProductCard = ({ product }) => {
                 <p className="text-[13px] font-bold text-[#00b894] tracking-tight">
                   <span className="opacity-70 text-[11px] font-semibold text-gray-500 mr-1 uppercase">OR</span>
                   {product.premiumPrice.toLocaleString()} ETB
-                  <span className="text-[10px] font-medium text-gray-500 ml-1.5 italic">with Stenvio Premium</span>
+                  <span className="text-[10px] font-medium text-gray-500 ml-1.5 italic">with Printora Premium</span>
                 </p>
               </div>
             )}

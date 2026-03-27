@@ -6,11 +6,12 @@ import { PrintArea, CanvasDesignState } from '@/types/editor';
 
 interface UseEditorCanvasProps {
     printArea: PrintArea | undefined;
+    canvasSize?: { width: number, height: number };
     onSelectionChange?: (activeObject: fabric.Object | null) => void;
     initialState?: CanvasDesignState;
 }
 
-export function useEditorCanvas({ printArea, onSelectionChange, initialState }: UseEditorCanvasProps) {
+export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, initialState }: UseEditorCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
 
@@ -54,12 +55,29 @@ export function useEditorCanvas({ printArea, onSelectionChange, initialState }: 
     // Resize canvas when print area changes
     useEffect(() => {
         if (canvas && printArea) {
-            canvas.setWidth(printArea.width);
-            canvas.setHeight(printArea.height);
-            // Optional: add a grid or safe zone visual here
+            // If canvasSize is provided, the canvas covers the full mockup, and printArea is just a clipping mask
+            const useFullCanvas = !!canvasSize;
+            canvas.setWidth(useFullCanvas ? canvasSize.width : printArea.width);
+            canvas.setHeight(useFullCanvas ? canvasSize.height : printArea.height);
+
+            if (useFullCanvas) {
+                // Apply Clipping Mask so elements hide outside the chest bounding box
+                const clipPath = new fabric.Rect({
+                    left: printArea.left,
+                    top: printArea.top,
+                    width: printArea.width,
+                    height: printArea.height,
+                    absolutePositioned: true
+                });
+                canvas.clipPath = clipPath;
+                
+                // Optional: Draw a visual dashed bounding box for the print area that doesn't export
+                // We'll skip drawing lines directly on canvas to keep export clean, we rely on HTML or overlay instead.
+            }
+
             canvas.renderAll();
         }
-    }, [canvas, printArea]);
+    }, [canvas, printArea, canvasSize]);
 
     // Handle restoring state (if we switch views and come back)
     useEffect(() => {
@@ -82,9 +100,12 @@ export function useEditorCanvas({ printArea, onSelectionChange, initialState }: 
     const addText = (textStr = 'Double click to edit', options: fabric.ITextOptions = {}) => {
         if (!canvas || !printArea) return;
 
+        const centerX = canvasSize ? printArea.left + printArea.width / 2 : printArea.width / 2;
+        const centerY = canvasSize ? printArea.top + printArea.height / 2 : printArea.height / 2;
+
         const text = new fabric.IText(textStr, {
-            left: printArea.width / 2,
-            top: printArea.height / 2,
+            left: centerX,
+            top: centerY,
             originX: 'center',
             originY: 'center',
             fontFamily: 'sans-serif',
@@ -113,9 +134,12 @@ export function useEditorCanvas({ printArea, onSelectionChange, initialState }: 
                 img.scale(scale);
             }
 
+            const centerX = canvasSize ? printArea.left + printArea.width / 2 : printArea.width / 2;
+            const centerY = canvasSize ? printArea.top + printArea.height / 2 : printArea.height / 2;
+
             img.set({
-                left: printArea.width / 2,
-                top: printArea.height / 2,
+                left: centerX,
+                top: centerY,
                 originX: 'center',
                 originY: 'center',
             });

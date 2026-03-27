@@ -4,20 +4,28 @@ import React, { useState, useEffect } from 'react';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
 import { useEditorCanvas } from '@/hooks/useEditorCanvas';
 import { useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TshirtMockup from './TshirtMockup';
+import HoodieMockup from './HoodieMockup';
+import SweaterMockup from './SweaterMockup';
+import HatMockup from './HatMockup';
 import {
     Image as ImageIcon,
     Type,
     Trash2,
-    ShoppingCart,
     BringToFront,
     SendToBack,
     Download,
-    Layers
+    Layers,
+    Palette,
+    ChevronLeft,
+    ChevronRight,
+    Bold,
+    Italic,
+    ShoppingCart,
+    Sparkles,
+    Move,
+    ZoomIn,
+    RotateCcw
 } from 'lucide-react';
 import { ProductTemplate, ProductView, CanvasDesignState } from '@/types/editor';
 
@@ -30,12 +38,11 @@ export default function EditorUI() {
     const [selectedColor, setSelectedColor] = useState<string>(initialTemplate.defaultColorHex);
     const [selectedView, setSelectedView] = useState<ProductView>(initialTemplate.views.find(v => v.id === initialTemplate.defaultViewId) || initialTemplate.views[0]);
 
-    // Store canvas state per view internally if needed, normally would be complex. 
-    // For MVP we just keep the active canvas, switching views clears/loads from a state map.
     const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>({});
     const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
+    const [activeTab, setActiveTab] = useState<'design' | 'colors'>('design');
 
-    const printArea = selectedView.printAreas[0]; // Assuming 1 print area per view for simplicity
+    const printArea = selectedView.printAreas[0];
 
     const {
         canvasRef,
@@ -48,34 +55,33 @@ export default function EditorUI() {
         updateActiveObject
     } = useEditorCanvas({
         printArea,
+        canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
         initialState: viewStates[selectedView.id]
     });
 
     // Handle View Change
     const handleViewChange = (viewId: string) => {
-        // Save current canvas state before switching
         if (canvas) {
             setViewStates(prev => ({
                 ...prev,
                 [selectedView.id]: { objects: canvas.toJSON().objects }
             }));
         }
-
         const newView = selectedProduct.views.find(v => v.id === viewId);
         if (newView) setSelectedView(newView);
     };
 
-    // Handle Product Change
-    const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const prodId = e.target.value;
-        const newProd = PRODUCT_TEMPLATES.find(p => p.id === prodId);
-        if (newProd) {
-            setSelectedProduct(newProd);
-            setSelectedColor(newProd.defaultColorHex);
-            setSelectedView(newView => newProd.views.find(v => v.id === newProd.defaultViewId) || newProd.views[0]);
-            setViewStates({}); // Reset states on new product
+    // Navigate views with arrows
+    const navigateView = (direction: 'prev' | 'next') => {
+        const currentIdx = selectedProduct.views.findIndex(v => v.id === selectedView.id);
+        let newIdx;
+        if (direction === 'next') {
+            newIdx = (currentIdx + 1) % selectedProduct.views.length;
+        } else {
+            newIdx = (currentIdx - 1 + selectedProduct.views.length) % selectedProduct.views.length;
         }
+        handleViewChange(selectedProduct.views[newIdx].id);
     };
 
     // Sync selected product when template query changes
@@ -108,10 +114,8 @@ export default function EditorUI() {
         const dataURL = canvas.toDataURL({
             format: 'png',
             quality: 1,
-            multiplier: 3 // High-res export
+            multiplier: 3
         });
-
-        // Trigger download
         const link = document.createElement('a');
         link.download = `printora-design-${selectedView.id}.png`;
         link.href = dataURL;
@@ -120,232 +124,313 @@ export default function EditorUI() {
         document.body.removeChild(link);
     };
 
+    // Get the right mockup component
+    const renderMockup = () => {
+        const props = {
+            selectedView,
+            selectedColor,
+            printArea,
+            canvasRef,
+        };
+        switch (selectedProduct.id) {
+            case 'premium-hoodie': return <HoodieMockup {...props} />;
+            case 'crewneck-sweater': return <SweaterMockup {...props} />;
+            case 'classic-cap': return <HatMockup {...props} />;
+            default: return <TshirtMockup {...props} />;
+        }
+    };
+
     return (
-        <div className="flex flex-col xl:flex-row gap-6 h-[calc(100vh-8rem)] max-w-screen-2xl mx-auto">
+        <div className="flex h-[calc(100vh-4rem)] bg-[#0e0e10] text-gray-100 overflow-hidden">
 
-            {/* LEFT PANEL: Elements & Products */}
-            <Card className="w-full xl:w-72 flex-shrink-0 flex flex-col h-full border-gray-200 shadow-sm overflow-hidden">
-                <CardHeader className="bg-gray-50 border-b pb-4 shrink-0">
-                    <CardTitle className="text-lg">Design Tools</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-6 flex-1 overflow-y-auto">
-
-                    {/* Product Selection */}
-                    <div className="space-y-3">
-                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</Label>
-                        <select
-                            className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background"
-                            value={selectedProduct.id}
-                            onChange={handleProductChange}
-                        >
-                            {PRODUCT_TEMPLATES.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
+            {/* ═══════════ LEFT PANEL: Tools ═══════════ */}
+            <div className="w-[280px] flex-shrink-0 flex flex-col border-r border-white/[0.06] bg-[#141416]">
+                
+                {/* Product name header */}
+                <div className="px-5 py-4 border-b border-white/[0.06]">
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Designing</span>
                     </div>
-
-                    <div className="w-full h-px bg-gray-100" />
-
-                    {/* Add Elements */}
-                    <div className="space-y-3">
-                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Add Elements</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <Button variant="outline" onClick={() => addText()} className="flex flex-col gap-2 items-center h-20 bg-white hover:bg-green-50 hover:text-primary hover:border-green-200 transition-colors">
-                                <Type className="w-6 h-6" />
-                                <span className="text-xs">Text</span>
-                            </Button>
-                            <div className="relative">
-                                <Button variant="outline" className="flex flex-col gap-2 items-center h-20 w-full bg-white hover:bg-green-50 hover:text-primary hover:border-green-200 transition-colors">
-                                    <ImageIcon className="w-6 h-6" />
-                                    <span className="text-xs">Upload</span>
-                                </Button>
-                                <input
-                                    type="file"
-                                    accept="image/svg+xml, image/png, image/jpeg"
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    onChange={handleImageUpload}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                </CardContent>
-            </Card>
-
-            {/* CENTER PANEL: Canvas Area */}
-            <div className="flex-1 rounded-xl border border-gray-200 flex flex-col items-center relative overflow-hidden h-full" style={{ background: '#f4f4f4' }}>
-
-                {/* Editor Surface */}
-                <div className="relative w-full flex-1 flex items-center justify-center px-6 pt-6 pb-2 transition-all">
-                    <TshirtMockup
-                        selectedView={selectedView}
-                        selectedColor={selectedColor}
-                        printArea={printArea}
-                        canvasRef={canvasRef}
-                    />
+                    <h2 className="text-[15px] font-bold text-white truncate">{selectedProduct.name}</h2>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{selectedProduct.description}</p>
                 </div>
 
-                {/* Bottom: View Tabs as pills */}
-                <div className="flex-shrink-0 pb-5 pt-3 flex items-center gap-3 z-20">
+                {/* Tab Switcher */}
+                <div className="flex border-b border-white/[0.06]">
+                    <button
+                        onClick={() => setActiveTab('design')}
+                        className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors relative ${
+                            activeTab === 'design' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                        }`}
+                    >
+                        Design
+                        {activeTab === 'design' && <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-emerald-400 rounded-full" />}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('colors')}
+                        className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors relative ${
+                            activeTab === 'colors' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+                        }`}
+                    >
+                        Colors
+                        {activeTab === 'colors' && <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-emerald-400 rounded-full" />}
+                    </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                    {activeTab === 'design' ? (
+                        <>
+                            {/* Add Elements */}
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-3 block">Add Elements</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => addText()}
+                                        className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group"
+                                    >
+                                        <Type className="w-5 h-5 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+                                        <span className="text-[11px] font-medium text-gray-400 group-hover:text-emerald-400 transition-colors">Add Text</span>
+                                    </button>
+                                    <div className="relative">
+                                        <button className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group w-full">
+                                            <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-400 transition-colors" />
+                                            <span className="text-[11px] font-medium text-gray-400 group-hover:text-emerald-400 transition-colors">Upload</span>
+                                        </button>
+                                        <input
+                                            type="file"
+                                            accept="image/svg+xml, image/png, image/jpeg"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            onChange={handleImageUpload}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Layer Controls — appears when an object is selected */}
+                            {activeObject && (
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] flex items-center gap-1.5">
+                                        <Layers className="w-3.5 h-3.5" /> Selected Item
+                                    </label>
+
+                                    <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-3 space-y-3">
+                                        {/* Text-specific controls */}
+                                        {activeObject.type === 'i-text' && (
+                                            <>
+                                                <div>
+                                                    <label className="text-[10px] font-medium text-gray-500 mb-1 block">Font</label>
+                                                    <select
+                                                        className="w-full h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] px-2.5 text-[12px] text-gray-200 focus:outline-none focus:border-emerald-500/40"
+                                                        value={(activeObject as any).fontFamily || 'sans-serif'}
+                                                        onChange={(e) => updateActiveObject({ fontFamily: e.target.value })}
+                                                    >
+                                                        <option value="sans-serif">Sans Serif</option>
+                                                        <option value="serif">Serif</option>
+                                                        <option value="monospace">Monospace</option>
+                                                        <option value="Arial">Arial</option>
+                                                        <option value="Impact">Impact</option>
+                                                        <option value="Georgia">Georgia</option>
+                                                    </select>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1">
+                                                        <label className="text-[10px] font-medium text-gray-500 mb-1 block">Color</label>
+                                                        <div className="flex items-center gap-2 h-8">
+                                                            <input
+                                                                type="color"
+                                                                value={(activeObject as any).fill || '#000000'}
+                                                                onChange={(e) => updateActiveObject({ fill: e.target.value })}
+                                                                className="h-7 w-10 cursor-pointer border-none bg-transparent rounded"
+                                                            />
+                                                            <span className="text-[10px] text-gray-500 uppercase font-mono">{(activeObject as any).fill}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-1">
+                                                        <button
+                                                            className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-all text-xs font-bold ${
+                                                                (activeObject as any).fontWeight === 'bold'
+                                                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                                                                    : 'bg-white/[0.04] border-white/[0.08] text-gray-400 hover:text-white'
+                                                            }`}
+                                                            onClick={() => {
+                                                                const current = (activeObject as any).fontWeight;
+                                                                updateActiveObject({ fontWeight: current === 'bold' ? 'normal' : 'bold' });
+                                                            }}
+                                                        >
+                                                            B
+                                                        </button>
+                                                        <button
+                                                            className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-all text-xs italic ${
+                                                                (activeObject as any).fontStyle === 'italic'
+                                                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                                                                    : 'bg-white/[0.04] border-white/[0.08] text-gray-400 hover:text-white'
+                                                            }`}
+                                                            onClick={() => {
+                                                                const current = (activeObject as any).fontStyle;
+                                                                updateActiveObject({ fontStyle: current === 'italic' ? 'normal' : 'italic' });
+                                                            }}
+                                                        >
+                                                            I
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Opacity */}
+                                        <div>
+                                            <label className="text-[10px] font-medium text-gray-500 mb-1 flex justify-between">
+                                                <span>Opacity</span>
+                                                <span className="text-gray-400">{Math.round((activeObject.opacity || 1) * 100)}%</span>
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0" max="1" step="0.05"
+                                                value={activeObject.opacity || 1}
+                                                onChange={(e) => updateActiveObject({ opacity: parseFloat(e.target.value) })}
+                                                className="w-full h-1 rounded-full appearance-none bg-white/10 accent-emerald-400
+                                                    [&::-webkit-slider-thumb]:appearance-none
+                                                    [&::-webkit-slider-thumb]:w-3
+                                                    [&::-webkit-slider-thumb]:h-3
+                                                    [&::-webkit-slider-thumb]:rounded-full
+                                                    [&::-webkit-slider-thumb]:bg-emerald-400
+                                                    [&::-webkit-slider-thumb]:shadow-lg
+                                                "
+                                            />
+                                        </div>
+
+                                        {/* Action buttons */}
+                                        <div className="flex gap-1.5 pt-1">
+                                            <button onClick={bringForward} className="flex-1 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[10px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1">
+                                                <BringToFront className="w-3 h-3" /> Forward
+                                            </button>
+                                            <button onClick={sendBackward} className="flex-1 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[10px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1">
+                                                <SendToBack className="w-3 h-3" /> Back
+                                            </button>
+                                            <button onClick={deleteSelected} className="h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all flex items-center justify-center">
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!activeObject && (
+                                <div className="text-[11px] text-gray-600 text-center py-6 bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]">
+                                    <Move className="w-5 h-5 mx-auto mb-2 text-gray-600" />
+                                    Select an element to edit its properties
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        /* Colors Tab */
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-3 block">
+                                <Palette className="w-3.5 h-3.5 inline mr-1.5" />
+                                Garment Color
+                            </label>
+                            <div className="grid grid-cols-5 gap-2">
+                                {selectedProduct.variants.map(c => (
+                                    <button
+                                        key={c.id}
+                                        title={c.colorName}
+                                        className={`group relative aspect-square rounded-xl border-2 transition-all hover:scale-105 ${
+                                            selectedColor === c.colorHex 
+                                                ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.25)] scale-105' 
+                                                : 'border-white/[0.08] hover:border-white/20'
+                                        }`}
+                                        style={{ backgroundColor: c.colorHex }}
+                                        onClick={() => setSelectedColor(c.colorHex)}
+                                    >
+                                        {selectedColor === c.colorHex && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-lg" />
+                                            </div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="mt-3 text-center">
+                                <span className="text-[11px] text-gray-500">
+                                    {selectedProduct.variants.find(v => v.colorHex === selectedColor)?.colorName || 'Custom'}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="p-4 border-t border-white/[0.06] space-y-2">
+                    <button 
+                        onClick={handleExport}
+                        className="w-full h-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all flex items-center justify-center gap-2"
+                    >
+                        <Download className="w-3.5 h-3.5" /> Export Design
+                    </button>
+                    <button className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-[12px] font-bold tracking-wide transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                        <ShoppingCart className="w-4 h-4" /> Save & Continue
+                    </button>
+                </div>
+            </div>
+
+            {/* ═══════════ CENTER: Canvas ═══════════ */}
+            <div className="flex-1 flex flex-col relative overflow-hidden">
+
+                {/* Canvas Area */}
+                <div className="flex-1 flex items-center justify-center relative">
+                    {/* Subtle grid pattern */}
+                    <div className="absolute inset-0 opacity-[0.03]" style={{
+                        backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
+                        backgroundSize: '24px 24px',
+                    }} />
+
+                    {/* Glow behind mockup */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-[280px] h-[280px] rounded-full blur-[80px] opacity-20"
+                            style={{ backgroundColor: selectedColor === '#ffffff' || selectedColor === '#fff' ? '#555' : selectedColor }}
+                        />
+                    </div>
+
+                    {/* Navigation arrows */}
+                    <button 
+                        onClick={() => navigateView('prev')}
+                        className="absolute left-4 z-40 w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all backdrop-blur-sm"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button 
+                        onClick={() => navigateView('next')}
+                        className="absolute right-4 z-40 w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all backdrop-blur-sm"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+
+                    {/* Mockup */}
+                    <div className="relative z-10">
+                        {renderMockup()}
+                    </div>
+                </div>
+
+                {/* Bottom: View Pills */}
+                <div className="flex-shrink-0 pb-4 pt-2 flex items-center justify-center gap-2 z-30">
                     {selectedProduct.views.map(view => (
                         <button
                             key={view.id}
                             onClick={() => handleViewChange(view.id)}
-                            className={`px-5 py-2 rounded-full text-sm font-medium border transition-all ${selectedView.id === view.id
-                                ? 'bg-[#3d3d2e] text-white border-[#3d3d2e] shadow-md'
-                                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-                                }`}
+                            className={`px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
+                                selectedView.id === view.id
+                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                    : 'bg-white/[0.04] text-gray-500 border border-white/[0.06] hover:text-gray-300 hover:bg-white/[0.08]'
+                            }`}
                         >
                             {view.name}
                         </button>
                     ))}
                 </div>
-
             </div>
-
-            {/* RIGHT PANEL: Object Controls & Layers */}
-            <Card className="w-full xl:w-80 flex-shrink-0 flex flex-col h-full border-gray-200 shadow-sm overflow-hidden">
-                <CardHeader className="bg-gray-50 border-b pb-4 shrink-0">
-                    <CardTitle className="text-lg">Properties</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 pt-6 flex-1 overflow-y-auto">
-
-                    {/* Garment Color Selection */}
-                    <div className="space-y-3">
-                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Garment Color</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {selectedProduct.variants.map(c => (
-                                <button
-                                    key={c.id}
-                                    title={c.colorName}
-                                    className={`w-8 h-8 rounded-full border shadow-sm transition-all hover:scale-110 ${selectedColor === c.colorHex ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-gray-200'}`}
-                                    style={{ backgroundColor: c.colorHex }}
-                                    onClick={() => setSelectedColor(c.colorHex)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="w-full h-px bg-gray-100" />
-
-                    {/* Active Object Controls */}
-                    <div className="space-y-4">
-                        <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                            <Layers className="w-4 h-4" /> Layer Controls
-                        </Label>
-
-                        {!activeObject ? (
-                            <div className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                                Select an object on the canvas to view properties.
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-
-                                {/* Object Type Specific Controls: Text */}
-                                {activeObject.type === 'i-text' && (
-                                    <>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Font Family</Label>
-                                            <select
-                                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                                                value={(activeObject as any).fontFamily || 'sans-serif'}
-                                                onChange={(e) => updateActiveObject({ fontFamily: e.target.value })}
-                                            >
-                                                <option value="sans-serif">Sans Serif</option>
-                                                <option value="serif">Serif</option>
-                                                <option value="monospace">Monospace</option>
-                                                <option value="Arial">Arial</option>
-                                                <option value="Impact">Impact</option>
-                                                <option value="Georgia">Georgia</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label className="text-xs">Text Color</Label>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="color"
-                                                    value={(activeObject as any).fill || '#000000'}
-                                                    onChange={(e) => updateActiveObject({ fill: e.target.value })}
-                                                    className="h-8 w-12 cursor-pointer border-none bg-transparent"
-                                                />
-                                                <span className="text-xs text-gray-500 uppercase">{(activeObject as any).fill}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className={`flex-1 ${(activeObject as any).fontWeight === 'bold' ? 'bg-gray-100 border-gray-400' : ''}`}
-                                                onClick={() => {
-                                                    const current = (activeObject as any).fontWeight;
-                                                    updateActiveObject({ fontWeight: current === 'bold' ? 'normal' : 'bold' });
-                                                }}
-                                            >
-                                                <b>B</b>
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className={`flex-1 ${(activeObject as any).fontStyle === 'italic' ? 'bg-gray-100 border-gray-400' : ''}`}
-                                                onClick={() => {
-                                                    const current = (activeObject as any).fontStyle;
-                                                    updateActiveObject({ fontStyle: current === 'italic' ? 'normal' : 'italic' });
-                                                }}
-                                            >
-                                                <i>I</i>
-                                            </Button>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* Opacity Control (All objects) */}
-                                <div className="space-y-2">
-                                    <Label className="text-xs flex justify-between">
-                                        <span>Opacity</span>
-                                        <span>{Math.round((activeObject.opacity || 1) * 100)}%</span>
-                                    </Label>
-                                    <input
-                                        type="range"
-                                        min="0" max="1" step="0.05"
-                                        value={activeObject.opacity || 1}
-                                        onChange={(e) => updateActiveObject({ opacity: parseFloat(e.target.value) })}
-                                        className="w-full accent-primary"
-                                    />
-                                </div>
-
-                                <div className="w-full h-px bg-gray-100" />
-
-                                {/* Stack Order & Delete */}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="outline" size="sm" onClick={bringForward} className="flex gap-1 text-xs h-9">
-                                        <BringToFront className="w-3 h-3" /> Forward
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={sendBackward} className="flex gap-1 text-xs h-9">
-                                        <SendToBack className="w-3 h-3" /> Back
-                                    </Button>
-                                </div>
-                                <Button variant="destructive" size="sm" onClick={deleteSelected} className="w-full flex gap-2 h-9 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200">
-                                    <Trash2 className="w-4 h-4" /> Delete Item
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-
-                </CardContent>
-
-                {/* Checkout & Export fixed to bottom */}
-                <div className="p-4 border-t bg-gray-50 mt-auto flex flex-col gap-3">
-                    <Button variant="outline" onClick={handleExport} className="w-full flex gap-2 h-10 bg-white shadow-sm border-gray-300 text-gray-700 hover:bg-gray-50">
-                        <Download className="w-4 h-4" /> Download Mockup
-                    </Button>
-                    <Button className="w-full flex gap-2 items-center h-12 bg-primary hover:bg-primary/90 text-white shadow-md text-md font-bold">
-                        <ShoppingCart className="w-5 h-5" /> Save & Continue
-                    </Button>
-                </div>
-            </Card>
-
         </div>
     );
 }

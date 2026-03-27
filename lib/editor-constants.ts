@@ -23,8 +23,6 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 mockupUrl: '/images/products/tshirt/front.png',
                 printAreas: [
                     {
-                        // Centered in shirt body: body x=118–382 (w=264), body y=182–518
-                        // Print area: 210 wide → left=(500-210)/2=145, top=200, height=248
                         id: 'front-center',
                         width: 210,
                         height: 248,
@@ -39,7 +37,6 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 mockupUrl: '/images/products/tshirt/back.png',
                 printAreas: [
                     {
-                        // Back: same body but print area starts higher (no collar), y=148
                         id: 'back-center',
                         width: 210,
                         height: 255,
@@ -49,12 +46,39 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 ]
             },
             {
+                id: 'left-side',
+                name: 'Left sleeve',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'left-sleeve',
+                        width: 60,
+                        height: 140,
+                        left: 220,
+                        top: 160
+                    }
+                ]
+            },
+            {
+                id: 'right-side',
+                name: 'Right sleeve',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'right-sleeve',
+                        width: 60,
+                        height: 140,
+                        left: 220,
+                        top: 160
+                    }
+                ]
+            },
+            {
                 id: 'neck-label',
                 name: 'Neck label inner',
                 mockupUrl: '/images/products/tshirt/neck-label.png',
                 printAreas: [
                     {
-                        // Centered below the collar band arc (which ends at ~y=152)
                         id: 'neck-label-area',
                         width: 168,
                         height: 148,
@@ -75,7 +99,9 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
         variants: [
             { id: 'white', colorHex: '#ffffff', colorName: 'White' },
             { id: 'black', colorHex: '#0f172a', colorName: 'Black' },
-            { id: 'grey', colorHex: '#94a3b8', colorName: 'Athletic Heather' }
+            { id: 'grey', colorHex: '#94a3b8', colorName: 'Athletic Heather' },
+            { id: 'green', colorHex: '#16a34a', colorName: 'Forest Green' },
+            { id: 'navy', colorHex: '#1e3a5f', colorName: 'Navy' }
         ],
         views: [
             {
@@ -85,10 +111,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'front-center',
-                        width: 220,
-                        height: 250, // Shorter than tshirt because of pocket
-                        left: 140,
-                        top: 160
+                        width: 250,
+                        height: 285,
+                        left: 125,
+                        top: 144
                     }
                 ]
             },
@@ -99,65 +125,185 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'back-center',
-                        width: 240,
-                        height: 340,
-                        left: 130,
-                        top: 150
+                        width: 276,
+                        height: 391,
+                        left: 112,
+                        top: 132
+                    }
+                ]
+            },
+            {
+                id: 'left-hand',
+                name: 'Left sleeve',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'left-sleeve',
+                        width: 80,
+                        height: 200,
+                        left: 210,
+                        top: 200
+                    }
+                ]
+            },
+            {
+                id: 'right-hand',
+                name: 'Right sleeve',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'right-sleeve',
+                        width: 80,
+                        height: 200,
+                        left: 210,
+                        top: 200
                     }
                 ]
             }
         ]
     },
     {
-        id: 'ceramic-mug',
-        name: '11oz Ceramic Mug',
-        description: 'Standard coffee mug.',
-        category: 'accessories',
-        defaultViewId: 'wrap',
+        id: 'crewneck-sweater',
+        name: 'Crewneck Sweater',
+        description: 'Classic crewneck sweatshirt for all seasons.',
+        category: 'long-sleeves',
+        defaultViewId: 'front',
         defaultColorHex: '#ffffff',
         variants: [
-            { id: 'white', colorHex: '#ffffff', colorName: 'White' }
+            { id: 'white', colorHex: '#ffffff', colorName: 'White' },
+            { id: 'black', colorHex: '#0f172a', colorName: 'Black' },
+            { id: 'grey', colorHex: '#94a3b8', colorName: 'Grey Heather' },
+            { id: 'green', colorHex: '#16a34a', colorName: 'Forest Green' },
+            { id: 'burgundy', colorHex: '#7f1d1d', colorName: 'Burgundy' }
         ],
         views: [
             {
-                id: 'wrap',
-                name: 'Full Wrap',
-                mockupUrl: '/images/products/mug/wrap.png',
+                id: 'front',
+                name: 'Front',
+                mockupUrl: '',
                 printAreas: [
                     {
-                        id: 'mug-wrap',
-                        width: 400,
-                        height: 180,
-                        left: 50,
-                        top: 200
+                        id: 'front-center',
+                        width: 160,
+                        height: 200,
+                        left: 170,
+                        top: 150
                     }
                 ]
             },
             {
-                id: 'left',
-                name: 'Left Side',
-                mockupUrl: '/images/products/mug/left.png',
+                id: 'back',
+                name: 'Back',
+                mockupUrl: '',
                 printAreas: [
                     {
-                        id: 'mug-left',
-                        width: 150,
-                        height: 180,
-                        left: 180,
-                        top: 200
+                        id: 'back-center',
+                        width: 160,
+                        height: 200,
+                        left: 170,
+                        top: 120
                     }
                 ]
             },
             {
-                id: 'right',
-                name: 'Right Side',
-                mockupUrl: '/images/products/mug/right.png',
+                id: 'left-side',
+                name: 'Left sleeve',
+                mockupUrl: '',
                 printAreas: [
                     {
-                        id: 'mug-right',
-                        width: 150,
+                        id: 'left-sleeve',
+                        width: 60,
+                        height: 150,
+                        left: 220,
+                        top: 130
+                    }
+                ]
+            },
+            {
+                id: 'right-side',
+                name: 'Right sleeve',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'right-sleeve',
+                        width: 60,
+                        height: 150,
+                        left: 220,
+                        top: 130
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'classic-cap',
+        name: 'Classic Baseball Cap',
+        description: 'Structured 6-panel cap with embroidery.',
+        category: 'hats',
+        defaultViewId: 'front',
+        defaultColorHex: '#0f172a',
+        variants: [
+            { id: 'white', colorHex: '#ffffff', colorName: 'White' },
+            { id: 'black', colorHex: '#0f172a', colorName: 'Black' },
+            { id: 'green', colorHex: '#16a34a', colorName: 'Forest Green' },
+            { id: 'red', colorHex: '#dc2626', colorName: 'Red' },
+            { id: 'navy', colorHex: '#1e3a5f', colorName: 'Navy' },
+            { id: 'beige', colorHex: '#d4b896', colorName: 'Beige' }
+        ],
+        views: [
+            {
+                id: 'front',
+                name: 'Front',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'front-center',
+                        width: 200,
                         height: 180,
-                        left: 180,
-                        top: 200
+                        left: 150,
+                        top: 140
+                    }
+                ]
+            },
+            {
+                id: 'back',
+                name: 'Back',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'back-center',
+                        width: 200,
+                        height: 200,
+                        left: 150,
+                        top: 150
+                    }
+                ]
+            },
+            {
+                id: 'left-side',
+                name: 'Left side',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'left-side-area',
+                        width: 100,
+                        height: 100,
+                        left: 210,
+                        top: 160
+                    }
+                ]
+            },
+            {
+                id: 'right-side',
+                name: 'Right side',
+                mockupUrl: '',
+                printAreas: [
+                    {
+                        id: 'right-side-area',
+                        width: 100,
+                        height: 100,
+                        left: 210,
+                        top: 160
                     }
                 ]
             }

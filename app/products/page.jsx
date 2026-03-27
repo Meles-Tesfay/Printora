@@ -74,7 +74,7 @@ const ProductsPage = () => {
         <div className="p-8">
           <Link href="/" className="flex items-center gap-1 group">
              <span className="text-3xl font-black text-[#1c211f] tracking-tighter" style={{ fontFamily: 'var(--font-geist-sans), sans-serif' }}>
-               Stenvio
+               Printora
              </span>
              <div className="relative ml-0.5 mt-1">
                <Brush className="w-6 h-6 text-[#1c211f] transform -rotate-12 group-hover:rotate-0 transition-transform" />
@@ -182,7 +182,7 @@ const ProductsPage = () => {
 
         {/* Section Heading */}
         <div className="mb-8">
-          <h1 className="text-3xl font-black text-[#1f1d12] mb-1 tracking-tight">Explore Stenvio's best</h1>
+          <h1 className="text-3xl font-black text-[#1f1d12] mb-1 tracking-tight">Explore Printora's best</h1>
           <p className="text-[#6b6850] text-[15px] font-medium">Discover the most popular custom products in our curated catalog.</p>
         </div>
 

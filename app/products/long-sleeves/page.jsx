@@ -7,7 +7,7 @@ const longSleevesData = [
   {
     id: 1,
     slug: 'product-long-sleeves-1',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 1',
     brand: 'Local Craft • 2000',
     price: 800,
@@ -21,7 +21,7 @@ const longSleevesData = [
   {
     id: 2,
     slug: 'product-long-sleeves-2',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 2',
     brand: 'Local Craft • 2001',
     price: 950,
@@ -35,7 +35,7 @@ const longSleevesData = [
   {
     id: 3,
     slug: 'product-long-sleeves-3',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 3',
     brand: 'Local Craft • 2002',
     price: 1100,
@@ -49,7 +49,7 @@ const longSleevesData = [
   {
     id: 4,
     slug: 'product-long-sleeves-4',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 4',
     brand: 'Local Craft • 2003',
     price: 1250,
@@ -63,7 +63,7 @@ const longSleevesData = [
   {
     id: 5,
     slug: 'product-long-sleeves-5',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 5',
     brand: 'Local Craft • 2004',
     price: 1400,
@@ -77,7 +77,7 @@ const longSleevesData = [
   {
     id: 6,
     slug: 'product-long-sleeves-6',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 6',
     brand: 'Local Craft • 2005',
     price: 1550,
@@ -91,7 +91,7 @@ const longSleevesData = [
   {
     id: 7,
     slug: 'product-long-sleeves-7',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 7',
     brand: 'Local Craft • 2006',
     price: 1700,
@@ -105,7 +105,7 @@ const longSleevesData = [
   {
     id: 8,
     slug: 'product-long-sleeves-8',
-    editorTemplateId: 'classic-tshirt',
+    editorTemplateId: 'crewneck-sweater',
     title: 'Custom long sleeves 8',
     brand: 'Local Craft • 2007',
     price: 1850,
