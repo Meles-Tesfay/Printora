@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { User, ShoppingBag } from 'lucide-react';
 
 export default function SignupPage() {
   return (
@@ -98,6 +99,26 @@ export default function SignupPage() {
                 <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                 </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[14px] font-bold text-gray-800">I want to:</label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className="relative cursor-pointer group">
+                  <input type="radio" name="role" value="CUSTOMER" defaultChecked className="peer sr-only" />
+                  <div className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-300 rounded-xl peer-checked:border-[#A1FF4C] peer-checked:bg-[#A1FF4C]/5 transition-all text-center group-hover:bg-gray-50">
+                    <User size={20} className="text-gray-400 peer-checked:text-[#1B2412]" />
+                    <span className="text-[13px] font-bold text-gray-700">Buy Products</span>
+                  </div>
+                </label>
+                <label className="relative cursor-pointer group">
+                  <input type="radio" name="role" value="SUPPLIER" className="peer sr-only" />
+                  <div className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-300 rounded-xl peer-checked:border-[#A1FF4C] peer-checked:bg-[#A1FF4C]/5 transition-all text-center group-hover:bg-gray-50">
+                    <ShoppingBag size={20} className="text-gray-400 peer-checked:text-[#1B2412]" />
+                    <span className="text-[13px] font-bold text-gray-700">Sell Products</span>
+                  </div>
+                </label>
               </div>
             </div>
 

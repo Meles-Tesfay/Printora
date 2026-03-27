@@ -2,7 +2,6 @@ import React from "react";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import CategoryHero from "@/components/CategoryHero";
-import { ArrowLeft } from "lucide-react";
 
 const hoodiesData = [
   {
@@ -119,14 +118,10 @@ const hoodiesData = [
   }
 ];
 
-/* ── Hero Banner with Back Arrow ── */
-
-
 const HoodiesPage = () => {
   return (
-    <div className="bg-white min-h-screen">
-      <CategoryHero title="Hoodies & Sweatshirts" description="Premium custom apparel for the local Printora community." images={hoodiesData.map(d => d.image)} />
-
+    <>
+      <CategoryHero title="Hoodies & Sweatshirts" description="Premium custom apparel for the local Stenvio community." images={hoodiesData.map(d => d.image)} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12">
           {hoodiesData.map((product) => (
@@ -134,7 +129,7 @@ const HoodiesPage = () => {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
