@@ -8,8 +8,8 @@ import imgHat1 from '../Images/hats/Beige ralph lauren cap.jpg';
 import imgTshirt1 from '../Images/t shirts/Basic Bae Round Neck Dropped Shoulder Short Sleeve….jpg';
 import imgLongSleeve1 from '../Images/long sleeves/Product information_ Color_ Black, camel, light….jpg';
 import imgHoodie1 from '../Images/hoodies/Introducing our premium hoodie, featuring a….jpg';
-import imgPhoneCase1 from '../Images/phone cases/Our signature Tough Phone Case delivers unmatched….jpg';
-import imgPhoneCase2 from '../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact….jpg';
+import imgBag1 from '../Images/bags/DIY City Market Bag _ Oleander + Palm.jpg';
+import imgBag2 from '../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg';
 import imgMug1 from '../Images/mugs/Good Morning Mug.jpg';
 
 import imgNewTee from '../Images/t shirts/Effortlessly stylish, consciously crafted — your….jpg';
@@ -19,7 +19,6 @@ import imgNewCap from '../Images/hats/La Casquette Avec Filet, une casquette res
 
 import imgStarterMug from '../Images/mugs/_i_Friends__i_ Central Perk Mug.jpg';
 import imgStarterTee from '../Images/t shirts/Dieses Herren-T-Shirt verleiht Ihrem Outfit eine….jpg';
-import imgStarterHat from '../Images/hats/Vintage Horse Art Casual Print Hat.jpg';
 
 import imgBanner from '../Images/hoodies/How To Start A Capsule Wardrobe_ 5 Step Visual….jpg';
 
@@ -30,15 +29,15 @@ const categories = [
   { name: 'T-shirts', path: '/products/t-shirts', image: resolveImg(imgTshirt1) },
   { name: 'Sweatshirts', path: '/products/long-sleeves', image: resolveImg(imgLongSleeve1) },
   { name: 'Hoodies', path: '/products/hoodies', image: resolveImg(imgHoodie1) },
-  { name: 'Accessories', path: '/products/bags', image: resolveImg(imgPhoneCase1) },
-  { name: 'Phone Cases', path: '/products/phone-cases', image: resolveImg(imgPhoneCase2) },
+  { name: 'Bags', path: '/products/bags', image: resolveImg(imgBag1) },
+  { name: 'Phone Cases', path: '/products/phone-cases', image: resolveImg(imgBag2) },
   { name: 'Mugs', path: '/products/mugs', image: resolveImg(imgMug1) }
 ];
 
 const starterEssentials = [
     { title: "White Ceramic Mug", price: "450 ETB", image: resolveImg(imgStarterMug) },
     { title: "Unisex Jersey Tee", price: "1,100 ETB", image: resolveImg(imgStarterTee) },
-    { title: "Eco Tote Bag", price: "950 ETB", image: resolveImg(imgStarterHat) }
+    { title: "Eco Tote Bag", price: "950 ETB", image: resolveImg(imgBag1) }
 ];
 
 const newCollectionItems = [
