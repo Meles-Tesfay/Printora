@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: "Active Suppliers", value: "12", icon: Users, color: "bg-blue-600" },
     { label: "Pending Approvals", value: approvals.length, icon: ShieldCheck, color: "bg-orange-500" },
-    { label: "Total Sales", value: "ETB 145K", icon: BarChart3, color: "bg-green-600" },
+    { label: "System Uptime", value: "99.9%", icon: ShieldCheck, color: "bg-green-600" },
     { label: "Open Orders", value: "48", icon: Truck, color: "bg-indigo-600" },
   ];
 

@@ -45,7 +45,7 @@ export default function SupplierDashboard() {
     { label: "Total Products", value: products.length, icon: Box, color: "bg-blue-500" },
     { label: "Approved", value: products.filter(p => p.status === "APPROVED").length, icon: CheckCircle, color: "bg-green-500" },
     { label: "Pending", value: products.filter(p => p.status === "PENDING").length, icon: Clock, color: "bg-yellow-500" },
-    { label: "Revenue", value: "ETB 24,500", icon: BarChart3, color: "bg-purple-500" },
+    { label: "Active Orders", value: "18", icon: ShoppingBag, color: "bg-purple-500" },
   ];
 
   return (
@@ -123,7 +123,7 @@ export default function SupplierDashboard() {
                 <tr className="bg-gray-50/50">
                   <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Product</th>
                   <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Category</th>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Price</th>
+
                   <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -143,7 +143,7 @@ export default function SupplierDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{product.category}</td>
-                    <td className="px-6 py-4 text-[#2B3220] font-black">ETB {product.price}</td>
+
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-wider ${
                         product.status === "APPROVED" ? "bg-green-100 text-green-700" :
@@ -200,20 +200,14 @@ export default function SupplierDashboard() {
                   <label className="text-sm font-bold text-[#2B3220] uppercase tracking-wider">Product Name</label>
                   <input type="text" placeholder="e.g. Classic White Mug" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[#2B3220] uppercase tracking-wider">Price (ETB)</label>
-                    <input type="number" placeholder="800" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-[#2B3220] uppercase tracking-wider">Category</label>
-                    <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all appearance-none cursor-pointer">
-                      <option>Mugs</option>
-                      <option>Apparel</option>
-                      <option>Hats</option>
-                      <option>Tech</option>
-                    </select>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-[#2B3220] uppercase tracking-wider">Category</label>
+                  <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all appearance-none cursor-pointer">
+                    <option>Mugs</option>
+                    <option>Apparel</option>
+                    <option>Hats</option>
+                    <option>Tech</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-[#2B3220] uppercase tracking-wider">Product Image</label>

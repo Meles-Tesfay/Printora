@@ -62,23 +62,24 @@ export default function ProductDetailPage(props) {
           </ul>
 
           {/* Printify Choice Box (Start Designing Box) */}
+          {/* Stenvio Studio Box (Start Designing Box) */}
           <div className="bg-[#e2fccc] rounded-lg p-6 border border-[#c4eab0]">
             <div className="flex items-center mb-4">
-              <span className="font-extrabold text-2xl tracking-tighter text-gray-900 italic mr-1">Printify</span>
-              <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest bg-transparent">Choice</span>
+              <span className="font-extrabold text-2xl tracking-tighter text-gray-900 italic mr-1">Stenvio</span>
+              <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest bg-transparent">Studio</span>
             </div>
             <p className="text-gray-900 font-medium mb-6 text-[15px]">
-              Get the best price and quality on every order with Printify Choice.
+              Premium blanks, ready for your creative vision. High-quality materials for local craft.
             </p>
             
             <div className="space-y-4 mb-8">
               <div className="flex items-center text-gray-900">
                 <Check className="text-green-700 mr-3" size={20} strokeWidth={3} />
-                <span className="text-base text-gray-600">From <strong className="text-[22px] font-extrabold text-gray-900">USD {product.price.toFixed(2)}</strong></span>
+                <span className="text-base font-bold text-gray-900 uppercase tracking-widest">In Stock & Ready</span>
               </div>
               <div className="flex items-center text-gray-900">
                 <Check className="text-green-700 mr-3" size={20} strokeWidth={3} />
-                <span className="text-base"><strong>Network of top-rated</strong> providers</span>
+                <span className="text-base"><strong>Local Fulfillment</strong> network</span>
               </div>
             </div>
 
