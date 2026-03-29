@@ -27,14 +27,12 @@ export default function ProductsSidebar() {
   return (
     <aside className="w-64 border-r border-[#e5e3d7] flex flex-col sticky top-0 h-screen overflow-y-auto no-scrollbar bg-[#f0f0eb]/20 pb-10">
       <div className="p-8">
-        <Link href="/" className="flex items-center gap-1 group">
-           <span className="text-3xl font-black text-[#1c211f] tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
-             Stenvio
-           </span>
-           <div className="relative ml-0.5 mt-1">
-             <Brush className="w-6 h-6 text-[#1c211f] transform -rotate-12 group-hover:rotate-0 transition-transform" />
-             <div className="absolute -bottom-1 -left-1 w-3 h-1.5 bg-sky-400 rounded-full blur-[2px] opacity-60" />
-           </div>
+        <Link href="/" className="inline-block group">
+           <img 
+             src="/logo.png" 
+             alt="Stenvio Logo" 
+             className="h-14 w-auto object-contain transition-transform group-hover:scale-105" 
+           />
         </Link>
       </div>
 

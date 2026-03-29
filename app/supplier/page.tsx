@@ -53,7 +53,7 @@ export default function SupplierDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <img src="/logo.png" alt="Printora" className="h-10 w-auto" />
+          <img src="/logo.png" alt="Stenvio Logo" className="h-12 w-auto" />
         </div>
         
         <nav className="flex-1 p-4 space-y-2 mt-4">
