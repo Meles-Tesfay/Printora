@@ -89,6 +89,28 @@ const ProductCard = ({ product }) => {
           <h3 className="font-black text-[#1c211f] text-[16px] leading-tight mb-3 min-h-[2.5rem] line-clamp-2 group-hover:text-[#2d2b1f] transition-colors tracking-tight">
             {product.title}
           </h3>
+
+          {/* New Supplier Technical Details (Visible on hover or just below title) */}
+          <div className="mb-4">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {product.supplierSpecs?.material && (
+                <span className="text-[9px] font-black uppercase tracking-wider bg-[#f0f0eb] px-2 py-0.5 rounded text-[#8a8670]">
+                  {product.supplierSpecs.material}
+                </span>
+              )}
+              {product.supplierSpecs?.printArea && (
+                <span className="text-[9px] font-black uppercase tracking-wider bg-[#f0f0eb] px-2 py-0.5 rounded text-[#8a8670]">
+                  {product.supplierSpecs.printArea}" Area
+                </span>
+              )}
+            </div>
+            {isHovered && product.supplierSpecs?.technique && (
+              <p className="text-[10px] text-[#bc9368] font-bold uppercase tracking-widest mt-1 animate-in fade-in duration-300">
+                Method: {product.supplierSpecs.technique}
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center justify-between mt-auto mb-1">
              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#bc9368]">Start Design</span>
              <div className="w-1.5 h-1.5 rounded-full bg-[#bc9368]" />

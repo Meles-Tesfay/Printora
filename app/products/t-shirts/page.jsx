@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
 import CategoryHero from '@/components/CategoryHero';
+import SupplierInfoSection from '@/components/SupplierInfoSection';
 
 const tShirtsData = [
   {
@@ -16,6 +17,7 @@ const tShirtsData = [
     colors: 10,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "100% Cotton", printArea: '12" x 16"', technique: "DTG / Screen Print" },
     image: (require("../../Images/t shirts/Basic Bae Round Neck Dropped Shoulder Short Sleeve….jpg").default?.src || require("../../Images/t shirts/Basic Bae Round Neck Dropped Shoulder Short Sleeve….jpg").default || require("../../Images/t shirts/Basic Bae Round Neck Dropped Shoulder Short Sleeve….jpg")),
   },
   {
@@ -30,6 +32,7 @@ const tShirtsData = [
     colors: 15,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "Ring-spun Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/t shirts/Bequem, vielseitig und stilvoll – die ideale….jpg").default?.src || require("../../Images/t shirts/Bequem, vielseitig und stilvoll – die ideale….jpg").default || require("../../Images/t shirts/Bequem, vielseitig und stilvoll – die ideale….jpg")),
   },
   {
@@ -44,6 +47,7 @@ const tShirtsData = [
     colors: 20,
     providers: 7,
     isBestseller: false,
+    supplierSpecs: { material: "Tri-blend", printArea: '11" x 15"', technique: "Screen Print" },
     image: (require("../../Images/t shirts/Dieses Herren-T-Shirt verleiht Ihrem Outfit eine….jpg").default?.src || require("../../Images/t shirts/Dieses Herren-T-Shirt verleiht Ihrem Outfit eine….jpg").default || require("../../Images/t shirts/Dieses Herren-T-Shirt verleiht Ihrem Outfit eine….jpg")),
   },
   {
@@ -58,6 +62,7 @@ const tShirtsData = [
     colors: 25,
     providers: 8,
     isBestseller: true,
+    supplierSpecs: { material: "Heavyweight Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/t shirts/Effortlessly stylish, consciously crafted — your….jpg").default?.src || require("../../Images/t shirts/Effortlessly stylish, consciously crafted — your….jpg").default || require("../../Images/t shirts/Effortlessly stylish, consciously crafted — your….jpg")),
   },
   {
@@ -72,6 +77,7 @@ const tShirtsData = [
     colors: 30,
     providers: 9,
     isBestseller: false,
+    supplierSpecs: { material: "Soft-style Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/t shirts/Get this vintage t-shirt in Simple Retro_ 2022….jpg").default?.src || require("../../Images/t shirts/Get this vintage t-shirt in Simple Retro_ 2022….jpg").default || require("../../Images/t shirts/Get this vintage t-shirt in Simple Retro_ 2022….jpg")),
   },
   {
@@ -86,6 +92,7 @@ const tShirtsData = [
     colors: 35,
     providers: 10,
     isBestseller: false,
+    supplierSpecs: { material: "100% Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/t shirts/Mit unserem Klara-T-Shirt verleihen Sie Ihrem….jpg").default?.src || require("../../Images/t shirts/Mit unserem Klara-T-Shirt verleihen Sie Ihrem….jpg").default || require("../../Images/t shirts/Mit unserem Klara-T-Shirt verleihen Sie Ihrem….jpg")),
   },
   {
@@ -100,6 +107,7 @@ const tShirtsData = [
     colors: 40,
     providers: 11,
     isBestseller: true,
+    supplierSpecs: { material: "Organic Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/t shirts/Returns_ Fast refund,100% Money Back Guarantee_.jpg").default?.src || require("../../Images/t shirts/Returns_ Fast refund,100% Money Back Guarantee_.jpg").default || require("../../Images/t shirts/Returns_ Fast refund,100% Money Back Guarantee_.jpg")),
   },
   {
@@ -114,9 +122,23 @@ const tShirtsData = [
     colors: 45,
     providers: 12,
     isBestseller: false,
+    supplierSpecs: { material: "Premium Cotton", printArea: '10" x 14"', technique: "DTG" },
     image: (require("../../Images/t shirts/Stylisch im Sommer_ Ihr luxuriöses Update Das….jpg").default?.src || require("../../Images/t shirts/Stylisch im Sommer_ Ihr luxuriöses Update Das….jpg").default || require("../../Images/t shirts/Stylisch im Sommer_ Ihr luxuriöses Update Das….jpg")),
   }
 ];
+
+const tShirtSupplierSpecs = {
+  printAreaDescription: "Large workspace for front and back designs. Sleeves optional.",
+  printArea: '12" x 16"',
+  fileRequirements: [
+    "300 DPI Transparent PNG",
+    "CMYK Color Space Preferred",
+    "No stray pixels",
+    "Minimum line weight of 1pt"
+  ],
+  materialDescription: "100% Combed & Ring-spun Cotton. Pre-shrunk fabric.",
+  techniques: ["DTG (Direct to Garment)", "Screen Printing", "Heat Press", "Embroidery"]
+};
 
 const TShirtsPage = () => {
   return (
@@ -129,6 +151,7 @@ const TShirtsPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="T-Shirts" specs={tShirtSupplierSpecs} />
     </>
   );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
 import CategoryHero from '@/components/CategoryHero';
+import SupplierInfoSection from '@/components/SupplierInfoSection';
 
 const phoneCasesData = [
   {
@@ -16,6 +17,7 @@ const phoneCasesData = [
     colors: 10,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "Polycarbonate", printArea: 'Full Wrap', technique: "Sublimation" },
     image: (require("../../Images/phone cases/Limited edition, hand-designed abstract nature eco….jpg").default?.src || require("../../Images/phone cases/Limited edition, hand-designed abstract nature eco….jpg").default || require("../../Images/phone cases/Limited edition, hand-designed abstract nature eco….jpg")),
   },
   {
@@ -30,6 +32,7 @@ const phoneCasesData = [
     colors: 15,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "TPU Soft Case", printArea: 'Back Only', technique: "UV Print" },
     image: (require("../../Images/phone cases/Limited edition, hand-designed cat phone case….jpg").default?.src || require("../../Images/phone cases/Limited edition, hand-designed cat phone case….jpg").default || require("../../Images/phone cases/Limited edition, hand-designed cat phone case….jpg")),
   },
   {
@@ -44,6 +47,7 @@ const phoneCasesData = [
     colors: 20,
     providers: 7,
     isBestseller: false,
+    supplierSpecs: { material: "Tough Case (Dual)", printArea: 'Full Wrap', technique: "Sublimation" },
     image: (require("../../Images/phone cases/Limited edition, met de hand ontworpen boho flower….jpg").default?.src || require("../../Images/phone cases/Limited edition, met de hand ontworpen boho flower….jpg").default || require("../../Images/phone cases/Limited edition, met de hand ontworpen boho flower….jpg")),
   },
   {
@@ -58,6 +62,7 @@ const phoneCasesData = [
     colors: 25,
     providers: 8,
     isBestseller: true,
+    supplierSpecs: { material: "Eco-friendly Bio", printArea: 'Back Only', technique: "UV Print" },
     image: (require("../../Images/phone cases/Limited edition, met de hand ontworpen….jpg").default?.src || require("../../Images/phone cases/Limited edition, met de hand ontworpen….jpg").default || require("../../Images/phone cases/Limited edition, met de hand ontworpen….jpg")),
   },
   {
@@ -72,6 +77,7 @@ const phoneCasesData = [
     colors: 30,
     providers: 9,
     isBestseller: false,
+    supplierSpecs: { material: "Tough Case", printArea: 'Full Wrap', technique: "Sublimation" },
     image: (require("../../Images/phone cases/Our signature Tough Phone Case delivers unmatched….jpg").default?.src || require("../../Images/phone cases/Our signature Tough Phone Case delivers unmatched….jpg").default || require("../../Images/phone cases/Our signature Tough Phone Case delivers unmatched….jpg")),
   },
   {
@@ -86,6 +92,7 @@ const phoneCasesData = [
     colors: 35,
     providers: 10,
     isBestseller: false,
+    supplierSpecs: { material: "Impact Case", printArea: 'Back Only', technique: "UV Print" },
     image: (require("../../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact… (1).jpg").default?.src || require("../../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact… (1).jpg").default || require("../../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact… (1).jpg")),
   },
   {
@@ -100,6 +107,7 @@ const phoneCasesData = [
     colors: 40,
     providers: 11,
     isBestseller: true,
+    supplierSpecs: { material: "Impact Case", printArea: 'Back Only', technique: "UV Print" },
     image: (require("../../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact….jpg").default?.src || require("../../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact….jpg").default || require("../../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact….jpg")),
   },
   {
@@ -114,11 +122,23 @@ const phoneCasesData = [
     colors: 45,
     providers: 12,
     isBestseller: false,
+    supplierSpecs: { material: "Slim Case", printArea: 'Back Only', technique: "UV Print" },
     image: (require("../../Images/phone cases/Un design floral_ C’est toujours une bonne idée….jpg").default?.src || require("../../Images/phone cases/Un design floral_ C’est toujours une bonne idée….jpg").default || require("../../Images/phone cases/Un design floral_ C’est toujours une bonne idée….jpg")),
   }
 ];
 
-
+const phoneCaseSupplierSpecs = {
+  printAreaDescription: "Full wrap includes edges. Back only covers the flat surface.",
+  printArea: '3.2" x 6.4"',
+  fileRequirements: [
+    "300 DPI High Resolution",
+    "Include 3mm bleed for full wrap",
+    "RGB for Sublimation",
+    "CMYK + White for UV Print"
+  ],
+  materialDescription: "Impact-resistant Polycarbonate or Flexible TPU.",
+  techniques: ["3D Sublimation", "UV LED Printing", "Eco-solvent", "Laser Engraving"]
+};
 
 const PhoneCasesPage = () => {
   return (
@@ -131,6 +151,7 @@ const PhoneCasesPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="Phone Cases" specs={phoneCaseSupplierSpecs} />
     </>
   );
 };

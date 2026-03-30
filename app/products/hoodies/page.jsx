@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import CategoryHero from "@/components/CategoryHero";
+import SupplierInfoSection from "@/components/SupplierInfoSection";
 
 const hoodiesData = [
   {
@@ -16,6 +17,7 @@ const hoodiesData = [
     colors: 10,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "80/20 Cotton-Poly", printArea: '12" x 12"', technique: "DTG / Embroidery" },
     image: (require("../../Images/hoodies/Comodidad casual con estilo relajado__Esta….jpg").default?.src || require("../../Images/hoodies/Comodidad casual con estilo relajado__Esta….jpg").default || require("../../Images/hoodies/Comodidad casual con estilo relajado__Esta….jpg")),
   },
   {
@@ -30,6 +32,7 @@ const hoodiesData = [
     colors: 15,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "Heavyweight Fleece", printArea: '12" x 12"', technique: "DTG" },
     image: (require("../../Images/hoodies/EFAN Mens Oversized Hoodies Fall Sweatshirt Winter….jpg").default?.src || require("../../Images/hoodies/EFAN Mens Oversized Hoodies Fall Sweatshirt Winter….jpg").default || require("../../Images/hoodies/EFAN Mens Oversized Hoodies Fall Sweatshirt Winter….jpg")),
   },
   {
@@ -44,6 +47,7 @@ const hoodiesData = [
     colors: 20,
     providers: 7,
     isBestseller: false,
+    supplierSpecs: { material: "Organic Cotton", printArea: '11" x 11"', technique: "Embroidery" },
     image: (require("../../Images/hoodies/Hilfe! Ich bin gestorben und in den….jpg").default?.src || require("../../Images/hoodies/Hilfe! Ich bin gestorben und in den….jpg").default || require("../../Images/hoodies/Hilfe! Ich bin gestorben und in den….jpg")),
   },
   {
@@ -58,6 +62,7 @@ const hoodiesData = [
     colors: 25,
     providers: 8,
     isBestseller: true,
+    supplierSpecs: { material: "Soft-touch Poly", printArea: '12" x 12"', technique: "DTG" },
     image: (require("../../Images/hoodies/How To Start A Capsule Wardrobe_ 5 Step Visual….jpg").default?.src || require("../../Images/hoodies/How To Start A Capsule Wardrobe_ 5 Step Visual….jpg").default || require("../../Images/hoodies/How To Start A Capsule Wardrobe_ 5 Step Visual….jpg")),
   },
   {
@@ -72,6 +77,7 @@ const hoodiesData = [
     colors: 30,
     providers: 9,
     isBestseller: false,
+    supplierSpecs: { material: "Fleece Lining", printArea: '12" x 12"', technique: "Heat Press" },
     image: (require("../../Images/hoodies/Introducing our Men's Oversized Organic Hoodie….jpg").default?.src || require("../../Images/hoodies/Introducing our Men's Oversized Organic Hoodie….jpg").default || require("../../Images/hoodies/Introducing our Men's Oversized Organic Hoodie….jpg")),
   },
   {
@@ -86,6 +92,7 @@ const hoodiesData = [
     colors: 35,
     providers: 10,
     isBestseller: false,
+    supplierSpecs: { material: "Premium Fleece", printArea: '12" x 12"', technique: "DTG" },
     image: (require("../../Images/hoodies/Introducing our premium fleece hoodie, crafted for….jpg").default?.src || require("../../Images/hoodies/Introducing our premium fleece hoodie, crafted for….jpg").default || require("../../Images/hoodies/Introducing our premium fleece hoodie, crafted for….jpg")),
   },
   {
@@ -100,6 +107,7 @@ const hoodiesData = [
     colors: 40,
     providers: 11,
     isBestseller: true,
+    supplierSpecs: { material: "Ring-spun Cotton", printArea: '12" x 12"', technique: "DTG" },
     image: (require("../../Images/hoodies/Introducing our premium fleece hoodie, crafted….jpg").default?.src || require("../../Images/hoodies/Introducing our premium fleece hoodie, crafted….jpg").default || require("../../Images/hoodies/Introducing our premium fleece hoodie, crafted….jpg")),
   },
   {
@@ -114,9 +122,23 @@ const hoodiesData = [
     colors: 45,
     providers: 12,
     isBestseller: false,
+    supplierSpecs: { material: "Eco-Friendly Blend", printArea: '10" x 10"', technique: "DTG" },
     image: (require("../../Images/hoodies/Introducing our premium hoodie, featuring a….jpg").default?.src || require("../../Images/hoodies/Introducing our premium hoodie, featuring a….jpg").default || require("../../Images/hoodies/Introducing our premium hoodie, featuring a….jpg")),
   }
 ];
+
+const hoodieSupplierSpecs = {
+  printAreaDescription: "Large chest area and back area. Sleeves and hood embroidery available.",
+  printArea: '12" x 12"',
+  fileRequirements: [
+    "300 DPI Transparent PNG",
+    "Max 15MB file size",
+    "Vector for embroidery",
+    "High contrast designs perform best"
+  ],
+  materialDescription: "Heavyweight Fleece and Cotton blends. Double-lined hoods.",
+  techniques: ["DTG", "Screen Printing", "Puff Print", "Embroidery"]
+};
 
 const HoodiesPage = () => {
   return (
@@ -129,6 +151,7 @@ const HoodiesPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="Hoodies" specs={hoodieSupplierSpecs} />
     </>
   );
 };

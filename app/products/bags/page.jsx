@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
 import PromoBanner from '@/components/PromoBanner';
+import SupplierInfoSection from '@/components/SupplierInfoSection';
 
 const bagsData = [
   {
@@ -15,6 +16,7 @@ const bagsData = [
     colors: 2,
     providers: 3,
     isBestseller: true,
+    supplierSpecs: { material: "Heavy Canvas", printArea: '10" x 12"', technique: "Screen Print" },
     image: (require("../../Images/bags/A heavyweight cotton canvas tote created in Monday….jpg").default?.src || require("../../Images/bags/A heavyweight cotton canvas tote created in Monday….jpg").default || require("../../Images/bags/A heavyweight cotton canvas tote created in Monday….jpg")),
   },
   {
@@ -28,6 +30,7 @@ const bagsData = [
     colors: 1,
     providers: 4,
     isBestseller: false,
+    supplierSpecs: { material: "100% Cotton", printArea: '8" x 8"', technique: "DTG" },
     image: (require("../../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg").default?.src || require("../../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg").default || require("../../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg")),
   },
   {
@@ -41,6 +44,7 @@ const bagsData = [
     colors: 3,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "Jute / Canvas", printArea: '12" x 10"', technique: "Screen Print" },
     image: (require("../../Images/bags/DIY City Market Bag _ Oleander + Palm.jpg").default?.src || require("../../Images/bags/DIY City Market Bag _ Oleander + Palm.jpg").default || require("../../Images/bags/DIY City Market Bag _ Oleander + Palm.jpg")),
   },
   {
@@ -54,6 +58,7 @@ const bagsData = [
     colors: 1,
     providers: 4,
     isBestseller: false,
+    supplierSpecs: { material: "Cream Canvas", printArea: '10" x 12"', technique: "DTG" },
     image: (require("../../Images/bags/Perfect Condition, Brand New Tags Attached Cream….jpg").default?.src || require("../../Images/bags/Perfect Condition, Brand New Tags Attached Cream….jpg").default || require("../../Images/bags/Perfect Condition, Brand New Tags Attached Cream….jpg")),
   },
   {
@@ -67,6 +72,7 @@ const bagsData = [
     colors: 5,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "Polyester-lined", printArea: '9" x 9"', technique: "Heat Transfer" },
     image: (require("../../Images/bags/Product information_ Lining texture_ Polyester….jpg").default?.src || require("../../Images/bags/Product information_ Lining texture_ Polyester….jpg").default || require("../../Images/bags/Product information_ Lining texture_ Polyester….jpg")),
   },
   {
@@ -80,6 +86,7 @@ const bagsData = [
     colors: 4,
     providers: 3,
     isBestseller: false,
+    supplierSpecs: { material: "Refined Canvas", printArea: '10" x 10"', technique: "Embroidery" },
     image: (require("../../Images/bags/2022春夏コレクションから直送！….jpg").default?.src || require("../../Images/bags/2022春夏コレクションから直送！….jpg").default || require("../../Images/bags/2022春夏コレクションから直送！….jpg")),
   },
   {
@@ -93,6 +100,7 @@ const bagsData = [
     colors: 2,
     providers: 3,
     isBestseller: false,
+    supplierSpecs: { material: "Heavy Canvas", printArea: '10" x 12"', technique: "Screen Print" },
     image: (require("../../Images/bags/A heavyweight cotton canvas tote created in Monday….jpg").default?.src || require("../../Images/bags/A heavyweight cotton canvas tote created in Monday….jpg").default || require("../../Images/bags/A heavyweight cotton canvas tote created in Monday….jpg")),
   },
   {
@@ -106,9 +114,24 @@ const bagsData = [
     colors: 1,
     providers: 4,
     isBestseller: true,
+    supplierSpecs: { material: "100% Cotton", printArea: '8" x 8"', technique: "DTG" },
     image: (require("../../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg").default?.src || require("../../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg").default || require("../../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg")),
   }
 ];
+
+const bagSupplierSpecs = {
+  printAreaDescription: "Ideal for centered flat designs. Handles are not printable.",
+  printArea: '10" x 12"',
+  fileRequirements: [
+    "300 DPI High Resolution",
+    "PNG / AI / EPS",
+    "Maximum 4 colors for Screen Print",
+    "Vector strongly recommended"
+  ],
+  materialDescription: "Heavyweight 12oz Canvas. Eco-friendly natural fibers.",
+  techniques: ["Screen Printing", "Direct to Garment", "Embroidery", "Dye Sublimation"]
+};
+
 const BagsPage = () => {
   return (
     <>
@@ -125,6 +148,7 @@ const BagsPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="Bags" specs={bagSupplierSpecs} />
     </>
   );
 };
