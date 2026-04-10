@@ -85,12 +85,12 @@ export default function Home() {
                   className="text-6xl lg:text-[76px] font-black uppercase tracking-normal leading-[1.15] mb-6"
                   style={{ color: '#2B3220', fontFamily: 'Impact, "Arial Black", "Segoe UI Black", sans-serif' }}
                 >
-                  Create And Sell <br />
+                  Design & Print <br />
                   Custom Products
                 </h1>
 
                 <p className="text-[#495439] text-[16px] sm:text-[17px] font-normal leading-normal mb-8 font-sans">
-                  Turn your custom ideas into premium merchandise with zero upfront costs.
+                  The ultimate destination for premium custom apparel. We design, we print, you thrive. No upfront costs.
                 </p>
 
                 <div className="flex flex-col sm:flex-row flex-wrap sm:items-center gap-4 sm:gap-6 text-[#2B3220] text-lg font-semibold mb-12">

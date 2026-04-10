@@ -1,16 +1,24 @@
 import React from 'react';
 import Link from 'next/link';
 import { 
-  Heart, 
+  ArrowRight,
+  Sparkles,
+  ShoppingBag,
+  Layers,
+  Star,
+  Zap,
+  Layout,
+  Plus
 } from 'lucide-react';
 
 import imgHat1 from '../Images/hats/Beige ralph lauren cap.jpg';
 import imgTshirt1 from '../Images/t shirts/Basic Bae Round Neck Dropped Shoulder Short Sleeve….jpg';
 import imgLongSleeve1 from '../Images/long sleeves/Product information_ Color_ Black, camel, light….jpg';
 import imgHoodie1 from '../Images/hoodies/Introducing our premium hoodie, featuring a….jpg';
-import imgPhoneCase1 from '../Images/phone cases/Our signature Tough Phone Case delivers unmatched….jpg';
-import imgPhoneCase2 from '../Images/phone cases/Protective and Stylish Phone Cases_ KaseMe Impact….jpg';
+import imgBag1 from '../Images/bags/DIY City Market Bag _ Oleander + Palm.jpg';
+import imgBag2 from '../Images/bags/New photo of me wearing my Scandinavian Bird Tote….jpg';
 import imgMug1 from '../Images/mugs/Good Morning Mug.jpg';
+import imgPhoneCase1 from '../Images/phone cases/Our signature Tough Phone Case delivers unmatched….jpg';
 
 import imgNewTee from '../Images/t shirts/Effortlessly stylish, consciously crafted — your….jpg';
 import imgNewHoodie from '../Images/hoodies/Introducing our premium fleece hoodie, crafted for….jpg';
@@ -19,144 +27,252 @@ import imgNewCap from '../Images/hats/La Casquette Avec Filet, une casquette res
 
 import imgStarterMug from '../Images/mugs/_i_Friends__i_ Central Perk Mug.jpg';
 import imgStarterTee from '../Images/t shirts/Dieses Herren-T-Shirt verleiht Ihrem Outfit eine….jpg';
-import imgStarterHat from '../Images/hats/Vintage Horse Art Casual Print Hat.jpg';
 
 import imgBanner from '../Images/hoodies/How To Start A Capsule Wardrobe_ 5 Step Visual….jpg';
+
+import ProductCard from '@/components/ProductCard';
 
 const resolveImg = (img) => img?.src || img?.default?.src || img?.default || img;
 
 const categories = [
-  { name: 'Embroidery', path: '/products/hats', image: resolveImg(imgHat1) },
-  { name: 'T-shirts', path: '/products/t-shirts', image: resolveImg(imgTshirt1) },
-  { name: 'Sweatshirts', path: '/products/long-sleeves', image: resolveImg(imgLongSleeve1) },
-  { name: 'Hoodies', path: '/products/hoodies', image: resolveImg(imgHoodie1) },
-  { name: 'Accessories', path: '/products/bags', image: resolveImg(imgPhoneCase1) },
-  { name: 'Phone Cases', path: '/products/phone-cases', image: resolveImg(imgPhoneCase2) },
-  { name: 'Mugs', path: '/products/mugs', image: resolveImg(imgMug1) }
+  { name: 'Embroidery', path: '/products/hats', image: resolveImg(imgHat1), size: 'large' },
+  { name: 'T-shirts', path: '/products/t-shirts', image: resolveImg(imgTshirt1), size: 'medium' },
+  { name: 'Sweatshirts', path: '/products/long-sleeves', image: resolveImg(imgLongSleeve1), size: 'small' },
+  { name: 'Hoodies', path: '/products/hoodies', image: resolveImg(imgHoodie1), size: 'medium' },
+  { name: 'Bags', path: '/products/bags', image: resolveImg(imgBag1), size: 'large' },
+  { name: 'Phones', path: '/products/phone-cases', image: resolveImg(imgPhoneCase1), size: 'small' },
+  { name: 'Mugs', path: '/products/mugs', image: resolveImg(imgMug1), size: 'medium' }
 ];
 
 const starterEssentials = [
-    { title: "White Ceramic Mug", price: "450 ETB", image: resolveImg(imgStarterMug) },
-    { title: "Unisex Jersey Tee", price: "1,100 ETB", image: resolveImg(imgStarterTee) },
-    { title: "Eco Tote Bag", price: "950 ETB", image: resolveImg(imgStarterHat) }
+    { title: "White Ceramic Mug", image: resolveImg(imgStarterMug) },
+    { title: "Unisex Jersey Tee", image: resolveImg(imgStarterTee) },
+    { title: "Eco Tote Bag", image: resolveImg(imgBag1) }
 ];
 
 const newCollectionItems = [
-  { title: "Classic Blank Tee", price: "$25.00", image: resolveImg(imgNewTee), colors: ['#f8f8f8', '#1a1a1a', '#e5e7eb'], sizes: ['S', 'M', 'L'], favorite: false },
-  { title: "Premium Hoodie", price: "$45.00", image: resolveImg(imgNewHoodie), colors: ['#8c8c8c', '#1a1a1a', '#1e3a8a'], sizes: ['S', 'M', 'L'], favorite: true },
-  { title: "Crewneck Sweatshirt", price: "$35.00", image: resolveImg(imgNewSweatshirt), colors: ['#f8f8f8', '#8c8c8c', '#1ae3a8'], sizes: ['S', 'M', 'L'], favorite: false },
-  { title: "Panel Cap", price: "$15.00", image: resolveImg(imgNewCap), colors: ['#1a1a1a', '#f8f8f8', '#e84424'], sizes: ['O/S'], favorite: false }
+  { 
+    id: 101, 
+    slug: 'classic-blank-tee', 
+    editorTemplateId: 'classic-tshirt',
+    title: "Classic Blank Tee", 
+    brand: 'Stenvio • Essentials',
+    price: 1550, 
+    premiumPrice: 1100,
+    image: resolveImg(imgNewTee), 
+    isBestseller: false,
+    isNew: true
+  },
+  { 
+    id: 102, 
+    slug: 'premium-hoodie-collection', 
+    editorTemplateId: 'premium-hoodie',
+    title: "Premium Hoodie", 
+    brand: 'Stenvio • Premium',
+    price: 3200, 
+    premiumPrice: 2450,
+    image: resolveImg(imgNewHoodie), 
+    isBestseller: true,
+    isNew: true
+  },
+  { 
+    id: 103, 
+    slug: 'crewneck-sweatshirt', 
+    editorTemplateId: 'classic-tshirt',
+    title: "Crewneck Sweatshirt", 
+    brand: 'Stenvio • Comfort',
+    price: 2400, 
+    premiumPrice: 1800,
+    image: resolveImg(imgNewSweatshirt), 
+    isBestseller: false,
+    isNew: true
+  },
+  { 
+    id: 104, 
+    slug: 'panel-cap-v2', 
+    editorTemplateId: 'classic-tshirt',
+    title: "Panel Cap", 
+    brand: 'Stenvio • Headwear',
+    price: 1850, 
+    premiumPrice: 1350,
+    image: resolveImg(imgNewCap), 
+    isBestseller: true,
+    isNew: true
+  }
 ];
 
 const ProductsPage = () => {
   return (
-    <div className="px-8 lg:px-12 py-8 bg-[#fbfaf6] overflow-y-auto min-h-screen">
+    <div className="relative bg-[#fbfaf6] min-h-screen overflow-x-hidden font-sans">
       
-      {/* New Collection Section */}
-      <div className="mb-20">
-        {/* Top Banner Carousel Wrapper */}
-        <div className="relative h-[250px] sm:h-[300px] md:h-[350px] mb-12 -mx-8 lg:-mx-12 overflow-hidden flex items-center justify-center -mt-4">
-          <img 
-            src={resolveImg(imgBanner)} 
-            alt="New Collection Banner"
-            className="absolute inset-0 w-full h-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-[#8c6239]/40 mix-blend-multiply" />
-          <h2 className="relative text-white text-4xl sm:text-5xl md:text-6xl italic text-center px-4 tracking-wider drop-shadow-md z-10" style={{ fontFamily: 'Georgia, serif' }}>
-            New collection is live now!
-          </h2>
-        </div>
-
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-2 xl:px-8">
-          {newCollectionItems.map((item, i) => (
-            <div key={i} className="flex flex-col bg-transparent">
-              <div className="relative aspect-[4/5] rounded-[1.25rem] overflow-hidden bg-[#e0ccae] mb-4">
-                <img src={item.image} alt={item.title} className="w-full h-full object-cover" style={{ objectPosition: 'center 20%' }} />
-                {item.favorite && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <Heart fill="white" className="w-6 h-6 text-white border-0 stroke-none shadow-sm" style={{ filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.2))' }} />
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex justify-between items-center mb-1">
-                <h3 className="text-[#a69688] font-semibold text-[15px]" style={{ fontFamily: 'Georgia, serif' }}>{item.title}</h3>
-                <span className="text-[#a69688] font-semibold text-[15px]" style={{ fontFamily: 'Georgia, serif' }}>{item.price}</span>
-              </div>
-              
-              <hr className="border-[#e5e0d8] mb-3 mt-1" />
-              
-              <div className="flex justify-between items-center mb-5">
-                <div className="flex gap-[5px]">
-                  {item.colors.map((color, idx) => (
-                    <div key={idx} className="w-[16px] h-[16px] rounded-full" style={{ backgroundColor: color }}></div>
-                  ))}
-                </div>
-                <div className="flex gap-3">
-                  {item.sizes.map((size, idx) => (
-                    <span key={idx} className="text-[#a69688] text-[12px] uppercase tracking-wider" style={{ fontFamily: 'Georgia, serif' }}>{size}</span>
-                  ))}
-                </div>
-              </div>
-              
-              <button className="w-full py-3 bg-[#bc9368] hover:bg-[#a37e56] text-white text-[11px] tracking-[0.2em] uppercase font-bold transition-colors">
-                ADD TO CART
-              </button>
-            </div>
-          ))}
-        </div>
+      {/* ── Enhanced Background ── */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
+        <div className="absolute top-[-5%] left-[-10%] w-[60%] h-[50%] bg-[#bc9368]/5 rounded-full blur-[140px] animate-pulse" />
+        <div className="absolute bottom-[20%] right-[-5%] w-[40%] h-[40%] bg-[#A1FF4D]/5 rounded-full blur-[120px]" />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '100px 100px' }} />
       </div>
 
-      {/* Section Heading */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-[#1f1d12] mb-1 tracking-tight">Explore Stenvio's best</h1>
-        <p className="text-[#6b6850] text-[15px] font-medium">Discover the most popular custom products in our curated catalog.</p>
-      </div>
-
-      {/* Category Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-16">
-        {categories.map((category) => (
-          <Link key={category.name} href={category.path}>
-            <div className="group cursor-pointer bg-white border border-[#e5e3d7] rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
-              <div className="aspect-[4/5] overflow-hidden bg-[#f0f0eb] flex items-center justify-center p-6">
-                <img 
-                  src={category.image} 
-                  alt={category.name} 
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" 
-                />
-              </div>
-              <div className="py-5 text-center border-t border-[#f0f0eb] bg-white">
-                <h3 className="text-[14px] font-bold text-[#1f1d12] group-hover:text-[#2d2b1f] tracking-wide">{category.name}</h3>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Starter Essentials Section */}
-      <div className="mb-8 border-t border-[#e5e3d7] pt-12">
-        <h2 className="text-2xl font-bold text-[#1f1d12] mb-1 tracking-tight">Starter essentials</h2>
-        <p className="text-[#6b6850] text-[15px] font-medium">Kickstart your brand with high-quality basics loved by our community.</p>
+      <div className="relative z-10 px-6 sm:px-12 lg:px-20 py-10">
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7 mt-9">
-          {starterEssentials.map((item, i) => (
-            <div key={i} className="bg-white border border-[#e5e3d7] rounded-2xl overflow-hidden hover:shadow-lg transition-all">
-              <div className="aspect-square bg-[#f8f8f4] flex items-center justify-center p-8 relative group">
-                <img src={item.image} alt={item.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-[#e5e3d7] active:scale-95 transition-transform">
-                    <svg className="w-5 h-5 text-[#6b6850]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                  </div>
-                </div>
-              </div>
-              <div className="p-5 text-center">
-                <h3 className="text-[14.5px] font-black text-[#1f1d12] mb-1.5 line-clamp-1">{item.title}</h3>
-                <p className="text-[14px] text-emerald-700 font-bold">From {item.price}</p>
-              </div>
+        {/* ── Premium Split Hero ── */}
+        <div className="flex flex-col lg:flex-row items-center gap-16 mb-40 pt-10">
+          <div className="w-full lg:w-3/5 space-y-10">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-[#e5e3d7] rounded-full shadow-sm hover:translate-x-2 transition-transform">
+                <Sparkles className="w-4 h-4 text-[#bc9368]" />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6b6440]">2026 Collection — Drop 01</span>
             </div>
-          ))}
+            
+            <h1 className="text-7xl sm:text-8xl lg:text-9xl font-black text-[#1f1d12] leading-[0.85] tracking-tighter" style={{ fontFamily: 'Georgia, serif' }}>
+                Design. <br />
+                Print. <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#bc9368] to-[#8c6239] italic">Perfect.</span>
+            </h1>
+            
+            <p className="max-w-xl text-xl text-[#6b6440] font-medium leading-relaxed opacity-80">
+                Stenvio Studio is your ultimate destination for premium custom apparel. We provide highest-quality blanks and professional print services to turn your ideas into reality.
+            </p>
+            
+            <div className="flex flex-wrap gap-6 pt-2">
+                <Link href="/editor">
+                    <button className="px-12 py-6 bg-[#1f1d12] text-white font-black uppercase text-[13px] tracking-widest hover:bg-[#bc9368] transition-all transform hover:-translate-y-2 rounded-3xl flex items-center gap-4 shadow-2xl">
+                        START DESIGNING <ArrowRight size={20} />
+                    </button>
+                </Link>
+                <Link href="#printing-network" className="flex items-center gap-4 pl-4 group cursor-pointer hover:translate-x-1 transition-transform">
+                     <div className="w-14 h-14 rounded-full border border-[#e5e3d7] flex items-center justify-center bg-white group-hover:bg-[#fbfaf6]">
+                        <Zap className="text-[#bc9368]" size={24} />
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-[#1f1d12]">Express Fulfillment</span>
+                </Link>
+            </div>
+          </div>
+
+          <div className="w-full lg:w-2/5 relative h-[500px] lg:h-[700px]">
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full">
+                <div className="absolute top-0 right-0 w-3/4 h-3/4 bg-white rounded-[4rem] shadow-2xl overflow-hidden transform rotate-6 border-[12px] border-white z-20 group hover:rotate-3 transition-transform duration-700">
+                    <img src={resolveImg(imgBanner)} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[5s]" alt="Main Product" />
+                </div>
+                <div className="absolute -bottom-10 -left-10 w-3/5 h-3/5 bg-white rounded-[3.5rem] shadow-2xl overflow-hidden transform -rotate-12 border-[12px] border-white z-30 group hover:rotate-0 transition-transform duration-700 flex items-center justify-center p-8">
+                    <div className="text-center group-hover:scale-105 transition-transform duration-500">
+                        <ShoppingBag className="w-16 h-16 text-[#bc9368] mx-auto mb-6" />
+                        <span className="text-[#1f1d12] font-black uppercase tracking-widest text-sm block mb-2">Premium Cotton</span>
+                        <div className="flex gap-1 justify-center opacity-40">
+                             {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="black" />)}
+                        </div>
+                    </div>
+                </div>
+                <div className="absolute top-[20%] -left-16 z-40 bg-[#bc9368] w-28 h-28 rounded-full flex flex-col items-center justify-center shadow-xl transform animate-bounce">
+                    <span className="text-white font-black text-xs">NEW</span>
+                    <span className="text-white/80 font-bold text-[10px] tracking-widest">SEASON</span>
+                </div>
+             </div>
+          </div>
         </div>
+
+        {/* ── Trending Grid ── */}
+        <div className="mb-40">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+               {newCollectionItems.map((product) => (
+                 <div key={product.id} className="relative group hover:-translate-y-2 transition-all duration-500">
+                    <ProductCard product={product} />
+                 </div>
+               ))}
+            </div>
+        </div>
+
+        {/* ── Bento Category Grid ── */}
+        <div className="mb-40">
+            <div className="flex items-center gap-6 mb-16 justify-center">
+                <div className="h-px bg-[#e5e3d7] flex-1" />
+                <h2 className="text-5xl font-black text-[#1f1d12] tracking-tighter text-center">Department <span className="italic">Lounge</span></h2>
+                <div className="h-px bg-[#e5e3d7] flex-1" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 auto-rows-[280px] gap-8">
+                {categories.map((cat, i) => (
+                    <Link 
+                        key={cat.name} 
+                        href={cat.path}
+                        className={`group relative rounded-[3rem] overflow-hidden bg-white shadow-sm border border-[#e5e3d7] transition-all hover:shadow-2xl hover:border-[#bc9368]/40 
+                            ${cat.size === 'large' ? 'md:col-span-2 md:row-span-2' : ''} 
+                            ${cat.size === 'medium' ? 'md:col-span-2 md:row-span-1' : ''}
+                            ${cat.size === 'small' ? 'md:col-span-1 md:row-span-1' : ''}`}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/30 z-10 opacity-60 group-hover:opacity-80 transition-opacity" />
+                        <img src={cat.image} className="absolute inset-0 w-full h-full object-contain p-12 group-hover:scale-110 transition-transform duration-700" alt={cat.name} />
+                        <div className="absolute bottom-10 left-10 z-20 flex items-center gap-4">
+                            <h3 className="text-white font-black text-2xl tracking-tight leading-none group-hover:translate-x-2 transition-transform duration-500">{cat.name}</h3>
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-50 group-hover:scale-100">
+                                <ArrowRight size={14} className="text-[#1f1d12]" />
+                            </div>
+                        </div>
+                    </Link>
+                ))}
+            </div>
+        </div>
+
+        {/* ── Starter Essentials: Enhanced Polaroid ── */}
+        <div className="mb-40 px-6 sm:px-16 lg:px-24 py-32 bg-[#1f1d12] rounded-[5rem] relative overflow-hidden shadow-[0_40px_80px_-15px_rgba(31,29,18,0.4)]">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 to-transparent pointer-events-none skew-x-12 translate-x-1/4" />
+            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-[#bc9368]/10 rounded-full blur-[80px]" />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row items-center gap-20">
+                <div className="w-full lg:w-5/12">
+                    <div className="w-14 h-14 bg-[#A1FF4C]/20 border border-[#A1FF4C]/30 rounded-2xl flex items-center justify-center mb-8">
+                         <Layout className="text-[#A1FF4C]" size={32} />
+                    </div>
+                    <h2 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8">
+                        The Master <br /> <span className="text-[#bc9368] italic">Print Blanks</span>
+                    </h2>
+                    <p className="text-white/60 text-xl mb-12 leading-relaxed font-medium">
+                        Heaviest weights, softest cottons, and the perfect canvas for your next design. Our studio-grade prints start with the world's best blanks.
+                    </p>
+                    <div className="inline-flex gap-8 items-center">
+                        <button className="px-10 py-5 bg-[#bc9368] text-white font-black uppercase text-[12px] tracking-widest rounded-2xl hover:bg-white hover:text-[#1f1d12] transition-all transform hover:-translate-y-1">
+                            Browse Blanks
+                        </button>
+                        <div className="flex -space-x-3">
+                             {[1,2,3].map(i => <div key={i} className="w-12 h-12 rounded-full border-2 border-[#1f1d12] bg-[#fbfaf6] flex items-center justify-center text-[10px] font-black text-[#1f1d12]">S {i}</div>)}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full lg:w-7/12 grid grid-cols-1 sm:grid-cols-3 gap-10 ">
+                    {starterEssentials.map((item, i) => (
+                        <div key={i} className={`group bg-white p-5 pb-16 rounded-3xl shadow-2xl transition-all duration-700 hover:scale-105 odd:rotate-2 even:-rotate-2 hover:rotate-0`}>
+                             <div className="aspect-[4/5] rounded-[2rem] overflow-hidden bg-[#fbfaf6] mb-8 border border-[#e5e3d7]">
+                                <img src={item.image} className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-1000" alt={item.title} />
+                             </div>
+                             <div className="px-2 text-center">
+                                <h4 className="font-black text-[#1f1d12] text-md leading-none mb-3 truncate">{item.title}</h4>
+                                <div className="flex items-center justify-center gap-3 text-orange-600">
+                                     <Sparkles className="text-[#bc9368] w-3 h-3" fill="currentColor" />
+                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#bc9368]">Studio Series Blanks</span>
+                                </div>
+                             </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+
+        {/* ── Studio Badge Bridge ── */}
+        <div id="printing-network" className="flex flex-col items-center py-20 text-center relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[12vw] font-black text-[#1f1d12]/5 pointer-events-none select-none tracking-tighter uppercase">
+                STUDIO
+            </div>
+            <div className="w-24 h-24 rounded-full border border-[#e5e3d7] flex items-center justify-center mb-10 bg-white shadow-inner relative z-10">
+                <Sparkles className="text-[#bc9368] w-10 h-10 animate-pulse" />
+            </div>
+            <h3 className="text-[#1f1d12] font-black text-3xl tracking-tight mb-4 relative z-10">Stenvio Printing Network.</h3>
+            <p className="text-[#6b6850] max-w-sm font-medium mb-12 relative z-10 leading-relaxed">Professional screen printing, high-fidelity DTG, and bespoke embroidery for creators.</p>
+            <Link href="/supplier">
+                <button className="px-10 py-5 bg-[#1f1d12] text-white font-black uppercase text-[11px] tracking-widest rounded-full hover:bg-[#bc9368] transition-all shadow-xl relative z-10">
+                    Register as Supplier
+                </button>
+            </Link>
+        </div>
+
       </div>
     </div>
   );

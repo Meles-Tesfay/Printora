@@ -82,80 +82,40 @@ const ProductCard = ({ product }) => {
           >
             <DesignOverlay />
           </div>
-
-          {/* Heart Icon */}
-          <button className="absolute top-4 right-4 w-9 h-9 bg-white/80 backdrop-blur-md rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center justify-center hover:bg-white hover:scale-110 active:scale-90">
-            <Heart size={18} className="text-[#1c211f] hover:text-red-500 transition-colors" strokeWidth={2} />
-          </button>
-
-          {/* Bestseller Badge */}
-          {product.isBestseller && (
-            <div className="absolute bottom-4 left-4 bg-[#ffbe76] text-[#1c211f] text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg z-20 shadow-sm flex items-center gap-1.5 border border-[#e67e22]/20">
-              <Star size={10} fill="#1c211f" />
-              Bestseller
-            </div>
-          )}
-
-          {/* New Badge */}
-          {product.isNew && !product.isBestseller && (
-            <div className="absolute bottom-4 left-4 bg-[#7ed6df] text-[#1c211f] text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg z-20 shadow-sm border border-[#22a6b3]/20">
-              New Arrival
-            </div>
-          )}
         </div>
 
         {/* ── Product Details ── */}
         <div className="flex flex-col p-5">
-          <div className="flex items-center gap-2 mb-1.5">
-             <span className="px-2 py-0.5 bg-[#f0f0eb] text-[#8a8670] text-[10px] font-bold rounded uppercase tracking-wider">
-               {product.brand.split('•')[0].trim()}
-             </span>
-             {product.providers && (
-               <span className="text-[10px] text-[#8a8670] font-medium italic">
-                 {product.providers} providers
-               </span>
-             )}
-          </div>
-          
-          <h3 className="font-black text-[#1c211f] text-[16px] leading-tight mb-2 min-h-[2.5rem] line-clamp-2 group-hover:text-[#2d2b1f] transition-colors tracking-tight">
+          <h3 className="font-black text-[#1c211f] text-[16px] leading-tight mb-3 min-h-[2.5rem] line-clamp-2 group-hover:text-[#2d2b1f] transition-colors tracking-tight">
             {product.title}
           </h3>
 
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[12px] font-bold text-[#8a8670]">FROM</span>
-              <span className="font-black text-[#1c211f] text-[18px]">{product.price.toLocaleString()} ETB</span>
+          {/* New Supplier Technical Details (Visible on hover or just below title) */}
+          <div className="mb-4">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {product.supplierSpecs?.material && (
+                <span className="text-[9px] font-black uppercase tracking-wider bg-[#f0f0eb] px-2 py-0.5 rounded text-[#8a8670]">
+                  {product.supplierSpecs.material}
+                </span>
+              )}
+              {product.supplierSpecs?.printArea && (
+                <span className="text-[9px] font-black uppercase tracking-wider bg-[#f0f0eb] px-2 py-0.5 rounded text-[#8a8670]">
+                  {product.supplierSpecs.printArea}" Area
+                </span>
+              )}
             </div>
-
-            {product.premiumPrice && (
-              <div className="flex items-center gap-1.5 py-2 px-3 bg-[#f1fcf7] rounded-xl border border-[#00b894]/10">
-                <div className="p-1 bg-[#00b894] rounded-full">
-                   <Zap size={10} className="text-white" fill="white" />
-                </div>
-                <p className="text-[13px] font-bold text-[#00b894] tracking-tight">
-                  <span className="opacity-70 text-[11px] font-semibold text-gray-500 mr-1 uppercase">OR</span>
-                  {product.premiumPrice.toLocaleString()} ETB
-                  <span className="text-[10px] font-medium text-gray-500 ml-1.5 italic">with Printora Premium</span>
-                </p>
-              </div>
+            {isHovered && product.supplierSpecs?.technique && (
+              <p className="text-[10px] text-[#bc9368] font-bold uppercase tracking-widest mt-1 animate-in fade-in duration-300">
+                Method: {product.supplierSpecs.technique}
+              </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#f0f0eb]">
-            <div className="flex gap-4">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-[#8a8670] uppercase">Sizes</span>
-                <span className="text-[12px] font-bold text-[#1c211f]">{product.sizes}+</span>
-              </div>
-              <div className="flex flex-col border-l border-[#f0f0eb] pl-4">
-                <span className="text-[10px] font-black text-[#8a8670] uppercase">Colors</span>
-                <span className="text-[12px] font-bold text-[#1c211f]">{product.colors}+</span>
-              </div>
-            </div>
-            
-            <div className="w-8 h-8 rounded-full bg-[#1c211f] flex items-center justify-center text-white transform group-hover:scale-110 transition-transform">
-              <ShoppingBag size={14} strokeWidth={2.5} />
-            </div>
+          <div className="flex items-center justify-between mt-auto mb-1">
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#bc9368]">Start Design</span>
+             <div className="w-1.5 h-1.5 rounded-full bg-[#bc9368]" />
+          </div>
+          <div className="flex items-center justify-end pt-3 border-t border-[#f0f0eb]">
           </div>
         </div>
       </div>

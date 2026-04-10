@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
 import CategoryHero from '@/components/CategoryHero';
+import SupplierInfoSection from '@/components/SupplierInfoSection';
 
 const hatsData = [
   {
@@ -16,6 +17,7 @@ const hatsData = [
     colors: 10,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "100% Cotton", printArea: '4" x 2"', technique: "Embroidery" },
     image: (require("../../Images/hats/Beige ralph lauren cap.jpg").default?.src || require("../../Images/hats/Beige ralph lauren cap.jpg").default || require("../../Images/hats/Beige ralph lauren cap.jpg")),
   },
   {
@@ -30,6 +32,7 @@ const hatsData = [
     colors: 15,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "Polyester Blend", printArea: '4" x 2"', technique: "Embroidery" },
     image: (require("../../Images/hats/Display your Masonic pride with our Master Mason….jpg").default?.src || require("../../Images/hats/Display your Masonic pride with our Master Mason….jpg").default || require("../../Images/hats/Display your Masonic pride with our Master Mason….jpg")),
   },
   {
@@ -44,6 +47,7 @@ const hatsData = [
     colors: 20,
     providers: 7,
     isBestseller: false,
+    supplierSpecs: { material: "Structured Cotton", printArea: '4" x 2"', technique: "Embroidery" },
     image: (require("../../Images/hats/Get Paid 2 Travel_ Love to travel_ Tag a….jpg").default?.src || require("../../Images/hats/Get Paid 2 Travel_ Love to travel_ Tag a….jpg").default || require("../../Images/hats/Get Paid 2 Travel_ Love to travel_ Tag a….jpg")),
   },
   {
@@ -58,6 +62,7 @@ const hatsData = [
     colors: 25,
     providers: 8,
     isBestseller: true,
+    supplierSpecs: { material: "Mesh Back Nylon", printArea: '3.5" x 1.8"', technique: "Screen Print" },
     image: (require("../../Images/hats/La Casquette Avec Filet, une casquette respirante….jpg").default?.src || require("../../Images/hats/La Casquette Avec Filet, une casquette respirante….jpg").default || require("../../Images/hats/La Casquette Avec Filet, une casquette respirante….jpg")),
   },
   {
@@ -72,6 +77,7 @@ const hatsData = [
     colors: 30,
     providers: 9,
     isBestseller: false,
+    supplierSpecs: { material: "Heavy Twill", printArea: '4" x 2"', technique: "Embroidery" },
     image: (require("../../Images/hats/La Casquette Homme Trucker, une casquette….jpg").default?.src || require("../../Images/hats/La Casquette Homme Trucker, une casquette….jpg").default || require("../../Images/hats/La Casquette Homme Trucker, une casquette….jpg")),
   },
   {
@@ -86,6 +92,7 @@ const hatsData = [
     colors: 35,
     providers: 10,
     isBestseller: false,
+    supplierSpecs: { material: "Brushed Cotton", printArea: '4" x 2"', technique: "Embroidery" },
     image: (require("../../Images/hats/Macho Moda_ Blog de Moda Masculina - Dicas de….jpg").default?.src || require("../../Images/hats/Macho Moda_ Blog de Moda Masculina - Dicas de….jpg").default || require("../../Images/hats/Macho Moda_ Blog de Moda Masculina - Dicas de….jpg")),
   },
   {
@@ -100,6 +107,7 @@ const hatsData = [
     colors: 40,
     providers: 11,
     isBestseller: true,
+    supplierSpecs: { material: "Organic Cotton", printArea: '4" x 2"', technique: "Embroidery" },
     image: (require("../../Images/hats/Preto e Branco  Collar  Tecido   Embellished….jpg").default?.src || require("../../Images/hats/Preto e Branco  Collar  Tecido   Embellished….jpg").default || require("../../Images/hats/Preto e Branco  Collar  Tecido   Embellished….jpg")),
   },
   {
@@ -114,11 +122,23 @@ const hatsData = [
     colors: 45,
     providers: 12,
     isBestseller: false,
+    supplierSpecs: { material: "Vintage Wash Twill", printArea: '3.5" x 1.8"', technique: "Embroidery" },
     image: (require("../../Images/hats/Vintage Horse Art Casual Print Hat.jpg").default?.src || require("../../Images/hats/Vintage Horse Art Casual Print Hat.jpg").default || require("../../Images/hats/Vintage Horse Art Casual Print Hat.jpg")),
   }
 ];
 
-
+const hatSupplierSpecs = {
+  printAreaDescription: "Centered on the front panel. Back embroidery available on request.",
+  printArea: '4" x 2"',
+  fileRequirements: [
+    "Vector files preferred (.AI, .EPS)",
+    "Min 300 DPI for Print",
+    "Max 6 Colors for Embroidery",
+    "Transparent backgrounds only"
+  ],
+  materialDescription: "Premium Twill & Cotton blends. Adjustable straps.",
+  techniques: ["Flat Embroidery", "3D Puff", "Heat Transfer", "Screen Printing"]
+};
 
 const HatsPage = () => {
   return (
@@ -131,6 +151,7 @@ const HatsPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="Hats" specs={hatSupplierSpecs} />
     </>
   );
 };

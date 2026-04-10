@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
 import CategoryHero from '@/components/CategoryHero';
+import SupplierInfoSection from '@/components/SupplierInfoSection';
 
 const longSleevesData = [
   {
@@ -16,6 +17,7 @@ const longSleevesData = [
     colors: 10,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "100% Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/long sleeves/Discover the essence of elegance and authenticity….jpg").default?.src || require("../../Images/long sleeves/Discover the essence of elegance and authenticity….jpg").default || require("../../Images/long sleeves/Discover the essence of elegance and authenticity….jpg")),
   },
   {
@@ -30,6 +32,7 @@ const longSleevesData = [
     colors: 15,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "Ribbed Cotton", printArea: '10" x 14"', technique: "Embroidery" },
     image: (require("../../Images/long sleeves/Product information_ Color_ Black, camel, light….jpg").default?.src || require("../../Images/long sleeves/Product information_ Color_ Black, camel, light….jpg").default || require("../../Images/long sleeves/Product information_ Color_ Black, camel, light….jpg")),
   },
   {
@@ -44,6 +47,7 @@ const longSleevesData = [
     colors: 20,
     providers: 7,
     isBestseller: false,
+    supplierSpecs: { material: "Premium Jersey", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/long sleeves/Produktbeschreibung Entdecken Sie den perfekten….jpg").default?.src || require("../../Images/long sleeves/Produktbeschreibung Entdecken Sie den perfekten….jpg").default || require("../../Images/long sleeves/Produktbeschreibung Entdecken Sie den perfekten….jpg")),
   },
   {
@@ -58,6 +62,7 @@ const longSleevesData = [
     colors: 25,
     providers: 8,
     isBestseller: true,
+    supplierSpecs: { material: "Oversized Cotton", printArea: '14" x 18"', technique: "Screen Print" },
     image: (require("../../Images/long sleeves/Pull Surdimensionné pour homme   Ce pull oversize….jpg").default?.src || require("../../Images/long sleeves/Pull Surdimensionné pour homme   Ce pull oversize….jpg").default || require("../../Images/long sleeves/Pull Surdimensionné pour homme   Ce pull oversize….jpg")),
   },
   {
@@ -72,6 +77,7 @@ const longSleevesData = [
     colors: 30,
     providers: 9,
     isBestseller: false,
+    supplierSpecs: { material: "Soft-spun Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/long sleeves/Returns_ Fast refund,100% Money Back Guarantee_.jpg").default?.src || require("../../Images/long sleeves/Returns_ Fast refund,100% Money Back Guarantee_.jpg").default || require("../../Images/long sleeves/Returns_ Fast refund,100% Money Back Guarantee_.jpg")),
   },
   {
@@ -86,6 +92,7 @@ const longSleevesData = [
     colors: 35,
     providers: 10,
     isBestseller: false,
+    supplierSpecs: { material: "Heavy Cotton", printArea: '12" x 16"', technique: "Screen Print" },
     image: (require("../../Images/long sleeves/Rămâi caldă chiar și când temperatura scade până….jpg").default?.src || require("../../Images/long sleeves/Rămâi caldă chiar și când temperatura scade până….jpg").default || require("../../Images/long sleeves/Rămâi caldă chiar și când temperatura scade până….jpg")),
   },
   {
@@ -100,6 +107,7 @@ const longSleevesData = [
     colors: 40,
     providers: 11,
     isBestseller: true,
+    supplierSpecs: { material: "Breathable Ribbed", printArea: '10" x 12"', technique: "DTG" },
     image: (require("../../Images/long sleeves/This breathable women’s ribbed long sleeve t-shirt….jpg").default?.src || require("../../Images/long sleeves/This breathable women’s ribbed long sleeve t-shirt….jpg").default || require("../../Images/long sleeves/This breathable women’s ribbed long sleeve t-shirt….jpg")),
   },
   {
@@ -114,9 +122,23 @@ const longSleevesData = [
     colors: 45,
     providers: 12,
     isBestseller: false,
+    supplierSpecs: { material: "Standard Cotton", printArea: '12" x 16"', technique: "DTG" },
     image: (require("../../Images/long sleeves/….jpg").default?.src || require("../../Images/long sleeves/….jpg").default || require("../../Images/long sleeves/….jpg")),
   }
 ];
+
+const longSleeveSupplierSpecs = {
+  printAreaDescription: "Extended workspace for front, back, and full sleeve prints.",
+  printArea: '12" x 16"',
+  fileRequirements: [
+    "300 DPI Transparent PNG",
+    "Vector for sleeve embroidery",
+    "CMYK for Screen Print",
+    "No fine lines under 0.5pt"
+  ],
+  materialDescription: "100% Cotton or Cotton-Poly Blends. Ribbed cuffs.",
+  techniques: ["DTG", "Screen Printing", "Sleeve Embroidery", "Heat Transfer"]
+};
 
 const LongSleevesPage = () => {
   return (
@@ -129,6 +151,7 @@ const LongSleevesPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="Long Sleeves" specs={longSleeveSupplierSpecs} />
     </>
   );
 };

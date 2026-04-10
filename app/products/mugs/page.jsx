@@ -2,6 +2,7 @@ import React from "react";
 import Link from 'next/link';
 import ProductCard from "@/components/ProductCard";
 import CategoryHero from "@/components/CategoryHero";
+import SupplierInfoSection from "@/components/SupplierInfoSection";
 import { ArrowLeft } from "lucide-react";
 
 const mugsData = [
@@ -17,6 +18,7 @@ const mugsData = [
     colors: 10,
     providers: 5,
     isBestseller: true,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/1 x 325 ml gepersonaliseerde koffiemok met naam en….jpg").default?.src || require("../../Images/mugs/1 x 325 ml gepersonaliseerde koffiemok met naam en….jpg").default || require("../../Images/mugs/1 x 325 ml gepersonaliseerde koffiemok met naam en….jpg")),
   },
   {
@@ -31,6 +33,7 @@ const mugsData = [
     colors: 15,
     providers: 6,
     isBestseller: false,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/24 Gifts For The Person Who's Obsessed With Their….jpg").default?.src || require("../../Images/mugs/24 Gifts For The Person Who's Obsessed With Their….jpg").default || require("../../Images/mugs/24 Gifts For The Person Who's Obsessed With Their….jpg")),
   },
   {
@@ -45,6 +48,7 @@ const mugsData = [
     colors: 20,
     providers: 7,
     isBestseller: false,
+    supplierSpecs: { material: "Ceramic", printArea: '8" x 3"', technique: "Sublimation" },
     image: (require("../../Images/mugs/Good Morning Mug.jpg").default?.src || require("../../Images/mugs/Good Morning Mug.jpg").default || require("../../Images/mugs/Good Morning Mug.jpg")),
   },
   {
@@ -59,6 +63,7 @@ const mugsData = [
     colors: 25,
     providers: 8,
     isBestseller: true,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/Graphic Designer Mug by CafePress CafePress….jpg").default?.src || require("../../Images/mugs/Graphic Designer Mug by CafePress CafePress….jpg").default || require("../../Images/mugs/Graphic Designer Mug by CafePress CafePress….jpg")),
   },
   {
@@ -73,6 +78,7 @@ const mugsData = [
     colors: 30,
     providers: 9,
     isBestseller: false,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/Item Type_ Mugs Material_ Ceramic Features….jpg").default?.src || require("../../Images/mugs/Item Type_ Mugs Material_ Ceramic Features….jpg").default || require("../../Images/mugs/Item Type_ Mugs Material_ Ceramic Features….jpg")),
   },
   {
@@ -87,6 +93,7 @@ const mugsData = [
     colors: 35,
     providers: 10,
     isBestseller: false,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/Motivational mug for slow mornings___.jpg").default?.src || require("../../Images/mugs/Motivational mug for slow mornings___.jpg").default || require("../../Images/mugs/Motivational mug for slow mornings___.jpg")),
   },
   {
@@ -101,6 +108,7 @@ const mugsData = [
     colors: 40,
     providers: 11,
     isBestseller: true,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/_Finally, a mug that gets it! 😂    This sleek….jpg").default?.src || require("../../Images/mugs/_Finally, a mug that gets it! 😂    This sleek….jpg").default || require("../../Images/mugs/_Finally, a mug that gets it! 😂    This sleek….jpg")),
   },
   {
@@ -115,11 +123,23 @@ const mugsData = [
     colors: 45,
     providers: 12,
     isBestseller: false,
+    supplierSpecs: { material: "Ceramic", printArea: '9.5" x 3.2"', technique: "Sublimation" },
     image: (require("../../Images/mugs/_i_Friends__i_ Central Perk Mug.jpg").default?.src || require("../../Images/mugs/_i_Friends__i_ Central Perk Mug.jpg").default || require("../../Images/mugs/_i_Friends__i_ Central Perk Mug.jpg")),
   }
 ];
 
-
+const mugSupplierSpecs = {
+  printAreaDescription: "Full wrap around the mug cylinder. Ideal for panoramas.",
+  printArea: '9.5" x 3.2"',
+  fileRequirements: [
+    "300 DPI High Resolution",
+    "PNG / PDF / JPG",
+    "RGB Color Profile",
+    "No transparent backgrounds"
+  ],
+  materialDescription: "Grade-A Ceramic. Diswasher and Microwave safe.",
+  techniques: ["Dye Sublimation", "Direct Transfer", "Screen Printing"]
+};
 
 const MugsPage = () => {
   return (
@@ -132,6 +152,7 @@ const MugsPage = () => {
           ))}
         </div>
       </div>
+      <SupplierInfoSection category="Mugs" specs={mugSupplierSpecs} />
     </>
   );
 };
