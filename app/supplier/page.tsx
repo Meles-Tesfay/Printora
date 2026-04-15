@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { 
-  ShoppingBag, 
-  Plus, 
-  Settings, 
-  User, 
-  LogOut, 
-  CheckCircle, 
-  Clock, 
+import {
+  ShoppingBag,
+  Plus,
+  Settings,
+  User,
+  LogOut,
+  CheckCircle,
+  Clock,
   XCircle,
   BarChart3,
   Box,
@@ -28,13 +28,49 @@ const initialProducts = [
 
 export default function SupplierDashboard() {
   const [products, setProducts] = useState(initialProducts);
+  const [orders, setOrders] = useState<any[]>([]);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('custom_orders')
+      .select('*, customer:profiles(full_name)')
+      .eq('supplier_id', user.id)
+      .eq('status', 'ASSIGNED_TO_SUPPLIER');
+
+    if (!error) setOrders(data || []);
+    setLoading(false);
+  };
+
+  const handleFulfill = async (orderId: string) => {
+    const proofUrl = prompt("Enter the URL of the photo of the finished product (Supplier Proof):");
+    if (!proofUrl) return;
+
+    const { error } = await supabase
+      .from('custom_orders')
+      .update({
+        status: 'COMPLETED_BY_SUPPLIER',
+        supplier_proof_image_url: proofUrl
+      })
+      .eq('id', orderId);
+
+    if (error) alert("Error: " + error.message);
+    else fetchOrders();
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // ... actual submission logic
     setIsAddingProduct(false);
     setLoading(false);
@@ -45,7 +81,7 @@ export default function SupplierDashboard() {
     { label: "Total Products", value: products.length, icon: Box, color: "bg-blue-500" },
     { label: "Approved", value: products.filter(p => p.status === "APPROVED").length, icon: CheckCircle, color: "bg-green-500" },
     { label: "Pending", value: products.filter(p => p.status === "PENDING").length, icon: Clock, color: "bg-yellow-500" },
-    { label: "Active Orders", value: "18", icon: ShoppingBag, color: "bg-purple-500" },
+    { label: "Assigned Orders", value: orders.length, icon: ShoppingBag, color: "bg-purple-500" },
   ];
 
   return (
@@ -55,7 +91,7 @@ export default function SupplierDashboard() {
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <img src="/logo.png" alt="Stenvio Logo" className="h-12 w-auto" />
         </div>
-        
+
         <nav className="flex-1 p-4 space-y-2 mt-4">
           <Link href="/supplier" className="flex items-center gap-3 px-4 py-3 bg-[#A1FF4D]/10 text-[#2B3220] rounded-xl font-bold transition-all">
             <BarChart3 size={20} /> Dashboard
@@ -85,7 +121,7 @@ export default function SupplierDashboard() {
             </h1>
             <p className="text-gray-500 font-medium">Manage your products and track your earnings.</p>
           </div>
-          <button 
+          <button
             onClick={() => setIsAddingProduct(true)}
             className="flex items-center justify-center gap-2 bg-[#A1FF4D] text-[#1B2412] px-6 py-3 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all hover:scale-105"
           >
@@ -110,77 +146,65 @@ export default function SupplierDashboard() {
           ))}
         </div>
 
-        {/* Products Table/List */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#2B3220]">Your Products</h2>
-            <Link href="/supplier/products" className="text-sm font-bold text-[#2B3118] hover:underline">View all</Link>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50/50">
-                  <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Product</th>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Category</th>
-
-                  <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-4 text-sm font-bold text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                          {/* Placeholder image icon */}
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <ImageIcon size={20} />
-                          </div>
-                        </div>
-                        <span className="font-bold text-[#2B3220]">{product.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 font-medium">{product.category}</td>
-
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[12px] font-black uppercase tracking-wider ${
-                        product.status === "APPROVED" ? "bg-green-100 text-green-700" :
-                        product.status === "PENDING" ? "bg-yellow-100 text-yellow-700" :
-                        "bg-red-100 text-red-700"
-                      }`}>
-                        {product.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="text-sm font-bold text-gray-500 hover:text-[#2B3220] transition-colors">Edit</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {products.length === 0 && (
-            <div className="p-20 text-center">
-              <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
-                <Box size={32} />
-              </div>
-              <h3 className="text-lg font-bold text-[#2B3220]">No products yet</h3>
-              <p className="text-gray-500 mb-6">Start by adding your first product to the catalog.</p>
-              <button 
-                onClick={() => setIsAddingProduct(true)}
-                className="bg-[#2B3220] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#3b442b] transition-all"
-              >
-                Add Your First Product
-              </button>
+        {/* --- Assigned Custom Orders Section --- */}
+        <div className="mt-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-[#1B2412] text-white p-2 rounded-xl">
+              <ShoppingBag size={20} />
             </div>
-          )}
+            <h2 className="text-2xl font-black text-[#2B3220] uppercase tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
+              Pending Custom Fulfillments
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {orders.map((order) => (
+              <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
+                <CardContent className="p-0 flex h-48">
+                  <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                    {order.mockup_image_url ? (
+                      <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
+                    ) : (
+                      <Box size={40} className="text-gray-200" />
+                    )}
+                  </div>
+                  <div className="flex-1 p-6 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-black text-[#2B3220] text-lg uppercase leading-none mb-1">{order.product_type}</h3>
+                        <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full uppercase tracking-tighter">New Order</span>
+                      </div>
+                      <p className="text-xs font-bold text-gray-400 mb-4">{order.variants?.color || 'N/A'} • {order.variants?.view || 'N/A'}</p>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                          <User size={12} className="text-gray-400" />
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">{order.customer?.full_name || 'Customer'}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleFulfill(order.id)}
+                      className="w-full bg-[#1B2412] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-black transition-all transform active:scale-95"
+                    >
+                      Fulfill & Upload Proof
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {orders.length === 0 && (
+              <div className="lg:col-span-2 p-16 text-center border-2 border-dashed border-gray-100 rounded-[2.5rem] bg-white/50">
+                <Clock size={48} className="mx-auto text-gray-200 mb-4" />
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">No assigned orders at the moment</h3>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
-      {/* Add Product Modal (Simple placeholder for now) */}
       {isAddingProduct && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <Card className="w-full max-w-lg rounded-[2.5rem] shadow-2xl border-none">

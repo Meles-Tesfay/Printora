@@ -1,17 +1,78 @@
+"use client";
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { User, ShoppingBag } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function SignupPage() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 'CUSTOMER'
+  });
+
+  const handleGoogleSignUp = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      console.error("Error with Google sign up:", error.message);
+      alert(error.message);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { firstName, lastName, email, password, role } = formData;
+
+    // 1. Sign up the user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (authError) {
+      alert(authError.message);
+      return;
+    }
+
+    if (authData.user) {
+      // 2. Create the profile in the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email: email,
+          full_name: `${firstName} ${lastName}`,
+          role: role
+        });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError.message);
+        alert("Account created, but profile setup failed: " + profileError.message);
+      } else {
+        alert("Registration successful! Please check your email for confirmation.");
+        window.location.href = "/login";
+      }
+    }
+  };
   return (
     <div className="min-h-screen w-full flex flex-row-reverse bg-[#f5f3e7] font-sans">
-      
+
       {/* Right Column - Image & Marketing */}
       <div className="hidden lg:flex flex-col relative w-[48%] xl:w-[45%] bg-zinc-900 flex-shrink-0 min-h-screen overflow-hidden">
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 z-0 bg-white overflow-hidden">
-           <img src="/pointer-guy.jpg" alt="Background" className="w-[110%] max-w-none h-full object-cover object-right absolute left-0 md:left-2 lg:left-6 xl:left-8 2xl:left-12 z-0" />
-           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/80 z-10"></div>
-           <div className="absolute inset-y-0 left-0 w-24 md:w-40 bg-gradient-to-l from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
+          <img src="/pointer-guy.jpg" alt="Background" className="w-[110%] max-w-none h-full object-cover object-right absolute left-0 md:left-2 lg:left-6 xl:left-8 2xl:left-12 z-0" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/80 z-10"></div>
+          <div className="absolute inset-y-0 left-0 w-24 md:w-40 bg-gradient-to-l from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
         </div>
 
         {/* Content */}
@@ -22,7 +83,7 @@ export default function SignupPage() {
             <span className="bg-[#2DC1DB] text-white px-3 py-1 -ml-3 inline-block shadow-md">BIG PROFIT</span>
             <span className="block mt-1 drop-shadow-md">POTENTIAL</span>
           </h1>
-          
+
           {/* Subtext */}
           <p className="mt-8 text-[15.5px] xl:text-[17px] font-medium leading-[1.6] opacity-95 max-w-md drop-shadow-lg">
             Phone cases are year-round profit-makers that smartphone users can't get enough of.
@@ -46,25 +107,29 @@ export default function SignupPage() {
 
       {/* Left Column - Auth Form */}
       <div className="flex-1 flex flex-col justify-center items-center py-10 px-6 lg:px-12 relative overflow-y-auto">
-        
+
         {/* Back Button */}
         <Link href="/" className="absolute top-6 left-6 md:top-10 md:left-10 flex items-center justify-center w-12 h-12 bg-white border border-gray-200 rounded-full text-gray-600 hover:text-[#2B3118] shadow-sm transition-colors z-20 hover-vibrate">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
         </Link>
-        
+
         <div className="w-full max-w-[440px] flex flex-col my-auto mt-4 md:mt-auto">
-          
+
           <h2 className="text-[44px] md:text-[54px] font-black uppercase text-[#2B3118] tracking-normal text-center mb-8" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em', letterSpacing: '0.02em' }}>
             JOIN STENVO.
           </h2>
 
           <div className="flex flex-col gap-3">
-            <button className="flex items-center justify-center gap-3 w-full bg-white border border-gray-300 shadow-sm rounded-md py-3.5 px-4 hover:bg-gray-50 transition-colors font-bold text-[14.5px] text-gray-800">
+            <button
+              type="button"
+              onClick={handleGoogleSignUp}
+              className="flex items-center justify-center gap-3 w-full bg-white border border-gray-300 shadow-sm rounded-md py-3.5 px-4 hover:bg-gray-50 transition-colors font-bold text-[14.5px] text-gray-800"
+            >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-[18px] h-[18px]" />
               Sign up with Google
             </button>
             <button className="flex items-center justify-center gap-3 w-full bg-white border border-gray-300 shadow-sm rounded-md py-3.5 px-4 hover:bg-gray-50 transition-colors font-bold text-[14.5px] text-gray-800">
-              <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.1-44.6-35.9-2.8-74.3 22.7-93.1 22.7-18.9 0-51-22.9-80-22.9-42.3 0-82.6 24.2-104.9 63.8-45 80.3-15.1 199.1 28.8 261.3 21.6 30.7 47 62.4 80.7 61.2 32.3-1.2 44.8-21 82.2-21 37.4 0 48.6 21.1 82.7 20.4 35.1-.7 57.6-29.3 79-59.8 24.7-35.5 35.1-70 35.7-71.8-1.1-.4-66.9-25.2-67-104.5zM227.6 112.9c18.5-22.5 31.1-53.9 27.6-84.9-26.5 1.1-58.8 17.5-78 40.1-17.1 19.8-31.5 52.3-27.4 82.2 29.8 2.3 59.3-14.8 77.8-37.4z"/></svg>
+              <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.1-44.6-35.9-2.8-74.3 22.7-93.1 22.7-18.9 0-51-22.9-80-22.9-42.3 0-82.6 24.2-104.9 63.8-45 80.3-15.1 199.1 28.8 261.3 21.6 30.7 47 62.4 80.7 61.2 32.3-1.2 44.8-21 82.2-21 37.4 0 48.6 21.1 82.7 20.4 35.1-.7 57.6-29.3 79-59.8 24.7-35.5 35.1-70 35.7-71.8-1.1-.4-66.9-25.2-67-104.5zM227.6 112.9c18.5-22.5 31.1-53.9 27.6-84.9-26.5 1.1-58.8 17.5-78 40.1-17.1 19.8-31.5 52.3-27.4 82.2 29.8 2.3 59.3-14.8 77.8-37.4z" /></svg>
               Sign up with Apple
             </button>
           </div>

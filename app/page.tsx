@@ -4,11 +4,26 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingBag, PenTool, CheckCircle, Truck } from "lucide-react";
+import { ShoppingBag, PenTool, CheckCircle, Truck, LogOut, User, ChevronDown } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [user, setUser] = useState<any>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+
+    // Listen for auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleScroll = () => {
     if (scrollContainerRef.current) {
@@ -59,16 +74,77 @@ export default function Home() {
           </nav>
 
           <div className="flex-1 flex items-center justify-end gap-3">
-            <Link href="/login" className="flex items-center justify-center rounded-md px-6 h-11 text-[16px] font-extrabold tracking-wide text-[#1B2412] bg-white border border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-gray-50 transition-colors">
-              Log in
-            </Link>
-            <Link 
-              href="/signup"
-              className="flex items-center justify-center rounded-md px-6 h-11 text-[16px] font-extrabold tracking-wide transition-opacity hover:opacity-80"
-              style={{ backgroundColor: '#A1FF4D', color: '#1B2412' }}
-            >
-              Sign up
-            </Link>
+            {user ? (
+              // --- LOGGED IN STATE ---
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-full px-3 pr-4 py-1.5 hover:shadow-md transition-all group"
+                >
+                  {user.user_metadata?.avatar_url ? (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="Avatar"
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-[#A1FF4D]"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-sm">
+                      {(user.user_metadata?.full_name || user.email || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-[14px] font-bold text-[#1B2412] max-w-[120px] truncate">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                  </span>
+                  <ChevronDown size={14} className={`text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Signed in as</p>
+                      <p className="text-sm font-bold text-[#1B2412] truncate mt-0.5">{user.email}</p>
+                    </div>
+                    <div className="p-2">
+                      <Link href="/editor" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-[#A1FF4D]/20 hover:text-[#1B2412] transition-colors">
+                        <PenTool size={15} /> Start Designing
+                      </Link>
+                      <Link href="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
+                        <ShoppingBag size={15} /> Admin Panel
+                      </Link>
+                      <Link href="/supplier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
+                        <CheckCircle size={15} /> Supplier Panel
+                      </Link>
+                    </div>
+                    <div className="p-2 border-t border-gray-100">
+                      <button
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 transition-colors w-full"
+                      >
+                        <LogOut size={15} /> Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // --- LOGGED OUT STATE ---
+              <>
+                <Link href="/login" className="flex items-center justify-center rounded-md px-6 h-11 text-[16px] font-extrabold tracking-wide text-[#1B2412] bg-white border border-[#e5e7eb] hover:border-[#d1d5db] hover:bg-gray-50 transition-colors">
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center justify-center rounded-md px-6 h-11 text-[16px] font-extrabold tracking-wide transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: '#A1FF4D', color: '#1B2412' }}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </header>
       </div>
@@ -723,7 +799,7 @@ export default function Home() {
         {/* Modern Bento Box Section */}
         <section className="bg-[#1e1e1e] w-full py-16 md:py-24 px-4 md:px-8 flex justify-center font-sans tracking-tight">
           <div className="max-w-[1280px] w-full grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
-            
+
             {/* Top Left Card (White) */}
             <div className="col-span-1 lg:col-span-7 bg-white rounded-[2.5rem] p-8 md:p-12 lg:p-14 flex flex-col justify-between min-h-[420px] lg:min-h-[500px]">
               {/* Header */}
@@ -736,12 +812,12 @@ export default function Home() {
                   TIME FOR CREATORS — 24
                 </span>
               </div>
-              
+
               {/* Large Title */}
               <h2 className="text-[60px] md:text-[88px] lg:text-[104px] font-black text-[#111] leading-[1.0] tracking-normal mb-10 md:mb-16 uppercase" style={{ fontFamily: 'Impact, sans-serif', fontStretch: 'condensed' }}>
-                OWN YOUR<br/>MERCH,<br/>OWN YOUR<br/>BRAND
+                OWN YOUR<br />MERCH,<br />OWN YOUR<br />BRAND
               </h2>
-              
+
               {/* Footer */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-6 mt-auto">
                 <button className="bg-[#111] text-white px-8 py-5 rounded-full font-extrabold text-[14px] tracking-wider hover:bg-gray-800 transition-transform hover:scale-105 active:scale-95 w-max">
@@ -756,7 +832,7 @@ export default function Home() {
                     <div className="w-[2px] h-3 bg-gray-400"></div>
                   </div>
                   <div className="text-[10px] md:text-[11px] font-bold text-gray-800 leading-[1.2] tracking-widest uppercase">
-                    LUXURY MERCH<br/>EXPERIENCE
+                    LUXURY MERCH<br />EXPERIENCE
                   </div>
                 </div>
               </div>
@@ -766,16 +842,16 @@ export default function Home() {
             <div className="col-span-1 lg:col-span-5 bg-[#e4a38f] rounded-[2.5rem] overflow-hidden relative min-h-[420px] lg:min-h-[500px] group">
               <img src="/hustle-tee-new.jpg" alt="Model" className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent mix-blend-multiply opacity-80"></div>
-              
+
               <div className="absolute top-8 left-8">
                 <div className="w-[52px] h-[52px] bg-[#111] rounded-2xl flex items-center justify-center p-[14px]">
                   <svg width="100%" height="100%" viewBox="0 0 24 24" fill="white"><path d="M12 2L15 9l7 1-5 5.5L15.5 22 12 18.5 8.5 22 10 15.5 5 10l7-1z" /></svg>
                 </div>
               </div>
-              
+
               <div className="absolute bottom-10 inset-x-0 px-8">
                 <h3 className="text-white font-black text-[34px] md:text-[42px] leading-[1.05] tracking-tight uppercase" style={{ fontFamily: 'sans-serif' }}>
-                  DESIGN ON YOUR<br/>OWN TIME
+                  DESIGN ON YOUR<br />OWN TIME
                 </h3>
               </div>
             </div>
@@ -787,20 +863,20 @@ export default function Home() {
                 <img src="/orange-hoodie.jpg" alt="Hoodie mock" className="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-95 grayscale" />
                 <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-10 h-32 bg-[#171717] rounded-l-2xl shadow-[-5px_0_15px_rgba(0,0,0,0.2)]"></div>
               </div>
-              
+
               {/* Text Block */}
               <div className="flex flex-col justify-between w-full p-2 lg:p-4">
                 <div className="flex justify-between items-start mb-8 gap-4 flex-wrap">
                   <span className="text-[12px] font-bold tracking-widest text-[#111]">24/7 SUPPORT</span>
                   <div className="flex items-center gap-3 text-right">
-                    <span className="text-[11px] font-bold tracking-widest text-[#111] leading-tight opacity-90">12834 STENVO LN<br/>BROOKLYN, NY</span>
+                    <span className="text-[11px] font-bold tracking-widest text-[#111] leading-tight opacity-90">12834 STENVO LN<br />BROOKLYN, NY</span>
                     <div className="w-9 h-9 rounded-full bg-[#111] flex items-center justify-center flex-shrink-0">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#fced44]"></div>
                     </div>
                   </div>
                 </div>
                 <h3 className="text-[32px] md:text-[40px] lg:text-[46px] font-black text-[#111] leading-[1.0] tracking-tighter uppercase pr-4">
-                  CONTACT US &<br/>SCALE FASTER
+                  CONTACT US &<br />SCALE FASTER
                 </h3>
               </div>
             </div>
@@ -812,7 +888,7 @@ export default function Home() {
                   <span className="text-[64px] md:text-[76px] font-black text-[#111] leading-[0.8] tracking-tighter">4.98</span>
                   <div className="flex flex-col pb-1">
                     <div className="flex gap-1 mb-1.5 text-[#fced44]">
-                      {[1,2,3,4,5].map(i => <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>)}
+                      {[1, 2, 3, 4, 5].map(i => <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>)}
                     </div>
                     <span className="text-[9px] md:text-[10px] font-bold tracking-widest text-[#999] uppercase">BASED ON 10K+ REVIEWS</span>
                   </div>
@@ -822,7 +898,7 @@ export default function Home() {
                   <svg viewBox="0 0 24 24" fill="#111"><path d="M11.66 22.84l-9.5-9.5a1 1 0 0 1 0-1.42l9.5-9.5a1 1 0 0 1 1.42 0l4.24 4.24-2.83 2.83-2.83-2.83L4.93 12l6.73 6.73 2.83-2.83 2.83 2.83-4.24 4.24a1 1 0 0 1-1.42 0z" /></svg>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap gap-2 md:gap-3">
                 {['T-SHIRTS', 'HOODIES', 'O-NECK', 'PHONE CASES', 'MUGS', 'POSTERS'].map((tag, i) => (
                   <div key={i} className="flex items-center justify-center px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-gray-200 text-[#333] text-[10px] md:text-[11px] font-bold tracking-widest uppercase whitespace-nowrap hover:border-black transition-colors cursor-pointer">
@@ -831,7 +907,7 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            
+
           </div>
         </section>
 

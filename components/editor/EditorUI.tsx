@@ -483,7 +483,6 @@ export default function EditorUI() {
             const { data: { user }, error: authError } = await supabase.auth.getUser();
 
             if (!user) {
-                alert("Please log in or create an account to save your design!");
                 // Save their work to localStorage so they don't lose it
                 localStorage.setItem('printora_pending_design', JSON.stringify({
                     productTemplateId: selectedProduct.id,
