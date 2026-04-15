@@ -1,330 +1,547 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  ShoppingBag,
-  CheckCircle,
-  Clock,
-  XCircle,
-  BarChart3,
-  Users,
-  User,
-  Box,
-  Truck,
-  ArrowRight,
-  ShieldCheck,
-  AlertCircle
+  ShoppingBag, CheckCircle, Clock, XCircle, BarChart3, Users,
+  User, Box, Truck, ArrowRight, ShieldCheck, AlertCircle,
+  Package, Palette, Loader2, LogOut, Eye
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { useEffect } from "react";
-
-// Placeholder data for product approval
-const pendingProducts = [
-  { id: 1, name: "Cat Mug", supplier: "Abebe M.", type: "Mugs", date: "2 mins ago" },
-  { id: 2, name: "Yellow Hoodie", supplier: "Tigist S.", type: "Apparel", date: "1 hour ago" },
-  { id: 3, name: "Neon Phone Case", supplier: "Samuel L.", type: "Tech", date: "3 hours ago" },
-];
 
 export default function AdminDashboard() {
-  const [approvals, setApprovals] = useState<any[]>([]);
+  const [adminProfile, setAdminProfile] = useState<any>(null);
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+  const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [allOrders, setAllOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"orders" | "products">("orders");
 
   useEffect(() => {
-    fetchData();
+    initDashboard();
   }, []);
 
-  const fetchData = async () => {
+  const initDashboard = async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
 
-    // 1. Fetch Pending Orders
-    const { data: orders, error: ordersError } = await supabase
-      .from('custom_orders')
-      .select('*, customer:profiles(full_name, email)')
-      .eq('status', 'PENDING_ADMIN')
-      .order('created_at', { ascending: false });
+    const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-    // 2. Fetch Suppliers
-    const { data: supplierProfiles, error: suppliersError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .eq('role', 'SUPPLIER');
+    // 🔒 ADMIN ONLY — redirect anyone else to home
+    if (!prof || prof.role !== "ADMIN") {
+      window.location.href = "/";
+      return;
+    }
 
-    if (!ordersError) setApprovals(orders || []);
-    if (!suppliersError) setSuppliers(supplierProfiles || []);
-
+    setAdminProfile(prof);
+    await fetchAll();
     setLoading(false);
   };
 
-  const handleApproveClick = (order: any) => {
-    setSelectedOrder(order);
-    setShowAssignModal(true);
+  const fetchAll = async () => {
+    const [ordersRes, productsRes, suppliersRes, customersRes, allOrdersRes] = await Promise.all([
+      // Pending customer orders (waiting for admin approval)
+      supabase
+        .from("custom_orders")
+        .select("*, customer:profiles!custom_orders_customer_id_fkey(full_name, email, id), supplier_product:supplier_products(name, product_type, supplier_id, supplier:profiles(full_name))")
+        .eq("status", "PENDING_ADMIN")
+        .order("created_at", { ascending: false }),
+
+      // Products submitted by suppliers awaiting approval
+      supabase
+        .from("supplier_products")
+        .select("*, supplier:profiles(full_name, email)")
+        .eq("status", "PENDING")
+        .order("created_at", { ascending: false }),
+
+      // All suppliers
+      supabase.from("profiles").select("id, full_name, email").eq("role", "SUPPLIER"),
+
+      // All customers
+      supabase.from("profiles").select("id, full_name, email, created_at").eq("role", "CUSTOMER"),
+
+      // All orders (any status, for overview)
+      supabase
+        .from("custom_orders")
+        .select("id, status, created_at, product_type")
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    if (!ordersRes.error) setPendingOrders(ordersRes.data || []);
+    if (!productsRes.error) setPendingProducts(productsRes.data || []);
+    if (!suppliersRes.error) setSuppliers(suppliersRes.data || []);
+    if (!customersRes.error) setCustomers(customersRes.data || []);
+    if (!allOrdersRes.error) setAllOrders(allOrdersRes.data || []);
   };
 
-  const handleFinalAssignment = async (supplierId: string) => {
-    if (!selectedOrder) return;
+  // Approve a customer order: auto-assign to the supplier of the chosen product
+  const handleApproveOrder = async (order: any) => {
+    // If order has a linked supplier_product, auto-assign its supplier
+    const supplierId = order.supplier_product?.supplier_id || null;
 
     const { error } = await supabase
-      .from('custom_orders')
+      .from("custom_orders")
       .update({
-        status: 'ASSIGNED_TO_SUPPLIER',
-        supplier_id: supplierId
+        status: "ASSIGNED_TO_SUPPLIER",
+        supplier_id: supplierId,
       })
-      .eq('id', selectedOrder.id);
+      .eq("id", order.id);
 
-    if (error) {
-      alert("Error assigning supplier: " + error.message);
-    } else {
-      setShowAssignModal(false);
+    if (error) alert("Error: " + error.message);
+    else {
       setSelectedOrder(null);
-      fetchData(); // Refresh list
+      fetchAll();
     }
   };
 
-  const handleReject = async (id: string) => {
-    if (!confirm("Reject this design?")) return;
-
+  // Reject order
+  const handleRejectOrder = async (id: string) => {
+    if (!confirm("Reject this order?")) return;
     const { error } = await supabase
-      .from('custom_orders')
-      .update({ status: 'REJECTED' })
-      .eq('id', id);
-
+      .from("custom_orders")
+      .update({ status: "REJECTED" })
+      .eq("id", id);
     if (error) alert("Error: " + error.message);
-    else fetchData();
+    else fetchAll();
   };
+
+  // Approve a supplier product → it appears on landing page
+  const handleApproveProduct = async (id: string) => {
+    const { error } = await supabase
+      .from("supplier_products")
+      .update({ status: "APPROVED" })
+      .eq("id", id);
+    if (error) alert("Error: " + error.message);
+    else { setSelectedProduct(null); fetchAll(); }
+  };
+
+  // Reject supplier product
+  const handleRejectProduct = async (id: string) => {
+    if (!confirm("Reject this product?")) return;
+    const { error } = await supabase
+      .from("supplier_products")
+      .update({ status: "REJECTED" })
+      .eq("id", id);
+    if (error) alert("Error: " + error.message);
+    else fetchAll();
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const totalPending = pendingOrders.length + pendingProducts.length;
 
   const stats = [
     { label: "Active Suppliers", value: suppliers.length, icon: Users, color: "bg-blue-600" },
-    { label: "Pending Approvals", value: approvals.length, icon: ShieldCheck, color: "bg-orange-500" },
-    { label: "System Uptime", value: "99.9%", icon: ShieldCheck, color: "bg-green-600" },
-    { label: "Open Orders", value: "0", icon: Truck, color: "bg-indigo-600" },
+    { label: "Customers", value: customers.length, icon: User, color: "bg-teal-500" },
+    { label: "Pending Approvals", value: totalPending, icon: ShieldCheck, color: "bg-orange-500" },
+    { label: "Total Orders", value: allOrders.length, icon: Truck, color: "bg-indigo-600" },
   ];
+
+  const STATUS_COLOR: Record<string, string> = {
+    PENDING_ADMIN: "bg-yellow-100 text-yellow-700",
+    ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
+    REJECTED: "bg-red-100 text-red-700",
+    COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#111]">
+        <Loader2 className="animate-spin text-[#ccff00]" size={48} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#111] text-white border-r border-gray-800 hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-8 border-b border-gray-800">
-          <img src="/logo.png" alt="Printora" className="h-10 w-auto invert brightness-0" />
+      <aside className="w-64 bg-[#111] text-white hidden md:flex flex-col sticky top-0 h-screen">
+        <div className="p-6 border-b border-gray-800">
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto invert brightness-0" />
           <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Admin Panel</span>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 mt-4">
-          <Link href="/admin" className="flex items-center gap-3 px-4 py-3 bg-white/10 text-white rounded-xl font-bold transition-all">
-            <BarChart3 size={20} /> Overview
-          </Link>
-          <Link href="/admin/approvals" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
-            <ShieldCheck size={20} /> Product Approvals
-          </Link>
-          <Link href="/admin/suppliers" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
-            <Users size={20} /> Suppliers
-          </Link>
-          <Link href="/admin/orders" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white rounded-xl transition-all">
-            <ShoppingBag size={20} /> All Orders
-          </Link>
+        {/* Admin Profile */}
+        {adminProfile && (
+          <div className="p-4 mx-4 my-4 bg-white/5 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center text-white font-black text-sm">
+                {adminProfile.full_name?.[0]?.toUpperCase() || 'A'}
+              </div>
+              <div>
+                <p className="text-[12px] font-black text-white leading-none">{adminProfile.full_name || 'Admin'}</p>
+                <p className="text-[9px] font-bold text-orange-500 mt-0.5 tracking-widest uppercase">Administrator</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <nav className="flex-1 p-4 space-y-1">
+          <span className="flex items-center gap-3 px-4 py-3 bg-white/10 text-white rounded-xl font-bold text-sm">
+            <BarChart3 size={16} /> Overview
+          </span>
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "orders" ? "bg-orange-500/20 text-orange-400" : "text-gray-400 hover:bg-white/5"}`}
+          >
+            <span className="flex items-center gap-3"><ShoppingBag size={16} /> Custom Orders</span>
+            {pendingOrders.length > 0 && (
+              <span className="bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingOrders.length}</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("products")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "products" ? "bg-orange-500/20 text-orange-400" : "text-gray-400 hover:bg-white/5"}`}
+          >
+            <span className="flex items-center gap-3"><Package size={16} /> Product Reviews</span>
+            {pendingProducts.length > 0 && (
+              <span className="bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingProducts.length}</span>
+            )}
+          </button>
+          <div className="pt-2">
+            <p className="px-4 text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Reports</p>
+            <span className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 rounded-xl text-sm font-bold cursor-pointer">
+              <Users size={16} /> Suppliers ({suppliers.length})
+            </span>
+            <span className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 rounded-xl text-sm font-bold cursor-pointer">
+              <User size={16} /> Customers ({customers.length})
+            </span>
+          </div>
         </nav>
 
-        <div className="p-4 border-t border-gray-800">
-          <button className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-400/10 w-full rounded-xl transition-all">
-            <Box size={20} /> Switch to Customer
+        <div className="p-4 border-t border-gray-800 space-y-1">
+          <Link href="/" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 rounded-xl text-sm font-bold">
+            <ArrowRight size={16} /> View Site
+          </Link>
+          <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-400/10 w-full rounded-xl text-sm font-bold transition-all">
+            <LogOut size={16} /> Sign Out
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-10 lg:p-14">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-tighter mb-2" style={{ fontFamily: 'Impact, sans-serif' }}>
+            <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
               System Control
             </h1>
-            <p className="text-gray-500 font-medium tracking-tight uppercase text-xs">Platform overview & Administrative actions</p>
+            <p className="text-gray-400 font-bold tracking-widest uppercase text-[10px] mt-1">Platform Overview & Administrative Actions</p>
           </div>
-          <div className="flex items-center gap-3 text-right">
-            <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center animate-pulse">
-              <AlertCircle size={24} />
+          {totalPending > 0 && (
+            <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-5 py-3 animate-pulse">
+              <AlertCircle size={20} className="text-orange-500" />
+              <span className="text-sm font-black text-orange-600 uppercase tracking-widest">
+                {totalPending} Requests Pending
+              </span>
             </div>
-            <span className="text-sm font-black text-orange-600 uppercase tracking-widest leading-none">
-              {approvals.length} Requests pending
-            </span>
-          </div>
+          )}
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {stats.map((stat, i) => (
-            <Card key={i} className="border-none shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] rounded-[2rem] overflow-hidden">
-              <CardContent className="p-8 flex items-center gap-5">
-                <div className={`${stat.color} p-4 rounded-2xl text-white shadow-lg`}>
-                  <stat.icon size={28} />
+            <Card key={i} className="border-none shadow-[8px_8px_24px_#e8e8e8,-8px_-8px_24px_#ffffff] rounded-[2rem] overflow-hidden">
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className={`${stat.color} p-3 rounded-2xl text-white shadow-lg flex-shrink-0`}>
+                  <stat.icon size={22} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                  <p className="text-3xl font-black text-[#111] leading-none tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>{stat.value}</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                  <p className="text-2xl font-black text-[#111] leading-none" style={{ fontFamily: 'Impact, sans-serif' }}>{stat.value}</p>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Approval Queue */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-xl font-black text-[#111] uppercase tracking-tight">Recent Product Requests</h2>
-                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Clock size={16} className="text-orange-600" />
+        {/* Tab Header */}
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`px-5 py-2.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all ${activeTab === "orders" ? "bg-[#111] text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-gray-400"}`}
+          >
+            Custom Orders {pendingOrders.length > 0 && `(${pendingOrders.length})`}
+          </button>
+          <button
+            onClick={() => setActiveTab("products")}
+            className={`px-5 py-2.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all ${activeTab === "products" ? "bg-[#111] text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-gray-400"}`}
+          >
+            Supplier Products {pendingProducts.length > 0 && `(${pendingProducts.length})`}
+          </button>
+        </div>
+
+        {/* === ORDERS TAB === */}
+        {activeTab === "orders" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Pending Customer Orders</h2>
+                  <Clock size={18} className="text-orange-500" />
+                </div>
+                <div className="p-4 space-y-3">
+                  {pendingOrders.map((order) => (
+                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50/60 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                        <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
+                          {order.mockup_image_url
+                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                            : <Box size={24} className="text-gray-300" />
+                          }
+                        </div>
+                        <div>
+                          <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {/* Customer */}
+                            <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                              <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
+                            </span>
+                            {/* Color/Variant */}
+                            <span className="text-[10px] font-bold text-gray-500">
+                              {order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}
+                            </span>
+                          </div>
+                          {/* Supplier product info */}
+                          {order.supplier_product && (
+                            <p className="text-[10px] font-bold text-green-600 mt-1 flex items-center gap-1">
+                              <ShieldCheck size={9} /> Will auto-assign to: {order.supplier_product.supplier?.full_name}
+                            </p>
+                          )}
+                          <p className="text-[9px] text-gray-400 font-bold mt-1">
+                            {new Date(order.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all">
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleRejectOrder(order.id)}
+                          className="p-2.5 bg-white border-2 border-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                        >
+                          <XCircle size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleApproveOrder(order)}
+                          className="bg-[#ccff00] text-[#111] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
+                        >
+                          <CheckCircle size={16} /> APPROVE
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {pendingOrders.length === 0 && (
+                    <div className="p-16 text-center text-gray-400 italic font-medium">
+                      <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                      All clear! No pending orders.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Panel - Supplier & Customer Registry */}
+            <div className="space-y-5">
+              {/* Suppliers */}
+              <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6">
+                <h3 className="text-sm font-black text-[#111] uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <Users size={14} className="text-blue-500" /> Suppliers ({suppliers.length})
+                </h3>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {suppliers.map(s => (
+                    <div key={s.id} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-xs flex-shrink-0">
+                        {s.full_name?.[0]?.toUpperCase() || 'S'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black text-[#111] truncate">{s.full_name}</p>
+                        <p className="text-[9px] text-gray-400 font-bold truncate">{s.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {suppliers.length === 0 && <p className="text-xs text-gray-400 text-center py-4">No suppliers yet</p>}
                 </div>
               </div>
 
-              <div className="p-4 space-y-4">
-                {approvals.map((req) => (
-                  <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-gray-50/50 rounded-3xl border border-gray-100/50 hover:bg-white hover:shadow-xl transition-all duration-300">
-                    <div className="flex items-center gap-5 mb-4 sm:mb-0">
-                      <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-gray-300 overflow-hidden relative">
-                        {req.mockup_image_url ? (
-                          <img src={req.mockup_image_url} alt="Mockup" className="w-full h-full object-contain p-1" />
-                        ) : (
-                          <Box size={32} />
-                        )}
+              {/* Customers */}
+              <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6">
+                <h3 className="text-sm font-black text-[#111] uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <User size={14} className="text-teal-500" /> Customers ({customers.length})
+                </h3>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {customers.map(c => (
+                    <div key={c.id} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-black text-xs flex-shrink-0">
+                        {c.full_name?.[0]?.toUpperCase() || 'C'}
                       </div>
-                      <div>
-                        <h3 className="font-extrabold text-[#111] text-lg leading-tight mb-1">{req.product_type}</h3>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                            {req.variants?.color || 'Default'} • {req.variants?.view || 'Front'}
-                          </span>
-                          <span className="text-[11px] font-bold text-gray-500">•</span>
-                          <span className="text-[11px] font-bold text-[#111] uppercase tracking-widest flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm border border-gray-100">
-                            <User size={10} className="text-blue-500" /> {req.customer?.full_name || 'Anonymous'}
-                          </span>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black text-[#111] truncate">{c.full_name || 'Customer'}</p>
+                        <p className="text-[9px] text-gray-400 font-bold truncate">{c.email}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {customers.length === 0 && <p className="text-xs text-gray-400 text-center py-4">No customers yet</p>}
+                </div>
+              </div>
+
+              {/* Recent All Orders */}
+              <div className="bg-[#111] rounded-[2rem] p-6 text-white">
+                <h3 className="text-sm font-black text-[#ccff00] uppercase tracking-widest mb-4">All Order History</h3>
+                <div className="space-y-3">
+                  {allOrders.slice(0, 6).map(o => (
+                    <div key={o.id} className="flex justify-between items-center">
+                      <p className="text-[11px] font-bold text-gray-300 truncate max-w-[130px]">{o.product_type}</p>
+                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${STATUS_COLOR[o.status] || 'bg-gray-700 text-gray-300'}`}>
+                        {o.status?.replace('_', ' ')}
+                      </span>
+                    </div>
+                  ))}
+                  {allOrders.length === 0 && <p className="text-xs text-gray-600 text-center py-4">No orders yet</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === PRODUCTS TAB === */}
+        {activeTab === "products" && (
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+              <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Supplier Product Submissions</h2>
+              <span className="text-xs font-black text-orange-600 bg-orange-50 px-3 py-1 rounded-full">{pendingProducts.length} pending</span>
+            </div>
+
+            {pendingProducts.length === 0 ? (
+              <div className="p-16 text-center text-gray-400">
+                <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                <p className="italic font-medium">No products waiting for approval.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                {pendingProducts.map((product) => (
+                  <div key={product.id} className="bg-gray-50 rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all group">
+                    {/* Product Image */}
+                    <div className="h-48 bg-gray-100 overflow-hidden relative">
+                      {product.image_url
+                        ? <img src={product.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={product.name} />
+                        : <div className="w-full h-full flex items-center justify-center text-gray-200"><Box size={48} /></div>
+                      }
+                      <div className="absolute top-3 left-3 flex gap-1 flex-wrap">
+                        {(product.tags || []).slice(0, 2).map((tag: string) => (
+                          <span key={tag} className="bg-white/90 backdrop-blur text-[#111] text-[9px] font-black px-2 py-1 rounded-full">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      {/* Supplier */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                          {product.supplier?.full_name?.[0]?.toUpperCase() || 'S'}
                         </div>
-                        <p className="text-[10px] text-gray-400 font-bold mt-2 flex items-center gap-1">
-                          <Clock size={10} /> RECIEVED {new Date(req.created_at).toLocaleTimeString()}
-                        </p>
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{product.supplier?.full_name}</span>
+                      </div>
+
+                      <h3 className="font-black text-[#111] text-base mb-1">{product.name}</h3>
+                      <p className="text-xs text-gray-500 mb-3 line-clamp-2">{product.description}</p>
+
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] font-black bg-gray-200 text-gray-700 px-2 py-1 rounded-lg">{product.product_type}</span>
+                        <span className="text-sm font-black text-[#111]">${product.price}</span>
+                      </div>
+
+                      {/* Colors */}
+                      <div className="flex gap-1 mb-4">
+                        {(product.available_colors || []).slice(0, 8).map((c: any) => (
+                          <div key={c.hex} title={c.name} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                        ))}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleRejectProduct(product.id)}
+                          className="flex-1 bg-white border-2 border-red-100 text-red-500 py-2.5 rounded-xl font-black text-xs hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => handleApproveProduct(product.id)}
+                          className="flex-1 bg-[#ccff00] text-[#111] py-2.5 rounded-xl font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-md"
+                        >
+                          ✓ Approve
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleReject(req.id)}
-                        className="bg-white border-2 border-red-50 text-red-500 p-4 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95"
-                      >
-                        <XCircle size={22} />
-                      </button>
-                      <button
-                        onClick={() => handleApproveClick(req)}
-                        className="bg-[#ccff00] text-[#111] p-4 rounded-2xl font-black shadow-lg shadow-[#ccff00]/20 hover:scale-110 active:scale-95 transition-all flex items-center gap-2"
-                      >
-                        <CheckCircle size={22} />
-                        <span className="text-sm font-black pr-1 tracking-tighter">APPROVE</span>
-                      </button>
-                    </div>
                   </div>
                 ))}
-
-                {approvals.length === 0 && (
-                  <div className="p-20 text-center text-gray-400 italic font-medium">
-                    All clear! No pending approval requests.
-                  </div>
-                )}
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Right column - Recent Activity / Meta */}
-          <div className="space-y-6">
-            <Card className="rounded-[2.5rem] border-none shadow-sm bg-gradient-to-br from-[#ccff00] to-[#9df542] p-8 text-[#111] relative overflow-hidden group">
-              <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform">
-                <ShoppingBag size={200} />
-              </div>
-              <h3 className="text-2xl font-black uppercase mb-4 leading-none tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
-                Sales Overview
-              </h3>
-              <p className="text-sm font-bold opacity-80 mb-8 leading-relaxed">
-                The platform has seen a <span className="underline decoration-2 underline-offset-4">24% increase</span> in custom mug orders this week.
-              </p>
-              <button className="bg-[#111] text-white px-8 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 group-hover:gap-3 transition-all active:scale-95">
-                VIEW REPORTS <ArrowRight size={16} />
-              </button>
-            </Card>
-
-            <div className="bg-[#111] rounded-[2.5rem] p-8 text-white relative overflow-hidden border border-gray-800">
-              <h4 className="text-[12px] font-black text-orange-500 uppercase tracking-[0.2em] mb-6">Security & Logs</h4>
-              <ul className="space-y-4">
-                {[
-                  { msg: 'Supplier "Desta Print" logged in', time: '12m ago' },
-                  { msg: 'New category "Canvas" added', time: '45m ago' },
-                  { msg: 'Suspicious login attempt blocked', time: '2h ago' },
-                ].map((log, i) => (
-                  <li key={i} className="flex justify-between items-start gap-4">
-                    <p className="text-xs font-bold text-gray-300 leading-tight">{log.msg}</p>
-                    <span className="text-[9px] font-black text-gray-600 uppercase whitespace-nowrap">{log.time}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
+        )}
       </main>
 
-      {/* Supplier Assignment Modal */}
-      {showAssignModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden">
             <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-black text-[#111] uppercase tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
-                  Assign Supplier
-                </h3>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Order #{selectedOrder?.id?.slice(0, 8)}</p>
-              </div>
-              <button onClick={() => setShowAssignModal(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
-                <XCircle size={32} />
+              <h3 className="text-xl font-black text-[#111] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>
+                Order Details
+              </h3>
+              <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-900">
+                <XCircle size={28} />
               </button>
             </div>
-
             <div className="p-8 space-y-4">
-              <p className="text-sm font-medium text-gray-500 leading-relaxed">
-                Choose which supplier should fulfill this <span className="text-[#111] font-black">{selectedOrder?.product_type}</span> design.
-              </p>
-
-              <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
-                {suppliers.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleFinalAssignment(s.id)}
-                    className="w-full flex items-center justify-between p-5 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-[#ccff00] hover:bg-white hover:shadow-xl transition-all group text-left"
-                  >
-                    <div>
-                      <p className="font-black text-[#111] uppercase text-sm tracking-tight group-hover:text-blue-600 transition-colors">{s.full_name}</p>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{s.email}</p>
-                    </div>
-                    <ArrowRight size={18} className="text-gray-300 group-hover:text-[#ccff00] transform group-hover:translate-x-1 transition-all" />
-                  </button>
-                ))}
-
-                {suppliers.length === 0 && (
-                  <div className="p-10 text-center border-2 border-dashed border-gray-100 rounded-2xl">
-                    <Users className="mx-auto text-gray-200 mb-3" size={40} />
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">No suppliers found.<br />Check supplier registrations.</p>
-                  </div>
-                )}
+              {selectedOrder.mockup_image_url && (
+                <div className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden">
+                  <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain" alt="Design" />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer</p>
+                  <p className="font-black text-[#111] text-sm">{selectedOrder.customer?.full_name || 'N/A'}</p>
+                  <p className="text-xs text-gray-500">{selectedOrder.customer?.email}</p>
+                </div>
+                <div className="bg-gray-50 rounded-2xl p-4">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product</p>
+                  <p className="font-black text-[#111] text-sm">{selectedOrder.product_type}</p>
+                  <p className="text-xs text-gray-500">{selectedOrder.variants?.color} • {selectedOrder.variants?.view}</p>
+                </div>
+                <div className="bg-green-50 rounded-2xl p-4 col-span-2">
+                  <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Auto-Assign To</p>
+                  <p className="font-black text-[#111] text-sm">
+                    {selectedOrder.supplier_product?.supplier?.full_name || '⚠️ No linked supplier product — will need manual routing'}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-end">
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="text-[11px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors p-2"
-              >
-                Cancel Action
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
+                  Reject Order
+                </button>
+                <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-1 bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg">
+                  ✓ Approve & Assign
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -332,3 +549,10 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+const STATUS_COLOR: Record<string, string> = {
+  PENDING_ADMIN: "bg-yellow-100 text-yellow-700",
+  ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
+  REJECTED: "bg-red-100 text-red-700",
+  COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+};
