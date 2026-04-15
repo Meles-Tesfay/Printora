@@ -86,6 +86,16 @@ function BackSweater({ color }: { color: string }) {
                 Z
             `} fill={color} stroke="none" />
 
+            {/* Collar fill — fills the white gap at the back neckline */}
+            <path d={`
+                M99,0.908
+                C124.5,8.908 169.5,2.908 171.5,0.908
+                L183.248,8.34
+                C180.5,19.908 100.5,27.908 87,8.408
+                L99,0.908
+                Z
+            `} fill={color} stroke="none" />
+
             <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M87.0166 8.90801C39.5165 27.408 26.0166 55.408 26.0166 66.408" />
                 <path d="M27.0166 65.908C26.0166 67.908 -18.4834 296.408 10.0166 305.908C10.0166 318.075 10 340.108 10 330.908" />
@@ -115,45 +125,45 @@ function BackSweater({ color }: { color: string }) {
     );
 }
 
-// --- LEFT SIDE (from Figma SVG: sweater left side.svg) ---
+// --- LEFT SIDE (new SVG from user) ---
 function LeftSideSweater({ color }: { color: string }) {
     return (
-        <svg viewBox="0 0 145 372" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
-            <path d={`
-                M106.5,0.49 C74.283,7.025 54.558,33.818 35.49,28.59
-                C7.875,120.731 -2.645,43.62 1.3,347.49
-                C27.469,367.722 120.217,360.559 143.24,352.095
-                C112.982,77.322 184.68,137.225 106.404,0.49 Z
-            `} fill={color} stroke="none" />
-
+        <svg viewBox="0 0 93 331" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
+            {/* Sleeve body fill */}
+            <path
+                d="M8.6056 120.5C-32.6155 -3.01139 97.0314 -72.2823 92.3774 120.5L70.1596 316C55.7814 313 25.7294 314 23.4021 316Z"
+                fill={color} stroke="none"
+            />
+            {/* Cuff fill */}
+            <path
+                d="M23.4021 316L24.5074 330.5H68.5026L70.1596 316C55.7814 313 25.7294 314 23.4021 316Z"
+                fill={color} stroke="none"
+            />
             <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1.30053 347.49C-2.64455 43.62 7.87543 120.731 35.4904 28.5898C54.5579 33.8177 74.2827 7.02486 106.5 0.490021" />
-                <path d="M0.50012 346.886C27.4694 367.722 120.217 360.559 143.24 352.095C112.982 77.3222 184.68 137.225 106.404 0.490021M32.0739 38.255C68.2521 41.5106 85.2499 6.3501 112.219 9.6057" />
-                <path d="M45.6057 161.49C4.38465 37.9786 134.032 -31.2922 129.378 161.49" />
-                <path d="M0.50012 340.49C41.2594 359.273 135.926 349.255 142.5 344.873" />
-                <path d="M45.5001 161.49L60.4023 356.99M129.5 161.49L107.16 356.99M107.16 356.99L105.503 371.49H61.5075L60.4023 356.99M107.16 356.99C92.7816 353.99 62.7295 354.99 60.4023 356.99" />
+                <path d="M8.6056 120.5C-32.6155 -3.01139 97.0314 -72.2823 92.3774 120.5" />
+                <path d="M8.50001 120.5L23.4021 316M92.5 120.5L70.1596 316M70.1596 316L68.5026 330.5H24.5074L23.4021 316M70.1596 316C55.7814 313 25.7294 314 23.4021 316" />
             </g>
         </svg>
     );
 }
 
-// --- RIGHT SIDE (from Figma SVG: sweater right side.svg) ---
+// --- RIGHT SIDE (new SVG from user) ---
 function RightSideSweater({ color }: { color: string }) {
     return (
-        <svg viewBox="0 0 145 372" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
-            <path d={`
-                M38.5,0.49 C70.717,7.025 90.442,33.818 109.51,28.59
-                C137.125,120.731 147.645,43.62 143.7,347.49
-                C117.531,367.722 24.783,360.559 1.76,352.095
-                C32.019,77.322 -39.68,137.225 38.596,0.49 Z
-            `} fill={color} stroke="none" />
-
+        <svg viewBox="0 0 104 331" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
+            {/* Sleeve body fill */}
+            <path
+                d="M0.637249 120.501C-4.57321 -72.2817 140.575 -3.01077 94.4253 120.501L77.8238 316.001C75.2195 314.001 41.5898 313.001 25.5 316.001Z"
+                fill={color} stroke="none"
+            />
+            {/* Cuff fill */}
+            <path
+                d="M25.5 316.001L27.3542 330.501H76.5869L77.8238 316.001C75.2195 314.001 41.5898 313.001 25.5 316.001Z"
+                fill={color} stroke="none"
+            />
             <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M143.7 347.49C147.645 43.62 137.125 120.731 109.51 28.5898C90.4422 33.8177 70.7174 7.02486 38.5 0.490021" />
-                <path d="M144.5 346.886C117.531 367.722 24.7829 360.559 1.76035 352.095C32.0185 77.3222 -39.6802 137.225 38.5964 0.490021M112.926 38.255C76.748 41.5106 59.7503 6.3501 32.781 9.6057" />
-                <path d="M99.3944 161.49C140.615 37.9786 10.9686 -31.2922 15.6226 161.49" />
-                <path d="M144.5 340.49C103.741 359.273 9.07408 349.255 2.50001 344.873" />
-                <path d="M99.1086 161.267L84.2952 356.767M15.6086 161.267L37.8161 356.767M37.8161 356.767L39.4632 371.267H83.1965L84.2952 356.767M37.8161 356.767C52.1086 353.767 81.9818 354.767 84.2952 356.767" />
+                <path d="M94.4253 120.501C140.575 -3.01077 -4.57321 -72.2817 0.637249 120.501" />
+                <path d="M94.5 120.501L77.8238 316.001M0.499992 120.501L25.5 316.001M25.5 316.001L27.3542 330.501H76.5869L77.8238 316.001M25.5 316.001C41.5898 313.001 75.2195 314.001 77.8238 316.001" />
             </g>
         </svg>
     );
@@ -181,7 +191,7 @@ export default function SweaterMockup({ selectedView, selectedColor, printArea, 
                 <canvas ref={canvasRef} className="outline-none" />
             </div>
 
-            <div 
+            <div
                 className="absolute border border-dashed border-gray-400/40 pointer-events-none z-30 flex items-center justify-center text-[10px] text-black/15 uppercase tracking-widest font-medium"
                 style={{
                     left: printArea?.left ?? 170,
