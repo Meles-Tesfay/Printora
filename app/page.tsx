@@ -11,16 +11,32 @@ export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        supabase.from("profiles").select("role").eq("id", user.id).single().then(({ data }) => {
+          if (data) setUserRole(data.role);
+        });
+      }
+    });
 
     // Listen for auth changes (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        supabase.from("profiles").select("role").eq("id", currentUser.id).single().then(({ data }) => {
+          if (data) setUserRole(data.role);
+        });
+      } else {
+        setUserRole(null);
+      }
     });
 
     // Fetch approved supplier products for the landing page
@@ -118,12 +134,24 @@ export default function Home() {
                       <Link href="/editor" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-[#A1FF4D]/20 hover:text-[#1B2412] transition-colors">
                         <PenTool size={15} /> Start Designing
                       </Link>
-                      <Link href="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
-                        <ShoppingBag size={15} /> Admin Panel
-                      </Link>
-                      <Link href="/supplier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
-                        <CheckCircle size={15} /> Supplier Panel
-                      </Link>
+                      
+                      {userRole !== "SUPPLIER" && (
+                        <Link href="/orders" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-[#A1FF4D]/20 hover:text-[#1B2412] transition-colors">
+                          <CheckCircle size={15} /> My Orders
+                        </Link>
+                      )}
+
+                      {userRole === "ADMIN" && (
+                        <Link href="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
+                          <ShoppingBag size={15} /> Admin Panel
+                        </Link>
+                      )}
+                      
+                      {(userRole === "SUPPLIER" || userRole === "ADMIN") && (
+                        <Link href="/supplier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
+                          <CheckCircle size={15} /> Supplier Panel
+                        </Link>
+                      )}
                     </div>
                     <div className="p-2 border-t border-gray-100">
                       <button

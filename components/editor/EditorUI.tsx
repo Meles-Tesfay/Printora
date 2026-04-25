@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
 import { useEditorCanvas } from '@/hooks/useEditorCanvas';
 import { useSearchParams } from 'next/navigation';
@@ -474,8 +475,23 @@ export default function EditorUI() {
             // Get design data
             const designData = canvas.toJSON();
 
-            // Get mockup image (canvas print area preview)
-            const dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.5, multiplier: 0.5 });
+            // Deselect active objects to avoid rendering bounding boxes in the snapshot
+            canvas.discardActiveObject();
+            canvas.renderAll();
+
+            // Capture the whole product div (t-shirt silhouette + design layer)
+            const captureArea = document.getElementById('product-capture-area');
+            let dataUrl = '';
+            if (captureArea) {
+                const canvasImage = await html2canvas(captureArea, {
+                    backgroundColor: null,
+                    scale: 1, // keeping it reasonable for fast upload
+                });
+                dataUrl = canvasImage.toDataURL('image/jpeg', 0.6);
+            } else {
+                // Fallback to old behavior if div not found for some reason
+                dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.5, multiplier: 0.5 });
+            }
 
             console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
@@ -508,7 +524,8 @@ export default function EditorUI() {
                 console.error('Error saving order:', error);
                 alert('Failed to save product: ' + error.message);
             } else {
-                alert('Product saved and sent for approval!');
+                // Redirect to customer orders page to track status
+                window.location.href = '/orders?submitted=true';
             }
         } catch (e: any) {
             console.error('Save error:', e);
@@ -687,7 +704,7 @@ export default function EditorUI() {
                 {/* ═══════════ CENTER: Canvas ═══════════ */}
                 <div className="flex-1 flex flex-col relative bg-[#F4F4F4]">
                     <div className="flex-1 flex items-center justify-center relative p-8">
-                        <div className="relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md">
+                        <div id="product-capture-area" className="relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md">
                             {renderMockup()}
                         </div>
                     </div>

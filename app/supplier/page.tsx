@@ -85,13 +85,26 @@ export default function SupplierDashboard() {
   };
 
   const fetchOrders = async (uid: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("custom_orders")
-      .select("*, customer:profiles!custom_orders_customer_id_fkey(full_name, email)")
+      .select("*")
       .eq("supplier_id", uid)
       .eq("status", "ASSIGNED_TO_SUPPLIER")
       .order("created_at", { ascending: false });
-    setOrders(data || []);
+
+    if (error) { console.error("Fetch orders error:", error); setOrders([]); return; }
+
+    // Enrich with customer profile separately (avoids FK join issues)
+    const rows = data || [];
+    const customerIds = [...new Set(rows.map((o: any) => o.customer_id).filter(Boolean))];
+    if (customerIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles").select("id, full_name, email").in("id", customerIds);
+      const map = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
+      setOrders(rows.map((o: any) => ({ ...o, customer: map[o.customer_id] || null })));
+    } else {
+      setOrders(rows);
+    }
   };
 
   const handleColorToggle = (color: { name: string; hex: string }) => {

@@ -51,10 +51,10 @@ export default function AdminDashboard() {
 
   const fetchAll = async () => {
     const [ordersRes, productsRes, suppliersRes, customersRes, allOrdersRes] = await Promise.all([
-      // Pending customer orders (waiting for admin approval)
+      // Pending customer orders — simple select, no FK join
       supabase
         .from("custom_orders")
-        .select("*, customer:profiles!custom_orders_customer_id_fkey(full_name, email, id), supplier_product:supplier_products(name, product_type, supplier_id, supplier:profiles(full_name))")
+        .select("*")
         .eq("status", "PENDING_ADMIN")
         .order("created_at", { ascending: false }),
 
@@ -71,25 +71,61 @@ export default function AdminDashboard() {
       // All customers
       supabase.from("profiles").select("id, full_name, email, created_at").eq("role", "CUSTOMER"),
 
-      // All orders (any status, for overview)
+      // All orders overview
       supabase
         .from("custom_orders")
-        .select("id, status, created_at, product_type")
+        .select("id, status, created_at, product_type, customer_id")
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
 
-    if (!ordersRes.error) setPendingOrders(ordersRes.data || []);
+    let enrichedOrders = ordersRes.data || [];
+
+    // Enrich orders with customer info manually
+    if (enrichedOrders.length > 0) {
+      const customerIds = [...new Set(enrichedOrders.map((o: any) => o.customer_id).filter(Boolean))];
+      if (customerIds.length > 0) {
+        const { data: customerProfiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", customerIds);
+
+        const profileMap = Object.fromEntries((customerProfiles || []).map((p: any) => [p.id, p]));
+        enrichedOrders = enrichedOrders.map((o: any) => ({
+          ...o,
+          customer: profileMap[o.customer_id] || null,
+        }));
+      }
+    }
+
+    if (!ordersRes.error) setPendingOrders(enrichedOrders);
     if (!productsRes.error) setPendingProducts(productsRes.data || []);
     if (!suppliersRes.error) setSuppliers(suppliersRes.data || []);
     if (!customersRes.error) setCustomers(customersRes.data || []);
     if (!allOrdersRes.error) setAllOrders(allOrdersRes.data || []);
+
+    // Log errors to console for debugging
+    if (ordersRes.error) console.error("Orders fetch error:", ordersRes.error);
   };
 
   // Approve a customer order: auto-assign to the supplier of the chosen product
   const handleApproveOrder = async (order: any) => {
     // If order has a linked supplier_product, auto-assign its supplier
-    const supplierId = order.supplier_product?.supplier_id || null;
+    let supplierId = order.supplier_product?.supplier_id || order.supplier_id || null;
+
+    // If no supplier is linked, let admin pick one from the list
+    if (!supplierId) {
+      if (suppliers.length === 0) {
+        alert("No suppliers registered yet. Please add a supplier first.");
+        return;
+      }
+      const options = suppliers.map((s: any, i: number) => `${i + 1}. ${s.full_name} (${s.email})`).join("\n");
+      const choice = prompt(`Assign to which supplier? Enter number:\n\n${options}`);
+      if (!choice) return;
+      const idx = parseInt(choice) - 1;
+      if (idx < 0 || idx >= suppliers.length) { alert("Invalid selection."); return; }
+      supplierId = suppliers[idx].id;
+    }
 
     const { error } = await supabase
       .from("custom_orders")
