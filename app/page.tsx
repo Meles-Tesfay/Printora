@@ -363,12 +363,12 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
 
                     {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
+                    <Link href="/products/t-shirts" className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
                       <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -406,12 +406,12 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
+                    <Link href="/products/bags" className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
                       <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -449,12 +449,12 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
+                    <Link href="/products/mugs" className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
                       <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -491,12 +491,12 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
+                    <Link href="/products" className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
                       <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -534,12 +534,12 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
+                    <Link href="/products/phone-cases" className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
                       <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
