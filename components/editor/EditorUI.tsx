@@ -485,7 +485,40 @@ export default function EditorUI() {
             if (captureArea) {
                 const canvasImage = await html2canvas(captureArea, {
                     backgroundColor: null,
-                    scale: 1, // keeping it reasonable for fast upload
+                    scale: 1,
+                    onclone: (clonedDoc) => {
+                        // html2canvas doesn't support modern CSS color functions like oklch/lab/lch.
+                        // Inject a <style> that overrides ALL CSS custom properties on :root
+                        // that contain unsupported color functions with plain transparent/white fallbacks.
+                        const unsupportedColorRe = /\b(oklch|oklab|lab|lch)\s*\(/;
+                        
+                        // Walk every stylesheet in the cloned doc and rewrite bad custom props
+                        const overrides: string[] = [];
+                        try {
+                            Array.from(clonedDoc.styleSheets).forEach(sheet => {
+                                try {
+                                    Array.from(sheet.cssRules || []).forEach(rule => {
+                                        if (rule instanceof CSSStyleRule && rule.selectorText === ':root') {
+                                            const style = rule.style;
+                                            for (let i = 0; i < style.length; i++) {
+                                                const prop = style[i];
+                                                const val = style.getPropertyValue(prop);
+                                                if (unsupportedColorRe.test(val)) {
+                                                    overrides.push(`${prop}: transparent;`);
+                                                }
+                                            }
+                                        }
+                                    });
+                                } catch { /* cross-origin sheets */ }
+                            });
+                        } catch { /* ignore */ }
+
+                        if (overrides.length > 0) {
+                            const styleEl = clonedDoc.createElement('style');
+                            styleEl.textContent = `:root { ${overrides.join(' ')} }`;
+                            clonedDoc.head.appendChild(styleEl);
+                        }
+                    },
                 });
                 dataUrl = canvasImage.toDataURL('image/jpeg', 0.6);
             } else {
