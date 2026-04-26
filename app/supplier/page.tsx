@@ -186,10 +186,72 @@ export default function SupplierDashboard() {
         return { kind: 'text', index: i, text: obj.text, font: obj.fontFamily || 'sans-serif', size: Math.round(obj.fontSize || 16), color: obj.fill || '#000', bold: obj.fontWeight === 'bold', italic: obj.fontStyle === 'italic' };
       }
       if (obj.type === 'image') {
-        return { kind: 'image', index: i, src: obj.src?.slice(0, 60) + '...', w: Math.round(obj.width * (obj.scaleX||1)), h: Math.round(obj.height * (obj.scaleY||1)) };
+        return { kind: 'image', index: i, src: obj.src, w: Math.round(obj.width * (obj.scaleX||1)), h: Math.round(obj.height * (obj.scaleY||1)) };
       }
       return { kind: 'shape', index: i, type: obj.type, color: obj.fill || obj.stroke || '#000', w: Math.round((obj.width||0) * (obj.scaleX||1)), h: Math.round((obj.height||0) * (obj.scaleY||1)) };
     });
+  };
+
+  // Trigger a browser download from a data URL
+  const downloadFile = (dataUrl: string, filename: string) => {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Download the embedded high-res print file
+  const downloadPrintFile = (order: any) => {
+    const pf = order.design_data?._printFile;
+    if (pf) {
+      downloadFile(pf, `print-file-${order.id.slice(0,8)}.png`);
+    } else {
+      alert('No print file found for this order. Ask the customer to re-save.');
+    }
+  };
+
+  // Download an individual layer as a PNG
+  const downloadLayer = (layer: any, orderDesignData: any, index: number) => {
+    if (layer.kind === 'image') {
+      // The image src is the raw base64 data URL from Fabric
+      const src = orderDesignData?.objects?.[layer.index]?.src || layer.src;
+      if (src) downloadFile(src, `image-layer-${index + 1}.png`);
+      else alert('Image source not found.');
+      return;
+    }
+
+    // For text and shapes: render to a high-DPI canvas
+    const SCALE = 4; // 4x = ~300 DPI equivalent
+    const offscreen = document.createElement('canvas');
+    const ctx = offscreen.getContext('2d')!;
+
+    if (layer.kind === 'text') {
+      const weight  = layer.bold   ? 'bold '   : '';
+      const style   = layer.italic ? 'italic ' : '';
+      const fs      = (layer.size || 16) * SCALE;
+      ctx.font = `${style}${weight}${fs}px ${layer.font}`;
+      const metrics = ctx.measureText(layer.text);
+      const tw = Math.ceil(metrics.width) + 20 * SCALE;
+      const th = Math.ceil(fs * 1.6) + 10 * SCALE;
+      offscreen.width  = tw;
+      offscreen.height = th;
+      ctx.clearRect(0, 0, tw, th);
+      ctx.font = `${style}${weight}${fs}px ${layer.font}`;
+      ctx.fillStyle = layer.color || '#000000';
+      ctx.fillText(layer.text, 10 * SCALE, fs + 5 * SCALE);
+    } else {
+      // Shape: just export a colour swatch at correct proportions
+      const W = Math.max(layer.w * SCALE, 10);
+      const H = Math.max(layer.h * SCALE, 10);
+      offscreen.width  = W;
+      offscreen.height = H;
+      ctx.fillStyle = layer.color || '#000000';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    downloadFile(offscreen.toDataURL('image/png'), `${layer.kind}-layer-${index + 1}.png`);
   };
 
   const handleSignOut = async () => {
@@ -438,16 +500,36 @@ export default function SupplierDashboard() {
                   <h2 className="text-lg font-black text-[#A1FF4D] uppercase tracking-tight">Print Order</h2>
                   <p className="text-[11px] text-gray-400 font-bold mt-0.5">{selectedOrder.product_type} · {selectedOrder.variants?.color} · {selectedOrder.variants?.view}</p>
                 </div>
-                <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white transition-colors">
-                  <XCircle size={26} />
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Download the full high-res design (3× PNG) */}
+                  <button
+                    onClick={() => downloadPrintFile(selectedOrder)}
+                    title="Download high-res print file (PNG)"
+                    className="flex items-center gap-1.5 bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Print File
+                  </button>
+                  <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white transition-colors">
+                    <XCircle size={26} />
+                  </button>
+                </div>
               </div>
 
               <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-                {/* Mockup preview */}
+                {/* Mockup preview + download */}
                 {selectedOrder.mockup_image_url && (
-                  <div className="w-full h-52 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                  <div className="relative w-full h-52 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group">
                     <img src={selectedOrder.mockup_image_url} alt="Mockup" className="w-full h-full object-contain" />
+                    {/* Download Mockup button — bottom-right, visible on hover */}
+                    <button
+                      onClick={() => downloadFile(selectedOrder.mockup_image_url, `mockup-${selectedOrder.id.slice(0,8)}.jpg`)}
+                      title="Download mockup image"
+                      className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#1B2412]/80 hover:bg-[#1B2412] text-white text-[10px] font-black px-3 py-1.5 rounded-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Download Mockup
+                    </button>
                   </div>
                 )}
 
@@ -503,10 +585,20 @@ export default function SupplierDashboard() {
                               </>
                             )}
                           </div>
-                          {/* Color swatch */}
-                          {layer.color && (
-                            <div title={layer.color} className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex-shrink-0" style={{ backgroundColor: layer.color }} />
-                          )}
+                          {/* Color swatch + Download button */}
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            {layer.color && (
+                              <div title={layer.color} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: layer.color }} />
+                            )}
+                            <button
+                              onClick={() => downloadLayer(layer, selectedOrder.design_data, i)}
+                              title="Download this layer as PNG"
+                              className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#1B2412] bg-white border border-gray-200 hover:border-gray-400 px-2 py-1 rounded-lg transition-all active:scale-95"
+                            >
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                              PNG
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

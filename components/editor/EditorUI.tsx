@@ -479,43 +479,40 @@ export default function EditorUI() {
             canvas.discardActiveObject();
             canvas.renderAll();
 
-            // Capture the whole product (SVG mockup + Fabric design layer).
-            // We avoid html2canvas because it crashes on oklch/lab CSS color functions
-            // from Tailwind/shadcn globals. Instead we composite manually:
-            //   1. Serialize the SVG garment (uses only hex fill attributes)
-            //   2. Draw it on an offscreen canvas
-            //   3. Draw the Fabric.js canvas on top
+            // Composite: SVG mockup silhouette + Fabric design layer.
+            // KEY: reference positions from the inner mockup container (always 500×540),
+            // NOT the outer #product-capture-area which can be wider/taller due to flex centering.
+            // This prevents clipping when the page is scrolled or the area is larger.
             let dataUrl = '';
+            let printFileDataUrl = '';
             try {
-                const CANVAS_W = 500;
-                const CANVAS_H = 540;
-
-                const offscreen = document.createElement('canvas');
-                offscreen.width  = CANVAS_W;
-                offscreen.height = CANVAS_H;
-                const ctx = offscreen.getContext('2d')!;
-
-                // White background
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-
-                // Find the mockup container (fixed 500×540 div)
                 const captureArea = document.getElementById('product-capture-area');
-                if (captureArea) {
-                    const captureRect = captureArea.getBoundingClientRect();
+                // The mockup container is always the first child of the capture area (500×540 fixed)
+                const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
 
-                    // Draw every SVG inside the capture area (the garment silhouette)
-                    const svgEls = captureArea.querySelectorAll<SVGSVGElement>('svg');
+                if (mockupContainer) {
+                    const refRect = mockupContainer.getBoundingClientRect();
+                    const W = Math.round(refRect.width);   // should be 500
+                    const H = Math.round(refRect.height);  // should be 540
+
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width  = W;
+                    offscreen.height = H;
+                    const ctx = offscreen.getContext('2d')!;
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, W, H);
+
+                    // 1. Draw every SVG garment silhouette (positions relative to the mockup container)
+                    const svgEls = mockupContainer.querySelectorAll<SVGSVGElement>('svg');
                     for (const svgEl of svgEls) {
                         const r = svgEl.getBoundingClientRect();
-                        const x = r.left - captureRect.left;
-                        const y = r.top  - captureRect.top;
+                        const x = r.left - refRect.left;
+                        const y = r.top  - refRect.top;
                         const w = r.width;
                         const h = r.height;
                         if (w < 1 || h < 1) continue;
 
-                        // Clone and stamp explicit pixel dimensions so the browser
-                        // renders it at the right size when loaded as an <img>
                         const clone = svgEl.cloneNode(true) as SVGSVGElement;
                         clone.setAttribute('width',  String(w));
                         clone.setAttribute('height', String(h));
@@ -532,20 +529,23 @@ export default function EditorUI() {
                         });
                     }
 
-                    // Draw the Fabric.js canvas (the design layer) on top
-                    const fabricCanvas = captureArea.querySelector<HTMLCanvasElement>('canvas');
-                    if (fabricCanvas) {
-                        const fr = fabricCanvas.getBoundingClientRect();
-                        const fx = fr.left - captureRect.left;
-                        const fy = fr.top  - captureRect.top;
-                        ctx.drawImage(fabricCanvas, fx, fy, fr.width, fr.height);
+                    // 2. Draw the Fabric.js canvas on top
+                    const fabricEl = mockupContainer.querySelector<HTMLCanvasElement>('canvas');
+                    if (fabricEl) {
+                        const fr = fabricEl.getBoundingClientRect();
+                        ctx.drawImage(fabricEl, fr.left - refRect.left, fr.top - refRect.top, fr.width, fr.height);
                     }
+
+                    dataUrl = offscreen.toDataURL('image/jpeg', 0.85);
                 }
 
-                dataUrl = offscreen.toDataURL('image/jpeg', 0.8);
+                // High-res print file: design only (no mockup), 3× multiplier for print quality
+                printFileDataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
+
             } catch (compositeErr) {
                 console.warn('Composite capture failed, falling back to canvas only:', compositeErr);
                 dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 1 });
+                printFileDataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
             }
 
             console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
@@ -570,11 +570,11 @@ export default function EditorUI() {
                 customer_id: user.id,
                 product_type: selectedProduct.name,
                 variants: { color: selectedColor, view: selectedView.name },
-                design_data: designData,
+                // Embed the high-res print file inside design_data so the supplier
+                // can download a print-quality PNG without needing a separate storage bucket.
+                design_data: { ...designData, _printFile: printFileDataUrl },
                 mockup_image_url: dataUrl,
                 status: 'PENDING_ADMIN',
-                // If customer clicked from a supplier product card, auto-link that product
-                // so admin can auto-assign the order to that supplier on approval.
                 ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
             });
 
