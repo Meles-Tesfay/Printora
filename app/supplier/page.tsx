@@ -36,6 +36,7 @@ export default function SupplierDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [activeViewIdx, setActiveViewIdx] = useState(0);
   const [proofUrl, setProofUrl] = useState('');
+  const [proofPreview, setProofPreview] = useState('');
   const [fulfillLoading, setFulfillLoading] = useState(false);
 
   // Form state
@@ -165,6 +166,7 @@ export default function SupplierDashboard() {
   const handleFulfill = async () => {
     if (!selectedOrder || !proofUrl.trim()) return;
     setFulfillLoading(true);
+    // proofUrl holds either a base64 data URL (from file upload) or a plain https:// URL
     const { error } = await supabase
       .from("custom_orders")
       .update({ status: "COMPLETED_BY_SUPPLIER", supplier_proof_image_url: proofUrl.trim() })
@@ -174,6 +176,7 @@ export default function SupplierDashboard() {
     else {
       setSelectedOrder(null);
       setProofUrl('');
+      setProofPreview('');
       const { data: { user } } = await supabase.auth.getUser();
       if (user) fetchOrders(user.id);
     }
@@ -479,7 +482,7 @@ export default function SupplierDashboard() {
                         </div>
                       </div>
                       <button
-                        onClick={() => { setSelectedOrder(order); setProofUrl(''); setActiveViewIdx(0); }}
+                        onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }}
                         className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95"
                       >
                         View &amp; Fulfill
@@ -636,15 +639,60 @@ export default function SupplierDashboard() {
                   )}
                 </div>
 
-                {/* Proof URL input */}
-                <div className="pt-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Proof Photo URL (after printing)</label>
+                {/* Proof upload */}
+                <div className="pt-2 space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Proof Photo (after printing)</label>
+
+                  {/* File upload drop zone */}
+                  <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl cursor-pointer transition-all p-4 ${
+                    proofPreview ? 'border-[#A1FF4D] bg-[#A1FF4D]/5' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                  }`}>
+                    {proofPreview ? (
+                      <div className="relative w-full">
+                        <img src={proofPreview} alt="Proof preview" className="w-full max-h-40 object-contain rounded-xl" />
+                        <button
+                          type="button"
+                          onClick={e => { e.preventDefault(); setProofUrl(''); setProofPreview(''); }}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black"
+                        >✕</button>
+                      </div>
+                    ) : (
+                      <>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span className="text-[11px] font-bold text-gray-400">Click to upload a photo</span>
+                        <span className="text-[10px] text-gray-300">JPG, PNG or WEBP</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          const base64 = ev.target?.result as string;
+                          setProofUrl(base64);      // base64 stored in DB
+                          setProofPreview(base64);   // shown as preview
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+
+                  {/* URL fallback */}
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-gray-100" />
+                    <span className="text-[10px] font-bold text-gray-300">or paste URL</span>
+                    <div className="h-px flex-1 bg-gray-100" />
+                  </div>
                   <input
                     type="url"
-                    value={proofUrl}
-                    onChange={e => setProofUrl(e.target.value)}
-                    placeholder="https://... paste a link to the finished product photo"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all"
+                    value={proofPreview ? '' : proofUrl}
+                    onChange={e => { setProofUrl(e.target.value); setProofPreview(''); }}
+                    placeholder="https://..."
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all"
                   />
                 </div>
 

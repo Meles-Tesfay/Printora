@@ -369,9 +369,19 @@ function OrderDetail({ order }: { order: any }) {
                     </div>
 
                     {/* Supplier proof (if completed) */}
-                    {order.status === "COMPLETED_BY_SUPPLIER" && order.supplier_proof_image_url && (
+                    {order.supplier_proof_image_url && (
                         <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                            <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-2">Completion Proof</p>
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Completion Proof</p>
+                                <a
+                                    href={order.supplier_proof_image_url}
+                                    download={`proof-${order.id.slice(0,8)}.jpg`}
+                                    className="flex items-center gap-1 bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:bg-green-700 active:scale-95 transition-all"
+                                >
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Download
+                                </a>
+                            </div>
                             <img src={order.supplier_proof_image_url} className="w-full rounded-xl" alt="Proof" />
                         </div>
                     )}
