@@ -34,6 +34,7 @@ export default function SupplierDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [activeViewIdx, setActiveViewIdx] = useState(0);
   const [proofUrl, setProofUrl] = useState('');
   const [fulfillLoading, setFulfillLoading] = useState(false);
 
@@ -204,9 +205,13 @@ export default function SupplierDashboard() {
 
   // Download the embedded high-res print file
   const downloadPrintFile = (order: any) => {
-    const pf = order.design_data?._printFile;
+    // Prefer the active view's print_file if design_views exists
+    const views: any[] = order.design_views || [];
+    const activeView = views[activeViewIdx];
+    const pf = activeView?.print_file || order.design_data?._printFile;
     if (pf) {
-      downloadFile(pf, `print-file-${order.id.slice(0,8)}.png`);
+      const suffix = activeView ? `-${activeView.viewName.replace(/\s+/g, '-').toLowerCase()}` : '';
+      downloadFile(pf, `print-file${suffix}-${order.id.slice(0, 8)}.png`);
     } else {
       alert('No print file found for this order. Ask the customer to re-save.');
     }
@@ -474,7 +479,7 @@ export default function SupplierDashboard() {
                         </div>
                       </div>
                       <button
-                        onClick={() => { setSelectedOrder(order); setProofUrl(''); }}
+                        onClick={() => { setSelectedOrder(order); setProofUrl(''); setActiveViewIdx(0); }}
                         className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95"
                       >
                         View &amp; Fulfill
@@ -490,7 +495,13 @@ export default function SupplierDashboard() {
 
       {/* ===== ORDER DETAIL + DESIGN EXTRACTION MODAL ===== */}
       {selectedOrder && (() => {
-        const layers = extractLayers(selectedOrder.design_data);
+        const views: any[] = selectedOrder.design_views || [];
+        const hasViews = views.length > 0;
+        // For the layer extractor: use the active view's design if available, else fall back to design_data
+        const activeViewData = hasViews ? views[Math.min(activeViewIdx, views.length - 1)] : null;
+        const activeDesign  = activeViewData?.design || selectedOrder.design_data;
+        const activeMockup  = activeViewData?.mockup_url || selectedOrder.mockup_image_url;
+        const layers = extractLayers(activeDesign);
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl my-4 overflow-hidden">
@@ -517,13 +528,31 @@ export default function SupplierDashboard() {
               </div>
 
               <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                {/* View tabs (shown only when multiple views were designed) */}
+                {hasViews && views.length > 1 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {views.map((v: any, i: number) => (
+                      <button
+                        key={v.viewId}
+                        onClick={() => setActiveViewIdx(i)}
+                        className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all ${
+                          activeViewIdx === i
+                            ? 'bg-[#1B2412] text-[#A1FF4D]'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {v.viewName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Mockup preview + download */}
-                {selectedOrder.mockup_image_url && (
+                {activeMockup && (
                   <div className="relative w-full h-52 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group">
-                    <img src={selectedOrder.mockup_image_url} alt="Mockup" className="w-full h-full object-contain" />
-                    {/* Download Mockup button — bottom-right, visible on hover */}
+                    <img src={activeMockup} alt="Mockup" className="w-full h-full object-contain" />
                     <button
-                      onClick={() => downloadFile(selectedOrder.mockup_image_url, `mockup-${selectedOrder.id.slice(0,8)}.jpg`)}
+                      onClick={() => downloadFile(activeMockup, `mockup-${activeViewData?.viewName || 'front'}-${selectedOrder.id.slice(0,8)}.jpg`)}
                       title="Download mockup image"
                       className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#1B2412]/80 hover:bg-[#1B2412] text-white text-[10px] font-black px-3 py-1.5 rounded-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100"
                     >
@@ -544,9 +573,11 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
 
-                {/* Design layers — Printify-style extraction */}
+                {/* Design layers for the active view */}
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Design Layers ({layers.length})</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                    Design Layers — {activeViewData?.viewName || 'Front'} ({layers.length})
+                  </p>
                   {layers.length === 0 ? (
                     <p className="text-xs text-gray-400 italic">No design elements found.</p>
                   ) : (
@@ -591,7 +622,7 @@ export default function SupplierDashboard() {
                               <div title={layer.color} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: layer.color }} />
                             )}
                             <button
-                              onClick={() => downloadLayer(layer, selectedOrder.design_data, i)}
+                              onClick={() => downloadLayer(layer, activeDesign, i)}
                               title="Download this layer as PNG"
                               className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#1B2412] bg-white border border-gray-200 hover:border-gray-400 px-2 py-1 rounded-lg transition-all active:scale-95"
                             >
