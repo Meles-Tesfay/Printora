@@ -33,6 +33,9 @@ export default function SupplierDashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [proofUrl, setProofUrl] = useState('');
+  const [fulfillLoading, setFulfillLoading] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -158,18 +161,35 @@ export default function SupplierDashboard() {
     setFormLoading(false);
   };
 
-  const handleFulfill = async (orderId: string) => {
-    const proofUrl = prompt("Enter the URL of a photo showing the completed product:");
-    if (!proofUrl) return;
+  const handleFulfill = async () => {
+    if (!selectedOrder || !proofUrl.trim()) return;
+    setFulfillLoading(true);
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "COMPLETED_BY_SUPPLIER", supplier_proof_image_url: proofUrl })
-      .eq("id", orderId);
+      .update({ status: "COMPLETED_BY_SUPPLIER", supplier_proof_image_url: proofUrl.trim() })
+      .eq("id", selectedOrder.id);
+    setFulfillLoading(false);
     if (error) alert("Error: " + error.message);
     else {
+      setSelectedOrder(null);
+      setProofUrl('');
       const { data: { user } } = await supabase.auth.getUser();
       if (user) fetchOrders(user.id);
     }
+  };
+
+  // Extract design layers from Fabric.js design_data JSON (like Printify)
+  const extractLayers = (designData: any) => {
+    if (!designData?.objects) return [];
+    return designData.objects.map((obj: any, i: number) => {
+      if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+        return { kind: 'text', index: i, text: obj.text, font: obj.fontFamily || 'sans-serif', size: Math.round(obj.fontSize || 16), color: obj.fill || '#000', bold: obj.fontWeight === 'bold', italic: obj.fontStyle === 'italic' };
+      }
+      if (obj.type === 'image') {
+        return { kind: 'image', index: i, src: obj.src?.slice(0, 60) + '...', w: Math.round(obj.width * (obj.scaleX||1)), h: Math.round(obj.height * (obj.scaleY||1)) };
+      }
+      return { kind: 'shape', index: i, type: obj.type, color: obj.fill || obj.stroke || '#000', w: Math.round((obj.width||0) * (obj.scaleX||1)), h: Math.round((obj.height||0) * (obj.scaleY||1)) };
+    });
   };
 
   const handleSignOut = async () => {
@@ -392,10 +412,10 @@ export default function SupplierDashboard() {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleFulfill(order.id)}
+                        onClick={() => { setSelectedOrder(order); setProofUrl(''); }}
                         className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95"
                       >
-                        Mark as Fulfilled
+                        View &amp; Fulfill
                       </button>
                     </div>
                   </CardContent>
@@ -405,6 +425,125 @@ export default function SupplierDashboard() {
           )}
         </div>
       </main>
+
+      {/* ===== ORDER DETAIL + DESIGN EXTRACTION MODAL ===== */}
+      {selectedOrder && (() => {
+        const layers = extractLayers(selectedOrder.design_data);
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl my-4 overflow-hidden">
+              {/* Header */}
+              <div className="px-7 py-5 border-b border-gray-100 flex items-center justify-between bg-[#1B2412]">
+                <div>
+                  <h2 className="text-lg font-black text-[#A1FF4D] uppercase tracking-tight">Print Order</h2>
+                  <p className="text-[11px] text-gray-400 font-bold mt-0.5">{selectedOrder.product_type} · {selectedOrder.variants?.color} · {selectedOrder.variants?.view}</p>
+                </div>
+                <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white transition-colors">
+                  <XCircle size={26} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                {/* Mockup preview */}
+                {selectedOrder.mockup_image_url && (
+                  <div className="w-full h-52 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                    <img src={selectedOrder.mockup_image_url} alt="Mockup" className="w-full h-full object-contain" />
+                  </div>
+                )}
+
+                {/* Customer info */}
+                <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-sm flex-shrink-0">
+                    {(selectedOrder.customer?.full_name || selectedOrder.customer?.email || 'C')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black text-gray-800">{selectedOrder.customer?.full_name || 'Customer'}</p>
+                    <p className="text-[10px] text-gray-400 font-bold">{selectedOrder.customer?.email}</p>
+                  </div>
+                </div>
+
+                {/* Design layers — Printify-style extraction */}
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Design Layers ({layers.length})</p>
+                  {layers.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic">No design elements found.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {layers.map((layer: any, i: number) => (
+                        <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          {/* Icon */}
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-black ${
+                            layer.kind === 'text'  ? 'bg-blue-500'   :
+                            layer.kind === 'image' ? 'bg-purple-500' : 'bg-orange-400'
+                          }`}>
+                            {layer.kind === 'text' ? 'T' : layer.kind === 'image' ? '🖼' : '◼'}
+                          </div>
+                          {/* Details */}
+                          <div className="flex-1 min-w-0">
+                            {layer.kind === 'text' && (
+                              <>
+                                <p className="text-sm font-black text-gray-800 truncate">&ldquo;{layer.text}&rdquo;</p>
+                                <p className="text-[10px] text-gray-400 font-bold mt-0.5">
+                                  {layer.font} · {layer.size}px
+                                  {layer.bold ? ' · Bold' : ''}
+                                  {layer.italic ? ' · Italic' : ''}
+                                </p>
+                              </>
+                            )}
+                            {layer.kind === 'image' && (
+                              <>
+                                <p className="text-sm font-black text-gray-800">Image</p>
+                                <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
+                              </>
+                            )}
+                            {layer.kind === 'shape' && (
+                              <>
+                                <p className="text-sm font-black text-gray-800 capitalize">{layer.type}</p>
+                                <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
+                              </>
+                            )}
+                          </div>
+                          {/* Color swatch */}
+                          {layer.color && (
+                            <div title={layer.color} className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex-shrink-0" style={{ backgroundColor: layer.color }} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Proof URL input */}
+                <div className="pt-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Proof Photo URL (after printing)</label>
+                  <input
+                    type="url"
+                    value={proofUrl}
+                    onChange={e => setProofUrl(e.target.value)}
+                    placeholder="https://... paste a link to the finished product photo"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button onClick={() => setSelectedOrder(null)} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFulfill}
+                    disabled={fulfillLoading || !proofUrl.trim()}
+                    className="flex-1 bg-[#A1FF4D] text-[#1B2412] py-3.5 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {fulfillLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                    {fulfillLoading ? 'Saving...' : 'Mark as Fulfilled'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Add Product Modal */}
       {showForm && (

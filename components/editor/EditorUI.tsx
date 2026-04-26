@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import html2canvas from 'html2canvas';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
 import { useEditorCanvas } from '@/hooks/useEditorCanvas';
 import { useSearchParams } from 'next/navigation';
@@ -433,6 +432,7 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
+    const supplierProductId   = searchParams.get('supplier_product_id'); // null if customer typed the URL directly
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
@@ -479,51 +479,73 @@ export default function EditorUI() {
             canvas.discardActiveObject();
             canvas.renderAll();
 
-            // Capture the whole product div (t-shirt silhouette + design layer)
-            const captureArea = document.getElementById('product-capture-area');
+            // Capture the whole product (SVG mockup + Fabric design layer).
+            // We avoid html2canvas because it crashes on oklch/lab CSS color functions
+            // from Tailwind/shadcn globals. Instead we composite manually:
+            //   1. Serialize the SVG garment (uses only hex fill attributes)
+            //   2. Draw it on an offscreen canvas
+            //   3. Draw the Fabric.js canvas on top
             let dataUrl = '';
-            if (captureArea) {
-                const canvasImage = await html2canvas(captureArea, {
-                    backgroundColor: null,
-                    scale: 1,
-                    onclone: (clonedDoc) => {
-                        // html2canvas doesn't support modern CSS color functions like oklch/lab/lch.
-                        // Inject a <style> that overrides ALL CSS custom properties on :root
-                        // that contain unsupported color functions with plain transparent/white fallbacks.
-                        const unsupportedColorRe = /\b(oklch|oklab|lab|lch)\s*\(/;
-                        
-                        // Walk every stylesheet in the cloned doc and rewrite bad custom props
-                        const overrides: string[] = [];
-                        try {
-                            Array.from(clonedDoc.styleSheets).forEach(sheet => {
-                                try {
-                                    Array.from(sheet.cssRules || []).forEach(rule => {
-                                        if (rule instanceof CSSStyleRule && rule.selectorText === ':root') {
-                                            const style = rule.style;
-                                            for (let i = 0; i < style.length; i++) {
-                                                const prop = style[i];
-                                                const val = style.getPropertyValue(prop);
-                                                if (unsupportedColorRe.test(val)) {
-                                                    overrides.push(`${prop}: transparent;`);
-                                                }
-                                            }
-                                        }
-                                    });
-                                } catch { /* cross-origin sheets */ }
-                            });
-                        } catch { /* ignore */ }
+            try {
+                const CANVAS_W = 500;
+                const CANVAS_H = 540;
 
-                        if (overrides.length > 0) {
-                            const styleEl = clonedDoc.createElement('style');
-                            styleEl.textContent = `:root { ${overrides.join(' ')} }`;
-                            clonedDoc.head.appendChild(styleEl);
-                        }
-                    },
-                });
-                dataUrl = canvasImage.toDataURL('image/jpeg', 0.6);
-            } else {
-                // Fallback to old behavior if div not found for some reason
-                dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.5, multiplier: 0.5 });
+                const offscreen = document.createElement('canvas');
+                offscreen.width  = CANVAS_W;
+                offscreen.height = CANVAS_H;
+                const ctx = offscreen.getContext('2d')!;
+
+                // White background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+                // Find the mockup container (fixed 500×540 div)
+                const captureArea = document.getElementById('product-capture-area');
+                if (captureArea) {
+                    const captureRect = captureArea.getBoundingClientRect();
+
+                    // Draw every SVG inside the capture area (the garment silhouette)
+                    const svgEls = captureArea.querySelectorAll<SVGSVGElement>('svg');
+                    for (const svgEl of svgEls) {
+                        const r = svgEl.getBoundingClientRect();
+                        const x = r.left - captureRect.left;
+                        const y = r.top  - captureRect.top;
+                        const w = r.width;
+                        const h = r.height;
+                        if (w < 1 || h < 1) continue;
+
+                        // Clone and stamp explicit pixel dimensions so the browser
+                        // renders it at the right size when loaded as an <img>
+                        const clone = svgEl.cloneNode(true) as SVGSVGElement;
+                        clone.setAttribute('width',  String(w));
+                        clone.setAttribute('height', String(h));
+
+                        const xml  = new XMLSerializer().serializeToString(clone);
+                        const blob = new Blob([xml], { type: 'image/svg+xml' });
+                        const url  = URL.createObjectURL(blob);
+
+                        await new Promise<void>(resolve => {
+                            const img = new Image();
+                            img.onload  = () => { ctx.drawImage(img, x, y, w, h); URL.revokeObjectURL(url); resolve(); };
+                            img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                            img.src = url;
+                        });
+                    }
+
+                    // Draw the Fabric.js canvas (the design layer) on top
+                    const fabricCanvas = captureArea.querySelector<HTMLCanvasElement>('canvas');
+                    if (fabricCanvas) {
+                        const fr = fabricCanvas.getBoundingClientRect();
+                        const fx = fr.left - captureRect.left;
+                        const fy = fr.top  - captureRect.top;
+                        ctx.drawImage(fabricCanvas, fx, fy, fr.width, fr.height);
+                    }
+                }
+
+                dataUrl = offscreen.toDataURL('image/jpeg', 0.8);
+            } catch (compositeErr) {
+                console.warn('Composite capture failed, falling back to canvas only:', compositeErr);
+                dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 1 });
             }
 
             console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
@@ -543,14 +565,17 @@ export default function EditorUI() {
                 return;
             }
 
-            // Insert into the new custom_orders table
+            // Insert into custom_orders, linking back to the supplier product
             const { error } = await supabase.from('custom_orders').insert({
-                customer_id: user.id, // Now guaranteed to be the actual logged-in customer's ID
+                customer_id: user.id,
                 product_type: selectedProduct.name,
                 variants: { color: selectedColor, view: selectedView.name },
-                design_data: designData, // Actual canvas state
-                mockup_image_url: dataUrl, // Snapshot image 
-                status: 'PENDING_ADMIN'
+                design_data: designData,
+                mockup_image_url: dataUrl,
+                status: 'PENDING_ADMIN',
+                // If customer clicked from a supplier product card, auto-link that product
+                // so admin can auto-assign the order to that supplier on approval.
+                ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
             });
 
             if (error) {

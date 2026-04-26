@@ -835,39 +835,46 @@ export default function Home() {
 
         {/* ====== SUPPLIER PRODUCTS CATALOG SECTION ====== */}
         {supplierProducts.length > 0 && (
-          <section className="bg-[#fafafa] py-16 px-6 lg:px-16">
+          <section className="bg-[#fafafa] py-16 px-6 lg:px-16" id="catalog">
             <div className="max-w-[1400px] mx-auto">
               {/* Header */}
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                 <div>
                   <p className="text-[12px] font-black uppercase tracking-[0.15em] text-[#A1FF4D] mb-2">Verified Suppliers</p>
                   <h2 className="text-[36px] md:text-[48px] font-black text-[#111] leading-tight tracking-tight">
-                    Browse Supplier Products
+                    Browse &amp; Customize Products
                   </h2>
-                  <p className="text-gray-500 font-medium text-sm mt-2">Pick a product from one of our verified suppliers, then design it yourself.</p>
+                  <p className="text-gray-500 font-medium text-sm mt-2">Pick a product, design it in our editor — your order goes straight to the supplier.</p>
                 </div>
               </div>
 
               {/* Product Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {supplierProducts.map((product) => (
+                {supplierProducts.map((product) => {
+                  // Map supplier product_type → editor template id (Printify-style routing)
+                  const templateId =
+                    product.product_type === 'Hoodie'  ? 'premium-hoodie'   :
+                    product.product_type === 'Sweater' ? 'crewneck-sweater' :
+                    product.product_type === 'Hat'     ? 'classic-cap'      :
+                    'classic-tshirt'; // T-Shirt + all others
+                  const editorUrl = `/editor?template=${templateId}&supplier_product_id=${product.id}`;
+                  return (
                   <div key={product.id} className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                     {/* Image */}
                     <div className="h-52 bg-gray-50 overflow-hidden relative">
                       {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-200">
                           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
                         </div>
                       )}
-                      {/* Tags */}
-                      <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
-                        {(product.tags || []).slice(0, 2).map((tag: string) => (
+                      {/* Product type + tags */}
+                      <div className="absolute top-3 left-3">
+                        <span className="bg-[#111]/80 backdrop-blur-sm text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">{product.product_type}</span>
+                      </div>
+                      <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+                        {(product.tags || []).slice(0, 1).map((tag: string) => (
                           <span key={tag} className="bg-white/90 backdrop-blur-sm text-[#111] text-[9px] font-black px-2 py-1 rounded-full shadow-sm uppercase tracking-wide">{tag}</span>
                         ))}
                       </div>
@@ -890,12 +897,7 @@ export default function Home() {
                       {product.available_colors?.length > 0 && (
                         <div className="flex gap-1.5 mb-4 flex-wrap">
                           {product.available_colors.slice(0, 8).map((c: any) => (
-                            <div
-                              key={c.hex}
-                              title={c.name}
-                              className="w-4 h-4 rounded-full border-2 border-white shadow-sm cursor-pointer hover:scale-125 transition-transform"
-                              style={{ backgroundColor: c.hex }}
-                            />
+                            <div key={c.hex} title={c.name} className="w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
                           ))}
                           {product.available_colors.length > 8 && (
                             <span className="text-[9px] font-bold text-gray-400">+{product.available_colors.length - 8}</span>
@@ -904,20 +906,19 @@ export default function Home() {
                       )}
 
                       <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{product.product_type}</span>
-                          <p className="text-lg font-black text-[#111]">${product.price}</p>
-                        </div>
+                        <p className="text-lg font-black text-[#111]">${product.price}</p>
                         <Link
-                          href="/editor"
-                          className="bg-[#111] text-white px-4 py-2.5 rounded-xl font-black text-xs hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-95"
+                          href={editorUrl}
+                          className="bg-[#111] text-white px-4 py-2.5 rounded-xl font-black text-xs hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-95 flex items-center gap-1"
                         >
-                          Design →
+                          Customize
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                         </Link>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </section>
