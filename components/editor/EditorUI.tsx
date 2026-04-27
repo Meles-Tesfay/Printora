@@ -509,6 +509,12 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
         { id: 'triangle', svg: <polygon points="50,15 90,85 10,85" fill="#64645A" /> },
         { id: 'circle', svg: <circle cx="50" cy="50" r="40" fill="#64645A" /> },
         { id: 'square', svg: <rect x="15" y="15" width="70" height="70" fill="#64645A" /> },
+        { id: 'hexagon', svg: <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="#64645A" /> },
+        { id: 'pentagon', svg: <polygon points="50,10 90,40 75,90 25,90 10,40" fill="#64645A" /> },
+        { id: 'diamond', svg: <polygon points="50,10 90,50 50,90 10,50" fill="#64645A" /> },
+        { id: 'arrow', svg: <path d="M10,40 L70,40 L70,20 L90,50 L70,80 L70,60 L10,60 Z" fill="#64645A" /> },
+        { id: 'cross', svg: <path d="M35,10 L65,10 L65,35 L90,35 L90,65 L65,65 L65,90 L35,90 L35,65 L10,65 L10,35 L35,35 Z" fill="#64645A" /> },
+        { id: 'badge', svg: <path d="M50,10 L80,20 L90,50 L80,80 L50,90 L20,80 L10,50 L20,20 Z" fill="#64645A" /> },
     ];
 
     return (
@@ -603,7 +609,7 @@ export default function EditorUI() {
 
     const printArea = selectedView.printAreas[0];
 
-    const { canvasRef, canvas, addText, addCurvedText, addImage, updateActiveObject } = useEditorCanvas({
+    const { canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject } = useEditorCanvas({
         printArea,
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
@@ -1032,18 +1038,21 @@ export default function EditorUI() {
                                         <span className="text-[13px] font-bold w-8 text-center">{Math.round(activeObject.fontSize || 32)}</span>
                                         <button onClick={() => updateActiveObject({ fontSize: (activeObject.fontSize || 32) + 2 })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Plus className="w-4 h-4" /></button>
                                     </div>
-                                    {/* Color Picker */}
-                                    <div className="flex items-center gap-2 border-r border-gray-200 pr-3 mr-1">
-                                        <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform focus-within:ring-2 focus-within:ring-gray-900 focus-within:ring-offset-1" style={{ backgroundColor: activeObject.fill as string || '#000000' }} title="Text color">
-                                            <input 
-                                                type="color" 
-                                                value={activeObject.fill as string || '#000000'}
-                                                onChange={(e) => updateActiveObject({ fill: e.target.value })}
-                                                className="opacity-0 w-full h-full cursor-pointer"
-                                            />
-                                        </label>
-                                    </div>
                                 </>
+                            )}
+                            
+                            {/* Color Picker (for everything except images) */}
+                            {activeObject.type !== 'image' && (
+                                <div className="flex items-center gap-2 border-r border-gray-200 pr-3 mr-1">
+                                    <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform focus-within:ring-2 focus-within:ring-gray-900 focus-within:ring-offset-1" style={{ backgroundColor: (activeObject.fill || activeObject.stroke) as string || '#000000' }} title="Color">
+                                        <input 
+                                            type="color" 
+                                            value={(activeObject.fill || activeObject.stroke) as string || '#000000'}
+                                            onChange={(e) => updateActiveObject(activeObject.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
+                                            className="opacity-0 w-full h-full cursor-pointer"
+                                        />
+                                    </label>
+                                </div>
                             )}
                             {/* Layer actions and Delete were moved to Fabric object controls directly */}
                         </div>
