@@ -24,10 +24,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'front-center',
-                        width: 210,
-                        height: 248,
-                        left: 145,
-                        top: 200
+                        width: 240,
+                        height: 280,
+                        left: 130,
+                        top: 120
                     }
                 ]
             },
@@ -52,10 +52,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'left-sleeve',
-                        width: 60,
-                        height: 140,
-                        left: 220,
-                        top: 160
+                        width: 265,
+                        height: 350,
+                        left: 117,
+                        top: 110
                     }
                 ]
             },
@@ -66,10 +66,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'right-sleeve',
-                        width: 60,
-                        height: 140,
-                        left: 220,
-                        top: 160
+                        width: 265,
+                        height: 365,
+                        left: 117,
+                        top: 110
                     }
                 ]
             },
@@ -111,10 +111,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'front-center',
-                        width: 250,
-                        height: 285,
-                        left: 125,
-                        top: 144
+                        width: 210,
+                        height: 155,
+                        left: 146,
+                        top: 150
                     }
                 ]
             },
@@ -125,10 +125,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'back-center',
-                        width: 276,
-                        height: 391,
-                        left: 112,
-                        top: 132
+                        width: 200,
+                        height: 250,
+                        left: 148,
+                        top: 152
                     }
                 ]
             },
@@ -139,10 +139,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'left-sleeve',
-                        width: 80,
-                        height: 200,
+                        width: 100,
+                        height: 155,
                         left: 210,
-                        top: 200
+                        top: 110
                     }
                 ]
             },
@@ -153,10 +153,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'right-sleeve',
-                        width: 80,
-                        height: 200,
-                        left: 210,
-                        top: 200
+                        width: 100,
+                        height: 155,
+                        left: 193,
+                        top: 100
                     }
                 ]
             }
@@ -184,10 +184,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'front-center',
-                        width: 160,
-                        height: 200,
-                        left: 170,
-                        top: 150
+                        width: 200,
+                        height: 265,
+                        left: 150,
+                        top: 115
                     }
                 ]
             },
@@ -198,10 +198,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'back-center',
-                        width: 160,
-                        height: 200,
-                        left: 170,
-                        top: 120
+                        width: 200,
+                        height: 265,
+                        left: 150,
+                        top: 115
                     }
                 ]
             },
@@ -212,10 +212,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'left-sleeve',
-                        width: 60,
-                        height: 150,
-                        left: 220,
-                        top: 130
+                        width: 100,
+                        height: 155,
+                        left: 200,
+                        top: 100
                     }
                 ]
             },
@@ -226,10 +226,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'right-sleeve',
-                        width: 60,
-                        height: 150,
-                        left: 220,
-                        top: 130
+                        width: 100,
+                        height: 155,
+                        left: 198,
+                        top: 100
                     }
                 ]
             }
@@ -258,52 +258,10 @@ export const PRODUCT_TEMPLATES: ProductTemplate[] = [
                 printAreas: [
                     {
                         id: 'front-center',
-                        width: 200,
-                        height: 180,
-                        left: 150,
-                        top: 140
-                    }
-                ]
-            },
-            {
-                id: 'back',
-                name: 'Back',
-                mockupUrl: '',
-                printAreas: [
-                    {
-                        id: 'back-center',
-                        width: 200,
-                        height: 200,
-                        left: 150,
-                        top: 150
-                    }
-                ]
-            },
-            {
-                id: 'left-side',
-                name: 'Left side',
-                mockupUrl: '',
-                printAreas: [
-                    {
-                        id: 'left-side-area',
-                        width: 100,
-                        height: 100,
-                        left: 210,
-                        top: 160
-                    }
-                ]
-            },
-            {
-                id: 'right-side',
-                name: 'Right side',
-                mockupUrl: '',
-                printAreas: [
-                    {
-                        id: 'right-side-area',
-                        width: 100,
-                        height: 100,
-                        left: 210,
-                        top: 160
+                        width: 270,
+                        height: 140,
+                        left: 105,
+                        top: 165
                     }
                 ]
             }

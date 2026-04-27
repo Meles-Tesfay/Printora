@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
 import { useEditorCanvas } from '@/hooks/useEditorCanvas';
 import { useSearchParams } from 'next/navigation';
@@ -9,93 +10,690 @@ import HoodieMockup from './HoodieMockup';
 import SweaterMockup from './SweaterMockup';
 import HatMockup from './HatMockup';
 import {
-    Image as ImageIcon,
     Type,
-    Trash2,
-    BringToFront,
-    SendToBack,
-    Download,
-    Layers,
-    Palette,
-    ChevronLeft,
+    UploadCloud,
+    Folder,
+    Shapes,
+    LayoutTemplate,
+    HelpCircle,
+    Undo2,
+    Redo2,
+    ArrowLeft,
+    Hand,
+    X,
+    Minus,
+    Plus,
+    Wand2,
+    Search,
     ChevronRight,
-    Bold,
-    Italic,
-    ShoppingCart,
-    Sparkles,
-    Move,
-    ZoomIn,
-    RotateCcw
 } from 'lucide-react';
 import { ProductTemplate, ProductView, CanvasDesignState } from '@/types/editor';
+import { supabase } from '@/lib/supabase';
 
+/* ─── Font catalogue ─────────────────────────────────────────────────────── */
+const FONTS = [
+    { name: 'ABeeZee', category: 'Display', style: 'sans-serif' },
+    { name: 'Abel', category: 'Display', style: 'sans-serif' },
+    { name: 'Abhaya Libre', category: 'Display', style: 'serif' },
+    { name: 'Aboreto', category: 'Display', style: 'sans-serif', caps: true },
+    { name: 'Abril Fatface', category: 'Display', style: 'serif', weight: '900' },
+    { name: 'Acme', category: 'Display', style: 'sans-serif' },
+    { name: 'Alegreya', category: 'Display', style: 'serif' },
+    { name: 'Alfa Slab One', category: 'Display', style: 'serif', weight: '900' },
+    { name: 'Dancing Script', category: 'Handwriting', style: 'cursive', weight: '700' },
+    { name: 'Caveat', category: 'Handwriting', style: 'cursive' },
+    { name: 'Satisfy', category: 'Handwriting', style: 'cursive' },
+    { name: 'Sacramento', category: 'Handwriting', style: 'cursive' },
+    { name: 'Kalam', category: 'Handwriting', style: 'cursive' },
+    { name: 'Pacifico', category: 'Handwriting', style: 'cursive' },
+    { name: 'Kaushan Script', category: 'Handwriting', style: 'cursive' },
+    { name: 'Space Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'Courier Prime', category: 'Monospace', style: 'monospace' },
+    { name: 'Roboto Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'IBM Plex Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'Source Code Pro', category: 'Monospace', style: 'monospace' },
+    { name: 'Share Tech Mono', category: 'Monospace', style: 'monospace' },
+];
+
+/* ─── Google-Fonts loader ────────────────────────────────────────────────── */
+const GFONTS_URL =
+    'https://fonts.googleapis.com/css2?family=ABeeZee&family=Abel&family=Abhaya+Libre&family=Aboreto&family=Abril+Fatface&family=Acme&family=Alegreya&family=Alfa+Slab+One&family=Dancing+Script:wght@700&family=Caveat&family=Satisfy&family=Sacramento&family=Kalam&family=Pacifico&family=Kaushan+Script&family=Space+Mono&family=Courier+Prime&family=Roboto+Mono&family=IBM+Plex+Mono&family=Source+Code+Pro&family=Share+Tech+Mono&display=swap';
+
+/* ─── Curved-text preview SVGs ──────────────────────────────────────────── */
+function CurvedPreview1() {
+    return (
+        <svg viewBox="0 0 90 90" className="w-full h-full">
+            <path id="cp1a" d="M12,55 A34,34 0 0,1 78,55" fill="none" />
+            <path id="cp1b" d="M18,63 A28,28 0 0,0 72,63" fill="none" />
+            <text fontSize="9" fontFamily="Georgia,serif" fill="#1a1a1a">
+                <textPath href="#cp1a" startOffset="4%">art lover boutique</textPath>
+            </text>
+            <text fontSize="6.5" fontFamily="Georgia,serif" fill="#666" letterSpacing="0.5">
+                <textPath href="#cp1b" startOffset="2%">PRINTS MADE WITH LOVE</textPath>
+            </text>
+        </svg>
+    );
+}
+function CurvedPreview2() {
+    return (
+        <svg viewBox="0 0 90 90" className="w-full h-full">
+            <path id="cp2" d="M6,56 A40,40 0 0,1 84,56" fill="none" />
+            <text fontSize="15" fontWeight="900" fontFamily="Impact,sans-serif" fill="#1a1a1a">
+                <textPath href="#cp2" startOffset="4%">NEW DAY</textPath>
+            </text>
+            <text x="50%" y="72" textAnchor="middle" fontSize="6.5" fontFamily="sans-serif" fill="#555" letterSpacing="1">IT&apos;S A</text>
+            <text x="50%" y="82" textAnchor="middle" fontSize="7" fontFamily="sans-serif" fill="#555">RISE N&apos; SHINE</text>
+        </svg>
+    );
+}
+function CurvedPreview3() {
+    return (
+        <svg viewBox="0 0 90 90" className="w-full h-full">
+            <circle cx="45" cy="45" r="32" fill="none" stroke="#1a1a1a" strokeWidth="1" />
+            <path id="cp3t" d="M13,45 a32,32 0 1,1 64,0" fill="none" />
+            <path id="cp3b" d="M13,45 a32,32 0 0,0 64,0" fill="none" />
+            <text fontSize="18" fontWeight="900" fontFamily="Impact,sans-serif" fill="#1a1a1a">
+                <textPath href="#cp3t" startOffset="28%">WYZ</textPath>
+            </text>
+            <text fontSize="5.5" fontFamily="sans-serif" fill="#555" letterSpacing="1.8">
+                <textPath href="#cp3b" startOffset="1%">SHIPPING GLOBALLY · DESIGNED LOCALLY ·</textPath>
+            </text>
+        </svg>
+    );
+}
+
+/* ─── Text Panel ────────────────────────────────────────────────────────── */
+function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (font?: string) => void }) {
+    const [search, setSearch] = useState('');
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+    useEffect(() => {
+        const existing = document.getElementById('gfonts-printora');
+        if (existing) return;
+        const link = document.createElement('link');
+        link.id = 'gfonts-printora';
+        link.rel = 'stylesheet';
+        link.href = GFONTS_URL;
+        document.head.appendChild(link);
+    }, []);
+
+    const filtered = FONTS.filter(f => {
+        const matchSearch = f.name.toLowerCase().includes(search.toLowerCase());
+        const matchCat = !activeCategory || f.category === activeCategory;
+        return matchSearch && matchCat;
+    });
+
+    return (
+        <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">Add text</h2>
+                <button
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin">
+
+                {/* Search */}
+                <div className="px-4 pt-4 pb-1">
+                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-gray-400 transition-colors">
+                        <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <input
+                            type="text"
+                            placeholder="Search fonts…"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="bg-transparent text-[13px] text-gray-700 placeholder-gray-400 outline-none w-full"
+                        />
+                    </div>
+                </div>
+
+                {/* ── Curved Text ── */}
+                <section className="px-4 pt-5 pb-2">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-bold text-gray-800">Curved Text</span>
+                            <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Editable</span>
+                        </div>
+                        <button className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+                            <Plus className="w-3 h-3" /> Show more
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[<CurvedPreview1 key="1" />, <CurvedPreview2 key="2" />, <CurvedPreview3 key="3" />].map((Preview, i) => (
+                            <button
+                                key={i}
+                                onClick={() => onAddText()}
+                                className="aspect-square bg-[#f8f8f6] rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden flex items-center justify-center p-2"
+                            >
+                                {Preview}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                {/* ── My Fonts ── */}
+                <section className="px-4 pt-5 pb-2">
+                    <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[13px] font-bold text-gray-800">My fonts</span>
+                        <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">New</span>
+                    </div>
+                    <button className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-3 text-[13px] text-gray-500 hover:border-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all font-medium">
+                        <UploadCloud className="w-4 h-4" />
+                        Upload font
+                    </button>
+                </section>
+
+                {/* ── Discover Fonts ── */}
+                <section className="px-4 pt-5 pb-6">
+                    <span className="text-[13px] font-bold text-gray-800 block mb-3">Discover fonts</span>
+
+                    {/* Category pills */}
+                    <div className="flex gap-2 mb-4">
+                        {['Display', 'Handwriting', 'Monospace'].map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                                className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${activeCategory === cat
+                                    ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Font list */}
+                    <div className="flex flex-col">
+                        {filtered.map(font => (
+                            <button
+                                key={font.name}
+                                onClick={() => onAddText(font.name)}
+                                className="text-left py-3 px-2 rounded-lg hover:bg-gray-50 transition-colors group flex items-center justify-between"
+                            >
+                                <span
+                                    style={{
+                                        fontFamily: `'${font.name}', ${font.style || 'sans-serif'}`,
+                                        fontWeight: font.weight || 'normal',
+                                        textTransform: font.caps ? 'uppercase' : 'none',
+                                    }}
+                                    className="text-[15px] text-gray-800 group-hover:text-gray-900"
+                                >
+                                    {font.name}
+                                </span>
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" />
+                            </button>
+                        ))}
+                        {filtered.length === 0 && (
+                            <p className="text-[13px] text-gray-400 text-center py-6">No fonts match &ldquo;{search}&rdquo;</p>
+                        )}
+                    </div>
+                </section>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Library Panel ──────────────────────────────────────────────────────── */
+function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage: (src: string) => void }) {
+    const [search, setSearch] = useState('');
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+    return (
+        <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">My library</h2>
+                <button
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Search */}
+            <div className="px-4 pt-4 pb-3">
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-gray-400 transition-colors">
+                    <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <input
+                        type="text"
+                        placeholder="Search library"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="bg-transparent text-[13px] text-gray-700 placeholder-gray-400 outline-none w-full"
+                    />
+                </div>
+            </div>
+
+            {/* Sort + View toggle */}
+            <div className="px-4 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-gray-300 transition-colors">
+                    <span className="text-[12px] font-medium text-gray-700">Recently added</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 rotate-90" />
+                </div>
+                <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`w-8 h-8 flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                            }`}
+                    >
+                        {/* Grid icon */}
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="1" y="1" width="6" height="6" rx="1" />
+                            <rect x="9" y="1" width="6" height="6" rx="1" />
+                            <rect x="1" y="9" width="6" height="6" rx="1" />
+                            <rect x="9" y="9" width="6" height="6" rx="1" />
+                        </svg>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`w-8 h-8 flex items-center justify-center border-l border-gray-200 transition-colors ${viewMode === 'list' ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+                            }`}
+                    >
+                        {/* List icon */}
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="1" y="2" width="14" height="2" rx="1" />
+                            <rect x="1" y="7" width="14" height="2" rx="1" />
+                            <rect x="1" y="12" width="14" height="2" rx="1" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {/* Empty state */}
+            <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
+                {/* Illustration */}
+                <div className="relative w-32 h-32 mb-6">
+                    <svg viewBox="0 0 130 130" className="w-full h-full" fill="none">
+                        {/* Background scattered papers */}
+                        <rect x="10" y="40" width="45" height="55" rx="4" fill="#e5e7eb" transform="rotate(-15 10 40)" />
+                        <rect x="75" y="35" width="45" height="55" rx="4" fill="#e5e7eb" transform="rotate(12 75 35)" />
+                        {/* Main paper */}
+                        <rect x="32" y="26" width="66" height="80" rx="5" fill="white" stroke="#d1d5db" strokeWidth="1.5" />
+                        {/* Green arrow/star shapes on top paper */}
+                        <polygon points="58,44 66,56 74,44 70,44 70,36 62,36 62,44" fill="#16a34a" transform="rotate(-10 66 46)" />
+                        <polygon points="48,60 56,72 64,60 60,60 60,52 52,52 52,60" fill="#4ade80" transform="rotate(5 56 62)" />
+                        <polygon points="68,62 76,74 84,62 80,62 80,54 72,54 72,62" fill="#16a34a" transform="rotate(-5 76 64)" />
+                        {/* Small decoration lines */}
+                        <line x1="42" y1="86" x2="88" y2="86" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="42" y1="93" x2="75" y2="93" stroke="#e5e7eb" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                </div>
+                <h3 className="text-[15px] font-bold text-gray-800 mb-2 text-center">Nothing here yet</h3>
+                <p className="text-[12px] text-gray-400 text-center leading-relaxed">
+                    Your design files will appear here once added.
+                </p>
+                {/* Upload CTA */}
+                <label className="mt-6 flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-[13px] font-semibold cursor-pointer hover:bg-gray-700 transition-colors">
+                    <UploadCloud className="w-4 h-4" />
+                    Upload a file
+                    <input type="file" accept="image/*" className="hidden" onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = f => { if (f.target?.result) onAddImage(f.target.result as string); };
+                        reader.readAsDataURL(file);
+                        e.target.value = '';
+                    }} />
+                </label>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Graphics Panel ─────────────────────────────────────────────────────── */
+function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () => void; onAddShape: (type: string) => void; onAddCurvedText: () => void }) {
+    const shapes = [
+        { id: 'star', svg: <polygon points="50,5 61,37 95,37 67,57 78,89 50,69 22,89 33,57 5,37 39,37" fill="#64645A" /> },
+        { id: 'heart', svg: <path d="M50,85 C20,55 5,35 5,20 C5,5 25,5 35,15 C45,25 50,30 50,30 C50,30 55,25 65,15 C75,5 95,5 95,20 C95,35 80,55 50,85 Z" fill="#64645A" /> },
+        { id: 'line', svg: <line x1="10" y1="50" x2="90" y2="50" stroke="#64645A" strokeWidth="8" strokeLinecap="round" /> },
+        { id: 'triangle', svg: <polygon points="50,15 90,85 10,85" fill="#64645A" /> },
+        { id: 'circle', svg: <circle cx="50" cy="50" r="40" fill="#64645A" /> },
+        { id: 'square', svg: <rect x="15" y="15" width="70" height="70" fill="#64645A" /> },
+    ];
+
+    return (
+        <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">Graphics</h2>
+                <button
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin">
+
+                {/* ── Shapes ── */}
+                <section className="px-4 pt-5 pb-2 border-b border-gray-100">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-bold text-gray-800">Shapes</span>
+                            <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Editable</span>
+                        </div>
+                        <button className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+                            <Plus className="w-3 h-3" /> Show more
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {shapes.map((shape) => (
+                            <button
+                                key={shape.id}
+                                onClick={() => onAddShape(shape.id)}
+                                className="aspect-square rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all overflow-hidden flex items-center justify-center p-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiAvPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZjJmMmYyIiAvPgo8cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZjJmMmYyIiAvPgo8L3N2Zz4=')]"
+                            >
+                                <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-sm">
+                                    {shape.svg}
+                                </svg>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
+                {/* ── Curved Text (Reused from TextPanel) ── */}
+                <section className="px-4 pt-5 pb-6">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-bold text-gray-800">Curved Text</span>
+                            <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Editable</span>
+                        </div>
+                        <button className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+                            <Plus className="w-3 h-3" /> Show more
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                        {[<CurvedPreview3 key="3" />, <CurvedPreview1 key="1" />, <CurvedPreview2 key="2" />].map((Preview, i) => (
+                            <button
+                                key={i}
+                                onClick={() => onAddCurvedText()}
+                                className="aspect-square bg-[#f8f8f6] rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden flex items-center justify-center p-2"
+                            >
+                                {Preview}
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Main Editor UI ─────────────────────────────────────────────────────── */
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
+    const supplierProductId   = searchParams.get('supplier_product_id'); // null if customer typed the URL directly
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
     const [selectedColor, setSelectedColor] = useState<string>(initialTemplate.defaultColorHex);
-    const [selectedView, setSelectedView] = useState<ProductView>(initialTemplate.views.find(v => v.id === initialTemplate.defaultViewId) || initialTemplate.views[0]);
-
+    const [selectedView, setSelectedView] = useState<ProductView>(
+        initialTemplate.views.find(v => v.id === initialTemplate.defaultViewId) || initialTemplate.views[0]
+    );
     const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>({});
     const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
-    const [activeTab, setActiveTab] = useState<'design' | 'colors'>('design');
+    const [showTextPanel, setShowTextPanel] = useState(false);
+    const [showLibraryPanel, setShowLibraryPanel] = useState(false);
+    const [showGraphicsPanel, setShowGraphicsPanel] = useState(false);
+    const [activeLeftTool, setActiveLeftTool] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const printArea = selectedView.printAreas[0];
 
-    const {
-        canvasRef,
-        canvas,
-        addText,
-        addImage,
-        deleteSelected,
-        bringForward,
-        sendBackward,
-        updateActiveObject
-    } = useEditorCanvas({
+    const { canvasRef, canvas, addText, addImage } = useEditorCanvas({
         printArea,
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
-        initialState: viewStates[selectedView.id]
+        initialState: viewStates[selectedView.id],
     });
 
-    // Handle View Change
     const handleViewChange = (viewId: string) => {
         if (canvas) {
             setViewStates(prev => ({
                 ...prev,
-                [selectedView.id]: { objects: canvas.toJSON().objects }
+                [selectedView.id]: { objects: canvas.toJSON().objects },
             }));
         }
         const newView = selectedProduct.views.find(v => v.id === viewId);
         if (newView) setSelectedView(newView);
     };
 
-    // Navigate views with arrows
-    const navigateView = (direction: 'prev' | 'next') => {
-        const currentIdx = selectedProduct.views.findIndex(v => v.id === selectedView.id);
-        let newIdx;
-        if (direction === 'next') {
-            newIdx = (currentIdx + 1) % selectedProduct.views.length;
-        } else {
-            newIdx = (currentIdx - 1 + selectedProduct.views.length) % selectedProduct.views.length;
-        }
-        handleViewChange(selectedProduct.views[newIdx].id);
+    // ── Helper: composite SVG silhouette from a given viewId onto an offscreen canvas ──
+    const compositeViewMockup = async (viewDesignJson: any): Promise<string> => {
+        try {
+            const captureArea = document.getElementById('product-capture-area');
+            const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
+            if (!mockupContainer) return '';
+            const refRect = mockupContainer.getBoundingClientRect();
+            const W = Math.round(refRect.width);
+            const H = Math.round(refRect.height);
+            const offscreen = document.createElement('canvas');
+            offscreen.width  = W;
+            offscreen.height = H;
+            const ctx = offscreen.getContext('2d')!;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            // Draw SVG silhouettes (garment shape) from the live DOM
+            const svgEls = mockupContainer.querySelectorAll<SVGSVGElement>('svg');
+            for (const svgEl of svgEls) {
+                const r = svgEl.getBoundingClientRect();
+                const x = r.left - refRect.left;
+                const y = r.top  - refRect.top;
+                const w = r.width; const h = r.height;
+                if (w < 1 || h < 1) continue;
+                const clone = svgEl.cloneNode(true) as SVGSVGElement;
+                clone.setAttribute('width', String(w));
+                clone.setAttribute('height', String(h));
+                const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+                const url  = URL.createObjectURL(blob);
+                await new Promise<void>(resolve => {
+                    const img = new Image();
+                    img.onload  = () => { ctx.drawImage(img, x, y, w, h); URL.revokeObjectURL(url); resolve(); };
+                    img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                    img.src = url;
+                });
+            }
+            // Draw the live Fabric canvas (already shows current view's design)
+            const fabricEl = mockupContainer.querySelector<HTMLCanvasElement>('canvas');
+            if (fabricEl) {
+                const fr = fabricEl.getBoundingClientRect();
+                ctx.drawImage(fabricEl, fr.left - refRect.left, fr.top - refRect.top, fr.width, fr.height);
+            }
+            return offscreen.toDataURL('image/jpeg', 0.85);
+        } catch { return ''; }
     };
 
-    // Sync selected product when template query changes
+    const handleSaveProduct = async () => {
+        if (!canvas) return;
+        setIsSaving(true);
+        try {
+            // 1. Flush the current active view into viewStates before saving
+            canvas.discardActiveObject();
+            canvas.renderAll();
+            const currentDesign = canvas.toJSON();
+            const allViewStates = {
+                ...viewStates,
+                [selectedView.id]: { objects: currentDesign.objects },
+            };
+
+            // 2. Composite the current (active) view mockup for the primary preview image
+            let dataUrl = '';
+            let printFileDataUrl = '';
+            try {
+                dataUrl = await compositeViewMockup(currentDesign);
+                // High-res design-only print file at 3× multiplier
+                printFileDataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
+            } catch {
+                dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 1 });
+                printFileDataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
+            }
+
+            // 3. Build design_views: one entry per view that has at least one design object
+            //    Each entry contains the view name, design JSON, and the composite mockup JPEG.
+            //    For views other than the currently active one we re-use the SVG silhouette from
+            //    the live DOM (same garment shape, just different design objects drawn via a
+            //    temporary Fabric canvas).
+            const design_views: Array<{
+                viewId: string; viewName: string;
+                design: any; mockup_url: string; print_file: string;
+            }> = [];
+
+            const originalView = selectedView;
+
+            for (const view of selectedProduct.views) {
+                const state = allViewStates[view.id];
+                // Only include views that the user actually put something on
+                if (!state?.objects?.length) continue;
+
+                const isActiveView = view.id === selectedView.id;
+                let viewMockupUrl = '';
+                let viewPrintFile = '';
+
+                if (isActiveView) {
+                    // Active view: already composited above
+                    viewMockupUrl = dataUrl;
+                    viewPrintFile = printFileDataUrl;
+                } else {
+                    try {
+                        // 1. Switch the DOM to this view's SVG silhouette using flushSync
+                        //    so the mockup component renders the correct garment shape
+                        //    (e.g. hoodie BACK instead of hoodie FRONT)
+                        flushSync(() => setSelectedView(view));
+                        // 2. Wait one frame for the browser to paint the new SVG
+                        await new Promise<void>(r => setTimeout(r, 100));
+
+                        // 3. Load this view's design into a temp Fabric canvas
+                        const tempCanvas = new fabric.Canvas(document.createElement('canvas'), {
+                            width: 500, height: 540, selection: false,
+                        });
+                        await new Promise<void>(resolve => tempCanvas.loadFromJSON(
+                            { version: '5.3.0', objects: state.objects },
+                            () => { tempCanvas.renderAll(); resolve(); }
+                        ));
+                        viewPrintFile = tempCanvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
+
+                        // 4. Composite: correct SVG silhouette (now in DOM) + temp design canvas
+                        const captureArea = document.getElementById('product-capture-area');
+                        const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
+                        if (mockupContainer) {
+                            const refRect = mockupContainer.getBoundingClientRect();
+                            const W = Math.round(refRect.width);
+                            const H = Math.round(refRect.height);
+                            const offscreen = document.createElement('canvas');
+                            offscreen.width = W; offscreen.height = H;
+                            const ctx = offscreen.getContext('2d')!;
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, W, H);
+                            for (const svgEl of mockupContainer.querySelectorAll<SVGSVGElement>('svg')) {
+                                const r = svgEl.getBoundingClientRect();
+                                const x = r.left - refRect.left;
+                                const y = r.top  - refRect.top;
+                                if (r.width < 1 || r.height < 1) continue;
+                                const clone = svgEl.cloneNode(true) as SVGSVGElement;
+                                clone.setAttribute('width',  String(r.width));
+                                clone.setAttribute('height', String(r.height));
+                                const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+                                const url  = URL.createObjectURL(blob);
+                                await new Promise<void>(res => {
+                                    const img = new Image();
+                                    img.onload  = () => { ctx.drawImage(img, x, y, r.width, r.height); URL.revokeObjectURL(url); res(); };
+                                    img.onerror = () => { URL.revokeObjectURL(url); res(); };
+                                    img.src = url;
+                                });
+                            }
+                            // Draw the temp canvas (correct design for this view) on top
+                            ctx.drawImage(tempCanvas.getElement() as HTMLCanvasElement, 0, 0, W, H);
+                            viewMockupUrl = offscreen.toDataURL('image/jpeg', 0.85);
+                        }
+                        tempCanvas.dispose();
+                    } catch (e) {
+                        console.warn('Could not composite view', view.id, e);
+                    }
+                }
+
+                design_views.push({
+                    viewId:    view.id,
+                    viewName:  view.name,
+                    design:    { version: '5.3.0', objects: state.objects },
+                    mockup_url: viewMockupUrl,
+                    print_file: viewPrintFile,
+                });
+            }
+
+            // Restore original view after compositing all views
+            flushSync(() => setSelectedView(originalView));
+
+            console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+            // Attempt to get logged-in user
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (!user) {
+                // Save their work to localStorage so they don't lose it
+                localStorage.setItem('printora_pending_design', JSON.stringify({
+                    productTemplateId: selectedProduct.id,
+                    color: selectedColor,
+                    view: selectedView.id,
+                    viewStates: allViewStates,
+                }));
+                window.location.href = "/login";
+                return;
+            }
+
+            // Insert into custom_orders — all edited views are stored in design_views.
+            // mockup_image_url = front/active view composite (used for card thumbnails).
+            // design_data kept for backward compat; _printFile = front view high-res PNG.
+            const { error } = await supabase.from('custom_orders').insert({
+                customer_id: user.id,
+                product_type: selectedProduct.name,
+                variants: { color: selectedColor, view: selectedView.name },
+                design_data: {
+                    _printFile: printFileDataUrl,
+                    // Embed all view designs for backward compat (active view's objects)
+                    objects: allViewStates[selectedView.id]?.objects ?? [],
+                },
+                // All views with their mockup images and print files
+                design_views: design_views,
+                mockup_image_url: dataUrl,
+                status: 'PENDING_ADMIN',
+                ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
+            });
+
+            if (error) {
+                console.error('Error saving order:', error);
+                alert('Failed to save product: ' + error.message);
+            } else {
+                // Redirect to customer orders page to track status
+                window.location.href = '/orders?submitted=true';
+            }
+        } catch (e: any) {
+            console.error('Save error:', e);
+            alert('An error occurred while saving: ' + e.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     useEffect(() => {
         const fromQuery = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate);
         if (!fromQuery || fromQuery.id === selectedProduct.id) return;
-
         setSelectedProduct(fromQuery);
         setSelectedColor(fromQuery.defaultColorHex);
         setSelectedView(fromQuery.views.find(v => v.id === fromQuery.defaultViewId) || fromQuery.views[0]);
         setViewStates({});
     }, [requestedTemplate, selectedProduct.id]);
 
-    // Handle Image Upload
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
         const file = e.target.files[0];
@@ -108,30 +706,27 @@ export default function EditorUI() {
         e.target.value = '';
     };
 
-    // Handle Export
-    const handleExport = () => {
-        if (!canvas) return;
-        const dataURL = canvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 3
-        });
-        const link = document.createElement('a');
-        link.download = `printora-design-${selectedView.id}.png`;
-        link.href = dataURL;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleLeftTool = (tool: string) => {
+        if (activeLeftTool === tool) {
+            setActiveLeftTool(null);
+            setShowTextPanel(false);
+            setShowLibraryPanel(false);
+            setShowGraphicsPanel(false);
+        } else {
+            setActiveLeftTool(tool);
+            setShowTextPanel(tool === 'text');
+            setShowLibraryPanel(tool === 'library');
+            setShowGraphicsPanel(tool === 'graphics');
+        }
     };
 
-    // Get the right mockup component
+    const handleAddText = (font?: string) => {
+        addText();
+        // font selection is a future enhancement
+    };
+
     const renderMockup = () => {
-        const props = {
-            selectedView,
-            selectedColor,
-            printArea,
-            canvasRef,
-        };
+        const props = { selectedView, selectedColor, printArea, canvasRef };
         switch (selectedProduct.id) {
             case 'premium-hoodie': return <HoodieMockup {...props} />;
             case 'crewneck-sweater': return <SweaterMockup {...props} />;
@@ -140,296 +735,203 @@ export default function EditorUI() {
         }
     };
 
+    const leftTools = [
+        {
+            id: 'upload',
+            label: 'Upload',
+            icon: <UploadCloud className="w-6 h-6 group-hover:scale-110 transition-transform" />,
+            isLabel: true,
+        },
+        {
+            id: 'text',
+            label: 'Add text',
+            icon: <Type className="w-6 h-6 group-hover:scale-110 transition-transform" />,
+        },
+        {
+            id: 'library',
+            label: 'My library',
+            icon: <Folder className="w-6 h-6 group-hover:scale-110 transition-transform" />,
+        },
+        {
+            id: 'graphics',
+            label: 'Graphics',
+            icon: <Shapes className="w-6 h-6 group-hover:scale-110 transition-transform" />,
+        },
+        {
+            id: 'templates',
+            label: 'My templates',
+            icon: <LayoutTemplate className="w-6 h-6 group-hover:scale-110 transition-transform" />,
+        },
+    ];
+
     return (
-        <div className="flex h-[calc(100vh-4rem)] bg-[#0e0e10] text-gray-100 overflow-hidden">
+        <div className="flex flex-col h-screen bg-[#F4F4F4] text-gray-800 font-sans overflow-hidden">
 
-            {/* ═══════════ LEFT PANEL: Tools ═══════════ */}
-            <div className="w-[280px] flex-shrink-0 flex flex-col border-r border-white/[0.06] bg-[#141416]">
-                
-                {/* Product name header */}
-                <div className="px-5 py-4 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-2 mb-0.5">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
-                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Designing</span>
+            {/* Top Navigation Bar */}
+            <div className="h-14 bg-white flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0">
+                <div className="flex items-center gap-4">
+                    <button className="text-gray-600 hover:text-gray-900">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div className="h-5 w-[1px] bg-gray-300" />
+                    <div className="flex items-center gap-3">
+                        <HelpCircle className="w-5 h-5 text-gray-500" />
+                        <button className="text-gray-400 hover:text-gray-600"><Undo2 className="w-5 h-5" /></button>
+                        <button className="text-gray-400 hover:text-gray-600"><Redo2 className="w-5 h-5" /></button>
                     </div>
-                    <h2 className="text-[15px] font-bold text-white truncate">{selectedProduct.name}</h2>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{selectedProduct.description}</p>
                 </div>
-
-                {/* Tab Switcher */}
-                <div className="flex border-b border-white/[0.06]">
-                    <button
-                        onClick={() => setActiveTab('design')}
-                        className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors relative ${
-                            activeTab === 'design' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                        }`}
-                    >
-                        Design
-                        {activeTab === 'design' && <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-emerald-400 rounded-full" />}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('colors')}
-                        className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.15em] transition-colors relative ${
-                            activeTab === 'colors' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
-                        }`}
-                    >
-                        Colors
-                        {activeTab === 'colors' && <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-emerald-400 rounded-full" />}
-                    </button>
-                </div>
-
-                {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-5">
-                    {activeTab === 'design' ? (
-                        <>
-                            {/* Add Elements */}
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-3 block">Add Elements</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => addText()}
-                                        className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group"
-                                    >
-                                        <Type className="w-5 h-5 text-gray-400 group-hover:text-emerald-400 transition-colors" />
-                                        <span className="text-[11px] font-medium text-gray-400 group-hover:text-emerald-400 transition-colors">Add Text</span>
-                                    </button>
-                                    <div className="relative">
-                                        <button className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all group w-full">
-                                            <ImageIcon className="w-5 h-5 text-gray-400 group-hover:text-emerald-400 transition-colors" />
-                                            <span className="text-[11px] font-medium text-gray-400 group-hover:text-emerald-400 transition-colors">Upload</span>
-                                        </button>
-                                        <input
-                                            type="file"
-                                            accept="image/svg+xml, image/png, image/jpeg"
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            onChange={handleImageUpload}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Layer Controls — appears when an object is selected */}
-                            {activeObject && (
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] flex items-center gap-1.5">
-                                        <Layers className="w-3.5 h-3.5" /> Selected Item
-                                    </label>
-
-                                    <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-3 space-y-3">
-                                        {/* Text-specific controls */}
-                                        {activeObject.type === 'i-text' && (
-                                            <>
-                                                <div>
-                                                    <label className="text-[10px] font-medium text-gray-500 mb-1 block">Font</label>
-                                                    <select
-                                                        className="w-full h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] px-2.5 text-[12px] text-gray-200 focus:outline-none focus:border-emerald-500/40"
-                                                        value={(activeObject as any).fontFamily || 'sans-serif'}
-                                                        onChange={(e) => updateActiveObject({ fontFamily: e.target.value })}
-                                                    >
-                                                        <option value="sans-serif">Sans Serif</option>
-                                                        <option value="serif">Serif</option>
-                                                        <option value="monospace">Monospace</option>
-                                                        <option value="Arial">Arial</option>
-                                                        <option value="Impact">Impact</option>
-                                                        <option value="Georgia">Georgia</option>
-                                                    </select>
-                                                </div>
-
-                                                <div className="flex gap-2">
-                                                    <div className="flex-1">
-                                                        <label className="text-[10px] font-medium text-gray-500 mb-1 block">Color</label>
-                                                        <div className="flex items-center gap-2 h-8">
-                                                            <input
-                                                                type="color"
-                                                                value={(activeObject as any).fill || '#000000'}
-                                                                onChange={(e) => updateActiveObject({ fill: e.target.value })}
-                                                                className="h-7 w-10 cursor-pointer border-none bg-transparent rounded"
-                                                            />
-                                                            <span className="text-[10px] text-gray-500 uppercase font-mono">{(activeObject as any).fill}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-1">
-                                                        <button
-                                                            className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-all text-xs font-bold ${
-                                                                (activeObject as any).fontWeight === 'bold'
-                                                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                                                                    : 'bg-white/[0.04] border-white/[0.08] text-gray-400 hover:text-white'
-                                                            }`}
-                                                            onClick={() => {
-                                                                const current = (activeObject as any).fontWeight;
-                                                                updateActiveObject({ fontWeight: current === 'bold' ? 'normal' : 'bold' });
-                                                            }}
-                                                        >
-                                                            B
-                                                        </button>
-                                                        <button
-                                                            className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-all text-xs italic ${
-                                                                (activeObject as any).fontStyle === 'italic'
-                                                                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                                                                    : 'bg-white/[0.04] border-white/[0.08] text-gray-400 hover:text-white'
-                                                            }`}
-                                                            onClick={() => {
-                                                                const current = (activeObject as any).fontStyle;
-                                                                updateActiveObject({ fontStyle: current === 'italic' ? 'normal' : 'italic' });
-                                                            }}
-                                                        >
-                                                            I
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {/* Opacity */}
-                                        <div>
-                                            <label className="text-[10px] font-medium text-gray-500 mb-1 flex justify-between">
-                                                <span>Opacity</span>
-                                                <span className="text-gray-400">{Math.round((activeObject.opacity || 1) * 100)}%</span>
-                                            </label>
-                                            <input
-                                                type="range"
-                                                min="0" max="1" step="0.05"
-                                                value={activeObject.opacity || 1}
-                                                onChange={(e) => updateActiveObject({ opacity: parseFloat(e.target.value) })}
-                                                className="w-full h-1 rounded-full appearance-none bg-white/10 accent-emerald-400
-                                                    [&::-webkit-slider-thumb]:appearance-none
-                                                    [&::-webkit-slider-thumb]:w-3
-                                                    [&::-webkit-slider-thumb]:h-3
-                                                    [&::-webkit-slider-thumb]:rounded-full
-                                                    [&::-webkit-slider-thumb]:bg-emerald-400
-                                                    [&::-webkit-slider-thumb]:shadow-lg
-                                                "
-                                            />
-                                        </div>
-
-                                        {/* Action buttons */}
-                                        <div className="flex gap-1.5 pt-1">
-                                            <button onClick={bringForward} className="flex-1 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[10px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1">
-                                                <BringToFront className="w-3 h-3" /> Forward
-                                            </button>
-                                            <button onClick={sendBackward} className="flex-1 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[10px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all flex items-center justify-center gap-1">
-                                                <SendToBack className="w-3 h-3" /> Back
-                                            </button>
-                                            <button onClick={deleteSelected} className="h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all flex items-center justify-center">
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {!activeObject && (
-                                <div className="text-[11px] text-gray-600 text-center py-6 bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]">
-                                    <Move className="w-5 h-5 mx-auto mb-2 text-gray-600" />
-                                    Select an element to edit its properties
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        /* Colors Tab */
-                        <div>
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-3 block">
-                                <Palette className="w-3.5 h-3.5 inline mr-1.5" />
-                                Garment Color
-                            </label>
-                            <div className="grid grid-cols-5 gap-2">
-                                {selectedProduct.variants.map(c => (
-                                    <button
-                                        key={c.id}
-                                        title={c.colorName}
-                                        className={`group relative aspect-square rounded-xl border-2 transition-all hover:scale-105 ${
-                                            selectedColor === c.colorHex 
-                                                ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.25)] scale-105' 
-                                                : 'border-white/[0.08] hover:border-white/20'
-                                        }`}
-                                        style={{ backgroundColor: c.colorHex }}
-                                        onClick={() => setSelectedColor(c.colorHex)}
-                                    >
-                                        {selectedColor === c.colorHex && (
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-lg" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="mt-3 text-center">
-                                <span className="text-[11px] text-gray-500">
-                                    {selectedProduct.variants.find(v => v.colorHex === selectedColor)?.colorName || 'Custom'}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="p-4 border-t border-white/[0.06] space-y-2">
-                    <button 
-                        onClick={handleExport}
-                        className="w-full h-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] font-medium text-gray-400 hover:text-white hover:bg-white/[0.08] transition-all flex items-center justify-center gap-2"
-                    >
-                        <Download className="w-3.5 h-3.5" /> Export Design
-                    </button>
-                    <button className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white text-[12px] font-bold tracking-wide transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
-                        <ShoppingCart className="w-4 h-4" /> Save & Continue
+                <div className="flex items-center gap-3">
+                    <div className="flex bg-gray-100 rounded-md p-1">
+                        <button className="px-6 py-1.5 text-sm font-semibold bg-[#64645C] text-white rounded shadow-sm">Edit</button>
+                        <button className="px-6 py-1.5 text-sm font-semibold text-gray-700 bg-white shadow-sm rounded ml-1">Preview</button>
+                    </div>
+                    <button className="w-9 h-9 flex items-center justify-center bg-[#E5E5DF] rounded-md text-gray-700">
+                        <Wand2 className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
-            {/* ═══════════ CENTER: Canvas ═══════════ */}
-            <div className="flex-1 flex flex-col relative overflow-hidden">
+            <div className="flex flex-1 overflow-hidden relative">
 
-                {/* Canvas Area */}
-                <div className="flex-1 flex items-center justify-center relative">
-                    {/* Subtle grid pattern */}
-                    <div className="absolute inset-0 opacity-[0.03]" style={{
-                        backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
-                        backgroundSize: '24px 24px',
-                    }} />
-
-                    {/* Glow behind mockup */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-[280px] h-[280px] rounded-full blur-[80px] opacity-20"
-                            style={{ backgroundColor: selectedColor === '#ffffff' || selectedColor === '#fff' ? '#555' : selectedColor }}
-                        />
-                    </div>
-
-                    {/* Navigation arrows */}
-                    <button 
-                        onClick={() => navigateView('prev')}
-                        className="absolute left-4 z-40 w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all backdrop-blur-sm"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button 
-                        onClick={() => navigateView('next')}
-                        className="absolute right-4 z-40 w-10 h-10 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all backdrop-blur-sm"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-
-                    {/* Mockup */}
-                    <div className="relative z-10">
-                        {renderMockup()}
+                {/* ═══════════ LEFT TOOLBAR (icons) ═══════════ */}
+                <div className="w-[88px] flex-shrink-0 flex flex-col items-center py-4 bg-white border-r border-gray-200 shadow-sm z-20">
+                    <div className="flex flex-col gap-1 w-full items-center">
+                        {leftTools.map(tool => {
+                            const isActive = activeLeftTool === tool.id;
+                            if (tool.isLabel) {
+                                return (
+                                    <label
+                                        key={tool.id}
+                                        className={`w-full flex flex-col items-center gap-1.5 cursor-pointer py-3 rounded-lg transition-colors group ${isActive ? 'bg-[#f0f0ec] text-gray-900' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        {tool.icon}
+                                        <span className="text-[10px] font-medium">{tool.label}</span>
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                    </label>
+                                );
+                            }
+                            return (
+                                <button
+                                    key={tool.id}
+                                    onClick={() => handleLeftTool(tool.id)}
+                                    className={`w-full flex flex-col items-center gap-1.5 py-3 rounded-lg transition-colors group ${isActive ? 'bg-[#f0f0ec] text-gray-900' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    {tool.icon}
+                                    <span className="text-[10px] font-medium text-center leading-tight">{tool.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Bottom: View Pills */}
-                <div className="flex-shrink-0 pb-4 pt-2 flex items-center justify-center gap-2 z-30">
-                    {selectedProduct.views.map(view => (
+                {/* ═══════════ TEXT PANEL (slide-in) ═══════════ */}
+                {showTextPanel && (
+                    <TextPanel
+                        onClose={() => { setShowTextPanel(false); setActiveLeftTool(null); }}
+                        onAddText={handleAddText}
+                    />
+                )}
+
+                {/* ═══════════ LIBRARY PANEL (slide-in) ═══════════ */}
+                {showLibraryPanel && (
+                    <LibraryPanel
+                        onClose={() => { setShowLibraryPanel(false); setActiveLeftTool(null); }}
+                        onAddImage={addImage}
+                    />
+                )}
+
+                {/* ═══════════ GRAPHICS PANEL (slide-in) ═══════════ */}
+                {showGraphicsPanel && (
+                    <GraphicsPanel
+                        onClose={() => { setShowGraphicsPanel(false); setActiveLeftTool(null); }}
+                        onAddShape={() => { /* future shape logic */ }}
+                        onAddCurvedText={handleAddText}
+                    />
+                )}
+
+                {/* ═══════════ CENTER: Canvas ═══════════ */}
+                <div className="flex-1 flex flex-col relative bg-[#F4F4F4]">
+                    <div className="flex-1 flex items-center justify-center relative p-8">
+                        <div id="product-capture-area" className="relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md">
+                            {renderMockup()}
+                        </div>
+                    </div>
+
+                    {/* View Pills */}
+                    <div className="absolute bottom-16 left-0 right-0 flex items-center justify-center gap-3 z-30">
+                        {selectedProduct.views.map(view => (
+                            <button
+                                key={view.id}
+                                onClick={() => handleViewChange(view.id)}
+                                className={`px-5 py-2 rounded-full text-[13px] font-medium transition-all shadow-sm ${selectedView.id === view.id
+                                    ? 'bg-[#64645A] text-white'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                                    }`}
+                            >
+                                {view.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Bottom Status Bar */}
+                    <div className="h-12 bg-white flex items-center justify-between px-4 border-t border-gray-200 mt-auto z-40 relative">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 border border-gray-300 rounded overflow-hidden">
+                                <button className="w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 border-r border-gray-300">
+                                    <Minus className="w-4 h-4" />
+                                </button>
+                                <span className="text-[13px] font-semibold text-gray-700 min-w-[3ch] text-center">9%</span>
+                                <button className="w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 border-l border-gray-300">
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <button className="text-gray-500 hover:text-gray-800">
+                                <Hand className="w-5 h-5" />
+                            </button>
+                        </div>
                         <button
-                            key={view.id}
-                            onClick={() => handleViewChange(view.id)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-semibold transition-all ${
-                                selectedView.id === view.id
-                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                                    : 'bg-white/[0.04] text-gray-500 border border-white/[0.06] hover:text-gray-300 hover:bg-white/[0.08]'
-                            }`}
+                            onClick={handleSaveProduct}
+                            disabled={isSaving}
+                            className={`${isSaving ? 'bg-gray-300' : 'bg-gray-900 hover:bg-gray-800'} text-white font-bold px-10 py-1.5 rounded text-sm uppercase transition-colors`}
                         >
-                            {view.name}
+                            {isSaving ? 'Saving...' : 'Save product'}
                         </button>
-                    ))}
+                    </div>
                 </div>
+
+                {/* ═══════════ RIGHT PANEL: Variants & Layers ═══════════ */}
+                <div className="absolute right-4 top-4 w-[320px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-100 z-30 overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                        <h3 className="font-bold text-[15px] text-gray-800">Variants and layers</h3>
+                        <button className="text-gray-400 hover:text-gray-700"><X className="w-4 h-4" /></button>
+                    </div>
+                    <div className="p-5 flex-1 min-h-[150px] bg-white">
+                        <h4 className="font-bold text-[13px] text-gray-800 mb-4">Variants</h4>
+                        <div className="flex items-center justify-between py-2">
+                            <span className="text-gray-600 text-[13px]">Colors</span>
+                            <button className="border border-gray-300 px-3 py-1.5 rounded text-[12px] text-gray-700 hover:bg-gray-50 font-bold">
+                                Select variants
+                            </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {selectedProduct.variants.map(c => (
+                                <button
+                                    key={c.id}
+                                    title={c.colorName}
+                                    className={`w-7 h-7 rounded-full border-2 transition-all ${selectedColor === c.colorHex
+                                        ? 'border-gray-400 shadow-sm'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                        }`}
+                                    style={{ backgroundColor: c.colorHex }}
+                                    onClick={() => setSelectedColor(c.colorHex)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
