@@ -241,9 +241,78 @@ function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (fo
 }
 
 /* ─── Library Panel ──────────────────────────────────────────────────────── */
+type UserAsset = { id: string; file_name: string; file_url: string; created_at: string };
+
 function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage: (src: string) => void }) {
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [assets, setAssets] = useState<UserAsset[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    const loadAssets = async () => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setLoading(false); return; }
+        const { data } = await supabase
+            .from('user_assets')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+        setAssets(data ?? []);
+        setLoading(false);
+    };
+
+    useEffect(() => { loadAssets(); }, []);
+
+    const handleUpload = async (file: File) => {
+        setUploading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { alert('Please log in to save images to your library.'); setUploading(false); return; }
+            const ext = file.name.split('.').pop();
+            const path = `${user.id}/${Date.now()}_${file.name}`;
+            const { error: upErr } = await supabase.storage.from('user_assets').upload(path, file, { upsert: false });
+            if (upErr) throw upErr;
+            const { data: { publicUrl } } = supabase.storage.from('user_assets').getPublicUrl(path);
+            const { error: dbErr } = await supabase.from('user_assets').insert({
+                user_id: user.id,
+                file_name: file.name,
+                file_url: publicUrl,
+            });
+            if (dbErr) throw dbErr;
+            // Add to canvas immediately
+            onAddImage(publicUrl);
+            await loadAssets();
+        } catch (e: any) {
+            console.error('Upload failed:', e);
+            alert('Upload failed: ' + e.message);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleDelete = async (asset: UserAsset, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDeletingId(asset.id);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            // Extract storage path from public URL
+            const url = new URL(asset.file_url);
+            const storagePath = url.pathname.split('/user_assets/')[1];
+            if (storagePath) await supabase.storage.from('user_assets').remove([storagePath]);
+            await supabase.from('user_assets').delete().eq('id', asset.id);
+            setAssets(prev => prev.filter(a => a.id !== asset.id));
+        } catch (e: any) {
+            console.error('Delete failed:', e);
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const filtered = assets.filter(a => a.file_name.toLowerCase().includes(search.toLowerCase()));
 
     return (
         <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
@@ -258,13 +327,33 @@ function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage
                 </button>
             </div>
 
+            {/* Upload CTA bar */}
+            <div className="px-4 pt-4 pb-2">
+                <label className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-3 text-[13px] font-semibold cursor-pointer transition-all ${
+                    uploading
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-600 hover:border-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                }`}>
+                    {uploading ? (
+                        <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> Uploading…</>
+                    ) : (
+                        <><UploadCloud className="w-4 h-4" /> Upload image</>
+                    )}
+                    <input
+                        type="file" accept="image/*" className="hidden"
+                        disabled={uploading}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); e.target.value = ''; }}
+                    />
+                </label>
+            </div>
+
             {/* Search */}
-            <div className="px-4 pt-4 pb-3">
+            <div className="px-4 pt-2 pb-3">
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-gray-400 transition-colors">
                     <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <input
                         type="text"
-                        placeholder="Search library"
+                        placeholder="Search library…"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="bg-transparent text-[13px] text-gray-700 placeholder-gray-400 outline-none w-full"
@@ -274,75 +363,109 @@ function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage
 
             {/* Sort + View toggle */}
             <div className="px-4 pb-3 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer hover:border-gray-300 transition-colors">
-                    <span className="text-[12px] font-medium text-gray-700">Recently added</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 rotate-90" />
-                </div>
+                <span className="text-[11px] text-gray-400 font-medium">{assets.length} image{assets.length !== 1 ? 's' : ''}</span>
                 <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                     <button
                         onClick={() => setViewMode('grid')}
-                        className={`w-8 h-8 flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
-                            }`}
+                        className={`w-8 h-8 flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                     >
-                        {/* Grid icon */}
                         <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                            <rect x="1" y="1" width="6" height="6" rx="1" />
-                            <rect x="9" y="1" width="6" height="6" rx="1" />
-                            <rect x="1" y="9" width="6" height="6" rx="1" />
-                            <rect x="9" y="9" width="6" height="6" rx="1" />
+                            <rect x="1" y="1" width="6" height="6" rx="1" /><rect x="9" y="1" width="6" height="6" rx="1" />
+                            <rect x="1" y="9" width="6" height="6" rx="1" /><rect x="9" y="9" width="6" height="6" rx="1" />
                         </svg>
                     </button>
                     <button
                         onClick={() => setViewMode('list')}
-                        className={`w-8 h-8 flex items-center justify-center border-l border-gray-200 transition-colors ${viewMode === 'list' ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
-                            }`}
+                        className={`w-8 h-8 flex items-center justify-center border-l border-gray-200 transition-colors ${viewMode === 'list' ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                     >
-                        {/* List icon */}
                         <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-                            <rect x="1" y="2" width="14" height="2" rx="1" />
-                            <rect x="1" y="7" width="14" height="2" rx="1" />
-                            <rect x="1" y="12" width="14" height="2" rx="1" />
+                            <rect x="1" y="2" width="14" height="2" rx="1" /><rect x="1" y="7" width="14" height="2" rx="1" /><rect x="1" y="12" width="14" height="2" rx="1" />
                         </svg>
                     </button>
                 </div>
             </div>
 
-            {/* Empty state */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
-                {/* Illustration */}
-                <div className="relative w-32 h-32 mb-6">
-                    <svg viewBox="0 0 130 130" className="w-full h-full" fill="none">
-                        {/* Background scattered papers */}
-                        <rect x="10" y="40" width="45" height="55" rx="4" fill="#e5e7eb" transform="rotate(-15 10 40)" />
-                        <rect x="75" y="35" width="45" height="55" rx="4" fill="#e5e7eb" transform="rotate(12 75 35)" />
-                        {/* Main paper */}
-                        <rect x="32" y="26" width="66" height="80" rx="5" fill="white" stroke="#d1d5db" strokeWidth="1.5" />
-                        {/* Green arrow/star shapes on top paper */}
-                        <polygon points="58,44 66,56 74,44 70,44 70,36 62,36 62,44" fill="#16a34a" transform="rotate(-10 66 46)" />
-                        <polygon points="48,60 56,72 64,60 60,60 60,52 52,52 52,60" fill="#4ade80" transform="rotate(5 56 62)" />
-                        <polygon points="68,62 76,74 84,62 80,62 80,54 72,54 72,62" fill="#16a34a" transform="rotate(-5 76 64)" />
-                        {/* Small decoration lines */}
-                        <line x1="42" y1="86" x2="88" y2="86" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
-                        <line x1="42" y1="93" x2="75" y2="93" stroke="#e5e7eb" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                </div>
-                <h3 className="text-[15px] font-bold text-gray-800 mb-2 text-center">Nothing here yet</h3>
-                <p className="text-[12px] text-gray-400 text-center leading-relaxed">
-                    Your design files will appear here once added.
-                </p>
-                {/* Upload CTA */}
-                <label className="mt-6 flex items-center gap-2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-[13px] font-semibold cursor-pointer hover:bg-gray-700 transition-colors">
-                    <UploadCloud className="w-4 h-4" />
-                    Upload a file
-                    <input type="file" accept="image/*" className="hidden" onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = f => { if (f.target?.result) onAddImage(f.target.result as string); };
-                        reader.readAsDataURL(file);
-                        e.target.value = '';
-                    }} />
-                </label>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-4 pb-6">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 py-16">
+                        <svg className="w-8 h-8 animate-spin text-gray-300" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                        <span className="text-[12px] text-gray-400">Loading your library…</span>
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <div className="w-24 h-24">
+                            <svg viewBox="0 0 130 130" className="w-full h-full" fill="none">
+                                <rect x="10" y="40" width="45" height="55" rx="4" fill="#e5e7eb" transform="rotate(-15 10 40)" />
+                                <rect x="75" y="35" width="45" height="55" rx="4" fill="#e5e7eb" transform="rotate(12 75 35)" />
+                                <rect x="32" y="26" width="66" height="80" rx="5" fill="white" stroke="#d1d5db" strokeWidth="1.5" />
+                                <polygon points="58,44 66,56 74,44 70,44 70,36 62,36 62,44" fill="#16a34a" transform="rotate(-10 66 46)" />
+                                <polygon points="48,60 56,72 64,60 60,60 60,52 52,52 52,60" fill="#4ade80" transform="rotate(5 56 62)" />
+                                <polygon points="68,62 76,74 84,62 80,62 80,54 72,54 72,62" fill="#16a34a" transform="rotate(-5 76 64)" />
+                                <line x1="42" y1="86" x2="88" y2="86" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
+                            </svg>
+                        </div>
+                        <h3 className="text-[14px] font-bold text-gray-800 text-center">{search ? `No results for "${search}"` : 'Nothing here yet'}</h3>
+                        <p className="text-[12px] text-gray-400 text-center leading-relaxed">
+                            {search ? 'Try a different search term.' : 'Upload images above — they\'ll be saved here for future use.'}
+                        </p>
+                    </div>
+                ) : viewMode === 'grid' ? (
+                    <div className="grid grid-cols-2 gap-2">
+                        {filtered.map(asset => (
+                            <div
+                                key={asset.id}
+                                onClick={() => onAddImage(asset.file_url)}
+                                className="relative group aspect-square rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:border-gray-400 hover:shadow-md transition-all bg-gray-50"
+                            >
+                                <img src={asset.file_url} alt={asset.file_name} className="w-full h-full object-cover" />
+                                {/* Hover overlay */}
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                                    <span className="opacity-0 group-hover:opacity-100 bg-white text-gray-900 text-[11px] font-semibold px-2 py-1 rounded-full shadow-sm transition-all">Add to design</span>
+                                </div>
+                                {/* Delete button */}
+                                <button
+                                    onClick={(e) => handleDelete(asset, e)}
+                                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 text-gray-500 hover:text-red-500 hover:bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                                >
+                                    {deletingId === asset.id ? (
+                                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                                    ) : (
+                                        <X className="w-3 h-3" />
+                                    )}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-1">
+                        {filtered.map(asset => (
+                            <div
+                                key={asset.id}
+                                onClick={() => onAddImage(asset.file_url)}
+                                className="flex items-center gap-3 p-2 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50 cursor-pointer group transition-all"
+                            >
+                                <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0 bg-gray-50">
+                                    <img src={asset.file_url} alt={asset.file_name} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[13px] font-medium text-gray-800 truncate">{asset.file_name}</p>
+                                    <p className="text-[11px] text-gray-400">{new Date(asset.created_at).toLocaleDateString()}</p>
+                                </div>
+                                <button
+                                    onClick={(e) => handleDelete(asset, e)}
+                                    className="w-7 h-7 rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                                >
+                                    {deletingId === asset.id ? (
+                                        <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                                    ) : (
+                                        <X className="w-3.5 h-3.5" />
+                                    )}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -694,16 +817,28 @@ export default function EditorUI() {
         setViewStates({});
     }, [requestedTemplate, selectedProduct.id]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
         const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (f) => {
-            const data = f.target?.result as string;
-            if (data) addImage(data);
-        };
-        reader.readAsDataURL(file);
         e.target.value = '';
+        // Try to save to Supabase Storage + library
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const path = `${user.id}/${Date.now()}_${file.name}`;
+                const { error: upErr } = await supabase.storage.from('user_assets').upload(path, file, { upsert: false });
+                if (!upErr) {
+                    const { data: { publicUrl } } = supabase.storage.from('user_assets').getPublicUrl(path);
+                    await supabase.from('user_assets').insert({ user_id: user.id, file_name: file.name, file_url: publicUrl });
+                    addImage(publicUrl);
+                    return;
+                }
+            }
+        } catch { /* fall back to local data URL */ }
+        // Fallback: use local data URL (not logged in or upload failed)
+        const reader = new FileReader();
+        reader.onload = (f) => { const data = f.target?.result as string; if (data) addImage(data); };
+        reader.readAsDataURL(file);
     };
 
     const handleLeftTool = (tool: string) => {
