@@ -33,6 +33,11 @@ export default function SupplierDashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [activeViewIdx, setActiveViewIdx] = useState(0);
+  const [proofUrl, setProofUrl] = useState('');
+  const [proofPreview, setProofPreview] = useState('');
+  const [fulfillLoading, setFulfillLoading] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -158,18 +163,103 @@ export default function SupplierDashboard() {
     setFormLoading(false);
   };
 
-  const handleFulfill = async (orderId: string) => {
-    const proofUrl = prompt("Enter the URL of a photo showing the completed product:");
-    if (!proofUrl) return;
+  const handleFulfill = async () => {
+    if (!selectedOrder || !proofUrl.trim()) return;
+    setFulfillLoading(true);
+    // proofUrl holds either a base64 data URL (from file upload) or a plain https:// URL
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "COMPLETED_BY_SUPPLIER", supplier_proof_image_url: proofUrl })
-      .eq("id", orderId);
+      .update({ status: "COMPLETED_BY_SUPPLIER", supplier_proof_image_url: proofUrl.trim() })
+      .eq("id", selectedOrder.id);
+    setFulfillLoading(false);
     if (error) alert("Error: " + error.message);
     else {
+      setSelectedOrder(null);
+      setProofUrl('');
+      setProofPreview('');
       const { data: { user } } = await supabase.auth.getUser();
       if (user) fetchOrders(user.id);
     }
+  };
+
+  // Extract design layers from Fabric.js design_data JSON (like Printify)
+  const extractLayers = (designData: any) => {
+    if (!designData?.objects) return [];
+    return designData.objects.map((obj: any, i: number) => {
+      if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+        return { kind: 'text', index: i, text: obj.text, font: obj.fontFamily || 'sans-serif', size: Math.round(obj.fontSize || 16), color: obj.fill || '#000', bold: obj.fontWeight === 'bold', italic: obj.fontStyle === 'italic' };
+      }
+      if (obj.type === 'image') {
+        return { kind: 'image', index: i, src: obj.src, w: Math.round(obj.width * (obj.scaleX||1)), h: Math.round(obj.height * (obj.scaleY||1)) };
+      }
+      return { kind: 'shape', index: i, type: obj.type, color: obj.fill || obj.stroke || '#000', w: Math.round((obj.width||0) * (obj.scaleX||1)), h: Math.round((obj.height||0) * (obj.scaleY||1)) };
+    });
+  };
+
+  // Trigger a browser download from a data URL
+  const downloadFile = (dataUrl: string, filename: string) => {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Download the embedded high-res print file
+  const downloadPrintFile = (order: any) => {
+    // Prefer the active view's print_file if design_views exists
+    const views: any[] = order.design_views || [];
+    const activeView = views[activeViewIdx];
+    const pf = activeView?.print_file || order.design_data?._printFile;
+    if (pf) {
+      const suffix = activeView ? `-${activeView.viewName.replace(/\s+/g, '-').toLowerCase()}` : '';
+      downloadFile(pf, `print-file${suffix}-${order.id.slice(0, 8)}.png`);
+    } else {
+      alert('No print file found for this order. Ask the customer to re-save.');
+    }
+  };
+
+  // Download an individual layer as a PNG
+  const downloadLayer = (layer: any, orderDesignData: any, index: number) => {
+    if (layer.kind === 'image') {
+      // The image src is the raw base64 data URL from Fabric
+      const src = orderDesignData?.objects?.[layer.index]?.src || layer.src;
+      if (src) downloadFile(src, `image-layer-${index + 1}.png`);
+      else alert('Image source not found.');
+      return;
+    }
+
+    // For text and shapes: render to a high-DPI canvas
+    const SCALE = 4; // 4x = ~300 DPI equivalent
+    const offscreen = document.createElement('canvas');
+    const ctx = offscreen.getContext('2d')!;
+
+    if (layer.kind === 'text') {
+      const weight  = layer.bold   ? 'bold '   : '';
+      const style   = layer.italic ? 'italic ' : '';
+      const fs      = (layer.size || 16) * SCALE;
+      ctx.font = `${style}${weight}${fs}px ${layer.font}`;
+      const metrics = ctx.measureText(layer.text);
+      const tw = Math.ceil(metrics.width) + 20 * SCALE;
+      const th = Math.ceil(fs * 1.6) + 10 * SCALE;
+      offscreen.width  = tw;
+      offscreen.height = th;
+      ctx.clearRect(0, 0, tw, th);
+      ctx.font = `${style}${weight}${fs}px ${layer.font}`;
+      ctx.fillStyle = layer.color || '#000000';
+      ctx.fillText(layer.text, 10 * SCALE, fs + 5 * SCALE);
+    } else {
+      // Shape: just export a colour swatch at correct proportions
+      const W = Math.max(layer.w * SCALE, 10);
+      const H = Math.max(layer.h * SCALE, 10);
+      offscreen.width  = W;
+      offscreen.height = H;
+      ctx.fillStyle = layer.color || '#000000';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    downloadFile(offscreen.toDataURL('image/png'), `${layer.kind}-layer-${index + 1}.png`);
   };
 
   const handleSignOut = async () => {
@@ -392,10 +482,10 @@ export default function SupplierDashboard() {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleFulfill(order.id)}
+                        onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }}
                         className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95"
                       >
-                        Mark as Fulfilled
+                        View &amp; Fulfill
                       </button>
                     </div>
                   </CardContent>
@@ -405,6 +495,226 @@ export default function SupplierDashboard() {
           )}
         </div>
       </main>
+
+      {/* ===== ORDER DETAIL + DESIGN EXTRACTION MODAL ===== */}
+      {selectedOrder && (() => {
+        const views: any[] = selectedOrder.design_views || [];
+        const hasViews = views.length > 0;
+        // For the layer extractor: use the active view's design if available, else fall back to design_data
+        const activeViewData = hasViews ? views[Math.min(activeViewIdx, views.length - 1)] : null;
+        const activeDesign  = activeViewData?.design || selectedOrder.design_data;
+        const activeMockup  = activeViewData?.mockup_url || selectedOrder.mockup_image_url;
+        const layers = extractLayers(activeDesign);
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl my-4 overflow-hidden">
+              {/* Header */}
+              <div className="px-7 py-5 border-b border-gray-100 flex items-center justify-between bg-[#1B2412]">
+                <div>
+                  <h2 className="text-lg font-black text-[#A1FF4D] uppercase tracking-tight">Print Order</h2>
+                  <p className="text-[11px] text-gray-400 font-bold mt-0.5">{selectedOrder.product_type} · {selectedOrder.variants?.color} · {selectedOrder.variants?.view}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {/* Download the full high-res design (3× PNG) */}
+                  <button
+                    onClick={() => downloadPrintFile(selectedOrder)}
+                    title="Download high-res print file (PNG)"
+                    className="flex items-center gap-1.5 bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Print File
+                  </button>
+                  <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white transition-colors">
+                    <XCircle size={26} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
+                {/* View tabs (shown only when multiple views were designed) */}
+                {hasViews && views.length > 1 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {views.map((v: any, i: number) => (
+                      <button
+                        key={v.viewId}
+                        onClick={() => setActiveViewIdx(i)}
+                        className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all ${
+                          activeViewIdx === i
+                            ? 'bg-[#1B2412] text-[#A1FF4D]'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        {v.viewName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Mockup preview + download */}
+                {activeMockup && (
+                  <div className="relative w-full h-52 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group">
+                    <img src={activeMockup} alt="Mockup" className="w-full h-full object-contain" />
+                    <button
+                      onClick={() => downloadFile(activeMockup, `mockup-${activeViewData?.viewName || 'front'}-${selectedOrder.id.slice(0,8)}.jpg`)}
+                      title="Download mockup image"
+                      className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#1B2412]/80 hover:bg-[#1B2412] text-white text-[10px] font-black px-3 py-1.5 rounded-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Download Mockup
+                    </button>
+                  </div>
+                )}
+
+                {/* Customer info */}
+                <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-sm flex-shrink-0">
+                    {(selectedOrder.customer?.full_name || selectedOrder.customer?.email || 'C')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black text-gray-800">{selectedOrder.customer?.full_name || 'Customer'}</p>
+                    <p className="text-[10px] text-gray-400 font-bold">{selectedOrder.customer?.email}</p>
+                  </div>
+                </div>
+
+                {/* Design layers for the active view */}
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                    Design Layers — {activeViewData?.viewName || 'Front'} ({layers.length})
+                  </p>
+                  {layers.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic">No design elements found.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {layers.map((layer: any, i: number) => (
+                        <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          {/* Icon */}
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-black ${
+                            layer.kind === 'text'  ? 'bg-blue-500'   :
+                            layer.kind === 'image' ? 'bg-purple-500' : 'bg-orange-400'
+                          }`}>
+                            {layer.kind === 'text' ? 'T' : layer.kind === 'image' ? '🖼' : '◼'}
+                          </div>
+                          {/* Details */}
+                          <div className="flex-1 min-w-0">
+                            {layer.kind === 'text' && (
+                              <>
+                                <p className="text-sm font-black text-gray-800 truncate">&ldquo;{layer.text}&rdquo;</p>
+                                <p className="text-[10px] text-gray-400 font-bold mt-0.5">
+                                  {layer.font} · {layer.size}px
+                                  {layer.bold ? ' · Bold' : ''}
+                                  {layer.italic ? ' · Italic' : ''}
+                                </p>
+                              </>
+                            )}
+                            {layer.kind === 'image' && (
+                              <>
+                                <p className="text-sm font-black text-gray-800">Image</p>
+                                <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
+                              </>
+                            )}
+                            {layer.kind === 'shape' && (
+                              <>
+                                <p className="text-sm font-black text-gray-800 capitalize">{layer.type}</p>
+                                <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
+                              </>
+                            )}
+                          </div>
+                          {/* Color swatch + Download button */}
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            {layer.color && (
+                              <div title={layer.color} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: layer.color }} />
+                            )}
+                            <button
+                              onClick={() => downloadLayer(layer, activeDesign, i)}
+                              title="Download this layer as PNG"
+                              className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#1B2412] bg-white border border-gray-200 hover:border-gray-400 px-2 py-1 rounded-lg transition-all active:scale-95"
+                            >
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                              PNG
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Proof upload */}
+                <div className="pt-2 space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Proof Photo (after printing)</label>
+
+                  {/* File upload drop zone */}
+                  <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl cursor-pointer transition-all p-4 ${
+                    proofPreview ? 'border-[#A1FF4D] bg-[#A1FF4D]/5' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                  }`}>
+                    {proofPreview ? (
+                      <div className="relative w-full">
+                        <img src={proofPreview} alt="Proof preview" className="w-full max-h-40 object-contain rounded-xl" />
+                        <button
+                          type="button"
+                          onClick={e => { e.preventDefault(); setProofUrl(''); setProofPreview(''); }}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black"
+                        >✕</button>
+                      </div>
+                    ) : (
+                      <>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span className="text-[11px] font-bold text-gray-400">Click to upload a photo</span>
+                        <span className="text-[10px] text-gray-300">JPG, PNG or WEBP</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          const base64 = ev.target?.result as string;
+                          setProofUrl(base64);      // base64 stored in DB
+                          setProofPreview(base64);   // shown as preview
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+
+                  {/* URL fallback */}
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-gray-100" />
+                    <span className="text-[10px] font-bold text-gray-300">or paste URL</span>
+                    <div className="h-px flex-1 bg-gray-100" />
+                  </div>
+                  <input
+                    type="url"
+                    value={proofPreview ? '' : proofUrl}
+                    onChange={e => { setProofUrl(e.target.value); setProofPreview(''); }}
+                    placeholder="https://..."
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button onClick={() => setSelectedOrder(null)} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleFulfill}
+                    disabled={fulfillLoading || !proofUrl.trim()}
+                    className="flex-1 bg-[#A1FF4D] text-[#1B2412] py-3.5 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {fulfillLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                    {fulfillLoading ? 'Saving...' : 'Mark as Fulfilled'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Add Product Modal */}
       {showForm && (

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import { flushSync } from 'react-dom';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
 import { useEditorCanvas } from '@/hooks/useEditorCanvas';
 import { useSearchParams } from 'next/navigation';
@@ -433,7 +433,11 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
+<<<<<<< HEAD
     const supplierProductIdFromQuery = searchParams.get('supplier_product_id');
+=======
+    const supplierProductId   = searchParams.get('supplier_product_id'); // null if customer typed the URL directly
+>>>>>>> 27f5a042396237b4993db14e61d1617fe8012a8b
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
@@ -471,30 +475,170 @@ export default function EditorUI() {
         if (newView) setSelectedView(newView);
     };
 
+    // ── Helper: composite SVG silhouette from a given viewId onto an offscreen canvas ──
+    const compositeViewMockup = async (viewDesignJson: any): Promise<string> => {
+        try {
+            const captureArea = document.getElementById('product-capture-area');
+            const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
+            if (!mockupContainer) return '';
+            const refRect = mockupContainer.getBoundingClientRect();
+            const W = Math.round(refRect.width);
+            const H = Math.round(refRect.height);
+            const offscreen = document.createElement('canvas');
+            offscreen.width  = W;
+            offscreen.height = H;
+            const ctx = offscreen.getContext('2d')!;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            // Draw SVG silhouettes (garment shape) from the live DOM
+            const svgEls = mockupContainer.querySelectorAll<SVGSVGElement>('svg');
+            for (const svgEl of svgEls) {
+                const r = svgEl.getBoundingClientRect();
+                const x = r.left - refRect.left;
+                const y = r.top  - refRect.top;
+                const w = r.width; const h = r.height;
+                if (w < 1 || h < 1) continue;
+                const clone = svgEl.cloneNode(true) as SVGSVGElement;
+                clone.setAttribute('width', String(w));
+                clone.setAttribute('height', String(h));
+                const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+                const url  = URL.createObjectURL(blob);
+                await new Promise<void>(resolve => {
+                    const img = new Image();
+                    img.onload  = () => { ctx.drawImage(img, x, y, w, h); URL.revokeObjectURL(url); resolve(); };
+                    img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                    img.src = url;
+                });
+            }
+            // Draw the live Fabric canvas (already shows current view's design)
+            const fabricEl = mockupContainer.querySelector<HTMLCanvasElement>('canvas');
+            if (fabricEl) {
+                const fr = fabricEl.getBoundingClientRect();
+                ctx.drawImage(fabricEl, fr.left - refRect.left, fr.top - refRect.top, fr.width, fr.height);
+            }
+            return offscreen.toDataURL('image/jpeg', 0.85);
+        } catch { return ''; }
+    };
+
     const handleSaveProduct = async () => {
         if (!canvas) return;
         setIsSaving(true);
         try {
-            // Get design data
-            const designData = canvas.toJSON();
-
-            // Deselect active objects to avoid rendering bounding boxes in the snapshot
+            // 1. Flush the current active view into viewStates before saving
             canvas.discardActiveObject();
             canvas.renderAll();
+            const currentDesign = canvas.toJSON();
+            const allViewStates = {
+                ...viewStates,
+                [selectedView.id]: { objects: currentDesign.objects },
+            };
 
-            // Capture the whole product div (t-shirt silhouette + design layer)
-            const captureArea = document.getElementById('product-capture-area');
+            // 2. Composite the current (active) view mockup for the primary preview image
             let dataUrl = '';
-            if (captureArea) {
-                const canvasImage = await html2canvas(captureArea, {
-                    backgroundColor: null,
-                    scale: 1, // keeping it reasonable for fast upload
-                });
-                dataUrl = canvasImage.toDataURL('image/jpeg', 0.6);
-            } else {
-                // Fallback to old behavior if div not found for some reason
-                dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.5, multiplier: 0.5 });
+            let printFileDataUrl = '';
+            try {
+                dataUrl = await compositeViewMockup(currentDesign);
+                // High-res design-only print file at 3× multiplier
+                printFileDataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
+            } catch {
+                dataUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 1 });
+                printFileDataUrl = canvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
             }
+
+            // 3. Build design_views: one entry per view that has at least one design object
+            //    Each entry contains the view name, design JSON, and the composite mockup JPEG.
+            //    For views other than the currently active one we re-use the SVG silhouette from
+            //    the live DOM (same garment shape, just different design objects drawn via a
+            //    temporary Fabric canvas).
+            const design_views: Array<{
+                viewId: string; viewName: string;
+                design: any; mockup_url: string; print_file: string;
+            }> = [];
+
+            const originalView = selectedView;
+
+            for (const view of selectedProduct.views) {
+                const state = allViewStates[view.id];
+                // Only include views that the user actually put something on
+                if (!state?.objects?.length) continue;
+
+                const isActiveView = view.id === selectedView.id;
+                let viewMockupUrl = '';
+                let viewPrintFile = '';
+
+                if (isActiveView) {
+                    // Active view: already composited above
+                    viewMockupUrl = dataUrl;
+                    viewPrintFile = printFileDataUrl;
+                } else {
+                    try {
+                        // 1. Switch the DOM to this view's SVG silhouette using flushSync
+                        //    so the mockup component renders the correct garment shape
+                        //    (e.g. hoodie BACK instead of hoodie FRONT)
+                        flushSync(() => setSelectedView(view));
+                        // 2. Wait one frame for the browser to paint the new SVG
+                        await new Promise<void>(r => setTimeout(r, 100));
+
+                        // 3. Load this view's design into a temp Fabric canvas
+                        const tempCanvas = new fabric.Canvas(document.createElement('canvas'), {
+                            width: 500, height: 540, selection: false,
+                        });
+                        await new Promise<void>(resolve => tempCanvas.loadFromJSON(
+                            { version: '5.3.0', objects: state.objects },
+                            () => { tempCanvas.renderAll(); resolve(); }
+                        ));
+                        viewPrintFile = tempCanvas.toDataURL({ format: 'png', quality: 1, multiplier: 3 });
+
+                        // 4. Composite: correct SVG silhouette (now in DOM) + temp design canvas
+                        const captureArea = document.getElementById('product-capture-area');
+                        const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
+                        if (mockupContainer) {
+                            const refRect = mockupContainer.getBoundingClientRect();
+                            const W = Math.round(refRect.width);
+                            const H = Math.round(refRect.height);
+                            const offscreen = document.createElement('canvas');
+                            offscreen.width = W; offscreen.height = H;
+                            const ctx = offscreen.getContext('2d')!;
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, W, H);
+                            for (const svgEl of mockupContainer.querySelectorAll<SVGSVGElement>('svg')) {
+                                const r = svgEl.getBoundingClientRect();
+                                const x = r.left - refRect.left;
+                                const y = r.top  - refRect.top;
+                                if (r.width < 1 || r.height < 1) continue;
+                                const clone = svgEl.cloneNode(true) as SVGSVGElement;
+                                clone.setAttribute('width',  String(r.width));
+                                clone.setAttribute('height', String(r.height));
+                                const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+                                const url  = URL.createObjectURL(blob);
+                                await new Promise<void>(res => {
+                                    const img = new Image();
+                                    img.onload  = () => { ctx.drawImage(img, x, y, r.width, r.height); URL.revokeObjectURL(url); res(); };
+                                    img.onerror = () => { URL.revokeObjectURL(url); res(); };
+                                    img.src = url;
+                                });
+                            }
+                            // Draw the temp canvas (correct design for this view) on top
+                            ctx.drawImage(tempCanvas.getElement() as HTMLCanvasElement, 0, 0, W, H);
+                            viewMockupUrl = offscreen.toDataURL('image/jpeg', 0.85);
+                        }
+                        tempCanvas.dispose();
+                    } catch (e) {
+                        console.warn('Could not composite view', view.id, e);
+                    }
+                }
+
+                design_views.push({
+                    viewId:    view.id,
+                    viewName:  view.name,
+                    design:    { version: '5.3.0', objects: state.objects },
+                    mockup_url: viewMockupUrl,
+                    print_file: viewPrintFile,
+                });
+            }
+
+            // Restore original view after compositing all views
+            flushSync(() => setSelectedView(originalView));
 
             console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
@@ -507,14 +651,17 @@ export default function EditorUI() {
                     productTemplateId: selectedProduct.id,
                     color: selectedColor,
                     view: selectedView.id,
-                    designData: designData
+                    viewStates: allViewStates,
                 }));
                 window.location.href = "/login";
                 return;
             }
 
-            // Insert into the new custom_orders table
+            // Insert into custom_orders — all edited views are stored in design_views.
+            // mockup_image_url = front/active view composite (used for card thumbnails).
+            // design_data kept for backward compat; _printFile = front view high-res PNG.
             const { error } = await supabase.from('custom_orders').insert({
+<<<<<<< HEAD
                 customer_id: user.id, // Now guaranteed to be the actual logged-in customer's ID
                 product_type: supplierProductType || selectedProduct.name,
                 variants: { color: selectedColor, view: selectedView.name },
@@ -522,6 +669,21 @@ export default function EditorUI() {
                 mockup_image_url: dataUrl, // Snapshot image 
                 status: 'PENDING_ADMIN',
                 supplier_product_id: supplierProductId,
+=======
+                customer_id: user.id,
+                product_type: selectedProduct.name,
+                variants: { color: selectedColor, view: selectedView.name },
+                design_data: {
+                    _printFile: printFileDataUrl,
+                    // Embed all view designs for backward compat (active view's objects)
+                    objects: allViewStates[selectedView.id]?.objects ?? [],
+                },
+                // All views with their mockup images and print files
+                design_views: design_views,
+                mockup_image_url: dataUrl,
+                status: 'PENDING_ADMIN',
+                ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
+>>>>>>> 27f5a042396237b4993db14e61d1617fe8012a8b
             });
 
             if (error) {
