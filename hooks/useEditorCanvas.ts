@@ -39,6 +39,36 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         fabric.Object.prototype.cornerSize = 10;
         fabric.Object.prototype.padding = 5;
 
+        // Custom Delete Control
+        const deleteIcon = "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23ef4444;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.245' height='262.187'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.244' height='262.187'/%3E%3C/g%3E%3C/svg%3E";
+        const img = document.createElement('img');
+        img.src = deleteIcon;
+
+        fabric.Object.prototype.controls.deleteControl = new fabric.Control({
+            x: 0.5,
+            y: -0.5,
+            offsetY: -16,
+            offsetX: 16,
+            cursorStyle: 'pointer',
+            mouseUpHandler: (eventData, transform) => {
+                const target = transform.target;
+                const canvas = target.canvas;
+                if (canvas) {
+                    canvas.remove(target);
+                    canvas.requestRenderAll();
+                }
+                return true;
+            },
+            render: (ctx, left, top, styleOverride, fabricObject) => {
+                const size = 20;
+                ctx.save();
+                ctx.translate(left, top);
+                ctx.drawImage(img, -size/2, -size/2, size, size);
+                ctx.restore();
+            },
+            cornerSize: 20
+        });
+
         // Event listeners for selection
         newCanvas.on('selection:created', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
         newCanvas.on('selection:updated', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
@@ -119,6 +149,94 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         canvas.add(text);
         canvas.setActiveObject(text);
         canvas.renderAll();
+    };
+
+    const addCurvedText = () => {
+        if (!canvas || !printArea) return;
+        const centerX = canvasSize ? printArea.left + printArea.width / 2 : printArea.width / 2;
+        const centerY = canvasSize ? printArea.top + printArea.height / 2 : printArea.height / 2;
+        
+        // Use a path for text to curve along
+        const path = new fabric.Path('M -100 0 Q 0 -100 100 0', { fill: '', stroke: '', objectCaching: false, visible: false });
+        
+        const text = new fabric.IText('CURVED TEXT', {
+            left: centerX,
+            top: centerY,
+            originX: 'center',
+            originY: 'center',
+            fontFamily: 'sans-serif',
+            fontSize: 30,
+            fill: '#000000',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            path: path
+        });
+
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        canvas.renderAll();
+    };
+
+    const addShape = (type: string) => {
+        if (!canvas || !printArea) return;
+
+        const centerX = canvasSize ? printArea.left + printArea.width / 2 : printArea.width / 2;
+        const centerY = canvasSize ? printArea.top + printArea.height / 2 : printArea.height / 2;
+
+        const commonProps = {
+            left: centerX,
+            top: centerY,
+            originX: 'center',
+            originY: 'center',
+            fill: '#000000',
+        };
+
+        let shape: fabric.Object | null = null;
+
+        switch (type) {
+            case 'square':
+                shape = new fabric.Rect({ ...commonProps, width: 100, height: 100 });
+                break;
+            case 'circle':
+                shape = new fabric.Circle({ ...commonProps, radius: 50 });
+                break;
+            case 'triangle':
+                shape = new fabric.Triangle({ ...commonProps, width: 100, height: 100 });
+                break;
+            case 'line':
+                shape = new fabric.Line([-50, 0, 50, 0], { ...commonProps, stroke: '#000000', strokeWidth: 5, fill: '' });
+                break;
+            case 'star':
+                shape = new fabric.Path('M 50 5 L 61 37 L 95 37 L 67 57 L 78 89 L 50 69 L 22 89 L 33 57 L 5 37 L 39 37 Z', commonProps);
+                break;
+            case 'heart':
+                shape = new fabric.Path('M 50 85 C 20 55 5 35 5 20 C 5 5 25 5 35 15 C 45 25 50 30 50 30 C 50 30 55 25 65 15 C 75 5 95 5 95 20 C 95 35 80 55 50 85 Z', commonProps);
+                break;
+            case 'hexagon':
+                shape = new fabric.Polygon([{x: 50, y: 0}, {x: 100, y: 25}, {x: 100, y: 75}, {x: 50, y: 100}, {x: 0, y: 75}, {x: 0, y: 25}], commonProps);
+                break;
+            case 'pentagon':
+                shape = new fabric.Polygon([{x: 50, y: 0}, {x: 100, y: 38}, {x: 82, y: 100}, {x: 18, y: 100}, {x: 0, y: 38}], commonProps);
+                break;
+            case 'diamond':
+                shape = new fabric.Polygon([{x: 50, y: 0}, {x: 100, y: 50}, {x: 50, y: 100}, {x: 0, y: 50}], commonProps);
+                break;
+            case 'arrow':
+                shape = new fabric.Path('M 0 40 L 60 40 L 60 20 L 100 50 L 60 80 L 60 60 L 0 60 Z', commonProps);
+                break;
+            case 'cross':
+                shape = new fabric.Path('M 35 0 L 65 0 L 65 35 L 100 35 L 100 65 L 65 65 L 65 100 L 35 100 L 35 65 L 0 65 L 0 35 L 35 35 Z', commonProps);
+                break;
+            case 'badge':
+                shape = new fabric.Path('M 50 0 L 80 10 L 100 40 L 90 70 L 50 100 L 10 70 L 0 40 L 20 10 Z', commonProps);
+                break;
+        }
+
+        if (shape) {
+            canvas.add(shape);
+            canvas.setActiveObject(shape);
+            canvas.renderAll();
+        }
     };
 
     const addImage = (url: string) => {
@@ -217,6 +335,8 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         canvasRef,
         canvas,
         addText,
+        addCurvedText,
+        addShape,
         addImage,
         deleteSelected,
         bringForward,

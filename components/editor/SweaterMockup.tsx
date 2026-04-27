@@ -192,7 +192,7 @@ export default function SweaterMockup({ selectedView, selectedColor, printArea, 
             </div>
 
             <div
-                className="absolute border border-dashed border-gray-400/40 pointer-events-none z-30 flex items-center justify-center text-[10px] text-black/15 uppercase tracking-widest font-medium"
+                className="print-area-placeholder absolute border border-dashed border-gray-400/40 pointer-events-none z-30 flex items-center justify-center text-[10px] text-black/15 uppercase tracking-widest font-medium"
                 style={{
                     left: printArea?.left ?? 170,
                     top: printArea?.top ?? 150,

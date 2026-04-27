@@ -32,32 +32,50 @@ import { supabase } from '@/lib/supabase';
 
 /* ─── Font catalogue ─────────────────────────────────────────────────────── */
 const FONTS = [
+    { name: 'Inter', category: 'Display', style: 'sans-serif' },
+    { name: 'Outfit', category: 'Display', style: 'sans-serif' },
+    { name: 'Playfair Display', category: 'Display', style: 'serif' },
+    { name: 'Oswald', category: 'Display', style: 'sans-serif' },
+    { name: 'Montserrat', category: 'Display', style: 'sans-serif' },
+    { name: 'Lora', category: 'Display', style: 'serif' },
+    { name: 'Bebas Neue', category: 'Display', style: 'sans-serif' },
+    { name: 'Cinzel', category: 'Display', style: 'serif' },
     { name: 'ABeeZee', category: 'Display', style: 'sans-serif' },
     { name: 'Abel', category: 'Display', style: 'sans-serif' },
     { name: 'Abhaya Libre', category: 'Display', style: 'serif' },
     { name: 'Aboreto', category: 'Display', style: 'sans-serif', caps: true },
     { name: 'Abril Fatface', category: 'Display', style: 'serif', weight: '900' },
+    { name: 'Abyssinica SIL', category: 'Display', style: 'serif' },
     { name: 'Acme', category: 'Display', style: 'sans-serif' },
     { name: 'Alegreya', category: 'Display', style: 'serif' },
     { name: 'Alfa Slab One', category: 'Display', style: 'serif', weight: '900' },
-    { name: 'Dancing Script', category: 'Handwriting', style: 'cursive', weight: '700' },
     { name: 'Caveat', category: 'Handwriting', style: 'cursive' },
-    { name: 'Satisfy', category: 'Handwriting', style: 'cursive' },
-    { name: 'Sacramento', category: 'Handwriting', style: 'cursive' },
-    { name: 'Kalam', category: 'Handwriting', style: 'cursive' },
-    { name: 'Pacifico', category: 'Handwriting', style: 'cursive' },
-    { name: 'Kaushan Script', category: 'Handwriting', style: 'cursive' },
-    { name: 'Space Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'Cinzel', category: 'Display', style: 'serif' },
     { name: 'Courier Prime', category: 'Monospace', style: 'monospace' },
-    { name: 'Roboto Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'Dancing Script', category: 'Handwriting', style: 'cursive', weight: '700' },
     { name: 'IBM Plex Mono', category: 'Monospace', style: 'monospace' },
-    { name: 'Source Code Pro', category: 'Monospace', style: 'monospace' },
+    { name: 'Inter', category: 'Display', style: 'sans-serif' },
+    { name: 'Kalam', category: 'Handwriting', style: 'cursive' },
+    { name: 'Kaushan Script', category: 'Handwriting', style: 'cursive' },
+    { name: 'Lora', category: 'Display', style: 'serif' },
+    { name: 'Montserrat', category: 'Display', style: 'sans-serif' },
+    { name: 'Noto Sans Ethiopic', category: 'Display', style: 'sans-serif' },
+    { name: 'Noto Serif Ethiopic', category: 'Display', style: 'serif' },
+    { name: 'Oswald', category: 'Display', style: 'sans-serif' },
+    { name: 'Outfit', category: 'Display', style: 'sans-serif' },
+    { name: 'Pacifico', category: 'Handwriting', style: 'cursive' },
+    { name: 'Playfair Display', category: 'Display', style: 'serif' },
+    { name: 'Roboto Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'Sacramento', category: 'Handwriting', style: 'cursive' },
+    { name: 'Satisfy', category: 'Handwriting', style: 'cursive' },
     { name: 'Share Tech Mono', category: 'Monospace', style: 'monospace' },
+    { name: 'Source Code Pro', category: 'Monospace', style: 'monospace' },
+    { name: 'Space Mono', category: 'Monospace', style: 'monospace' },
 ];
 
 /* ─── Google-Fonts loader ────────────────────────────────────────────────── */
 const GFONTS_URL =
-    'https://fonts.googleapis.com/css2?family=ABeeZee&family=Abel&family=Abhaya+Libre&family=Aboreto&family=Abril+Fatface&family=Acme&family=Alegreya&family=Alfa+Slab+One&family=Dancing+Script:wght@700&family=Caveat&family=Satisfy&family=Sacramento&family=Kalam&family=Pacifico&family=Kaushan+Script&family=Space+Mono&family=Courier+Prime&family=Roboto+Mono&family=IBM+Plex+Mono&family=Source+Code+Pro&family=Share+Tech+Mono&display=swap';
+    'https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Outfit:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Oswald:wght@400;700&family=Montserrat:wght@400;700;900&family=Lora:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=Cinzel:wght@400;700&family=ABeeZee&family=Abel&family=Abhaya+Libre&family=Aboreto&family=Abril+Fatface&family=Acme&family=Alegreya&family=Alfa+Slab+One&family=Dancing+Script:wght@700&family=Caveat&family=Satisfy&family=Sacramento&family=Kalam&family=Pacifico&family=Kaushan+Script&family=Space+Mono&family=Courier+Prime&family=Roboto+Mono&family=IBM+Plex+Mono&family=Source+Code+Pro&family=Share+Tech+Mono&family=Noto+Sans+Ethiopic:wght@400;700&family=Noto+Serif+Ethiopic:wght@400;700&family=Abyssinica+SIL&display=swap';
 
 /* ─── Curved-text preview SVGs ──────────────────────────────────────────── */
 function CurvedPreview1() {
@@ -103,7 +121,7 @@ function CurvedPreview3() {
 }
 
 /* ─── Text Panel ────────────────────────────────────────────────────────── */
-function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (font?: string) => void }) {
+function TextPanel({ onClose, onAddText, onAddCurvedText }: { onClose: () => void; onAddText: (font?: string) => void; onAddCurvedText: () => void }) {
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -139,8 +157,19 @@ function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (fo
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto scrollbar-thin">
 
+                {/* Add a heading CTA */}
+                <div className="px-4 pt-4 pb-2">
+                    <button 
+                        onClick={() => onAddText()}
+                        className="w-full bg-gray-900 text-white rounded-xl py-3.5 text-[14px] font-bold shadow-sm hover:bg-gray-800 hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                        <Type className="w-4 h-4" />
+                        Add a text box
+                    </button>
+                </div>
+
                 {/* Search */}
-                <div className="px-4 pt-4 pb-1">
+                <div className="px-4 pt-2 pb-1">
                     <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus-within:border-gray-400 transition-colors">
                         <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <input
@@ -168,7 +197,7 @@ function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (fo
                         {[<CurvedPreview1 key="1" />, <CurvedPreview2 key="2" />, <CurvedPreview3 key="3" />].map((Preview, i) => (
                             <button
                                 key={i}
-                                onClick={() => onAddText()}
+                                onClick={() => onAddCurvedText()}
                                 className="aspect-square bg-[#f8f8f6] rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden flex items-center justify-center p-2"
                             >
                                 {Preview}
@@ -574,7 +603,7 @@ export default function EditorUI() {
 
     const printArea = selectedView.printAreas[0];
 
-    const { canvasRef, canvas, addText, addImage, updateActiveObject, deleteSelected, bringForward, sendBackward } = useEditorCanvas({
+    const { canvasRef, canvas, addText, addCurvedText, addImage, updateActiveObject } = useEditorCanvas({
         printArea,
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
@@ -969,6 +998,7 @@ export default function EditorUI() {
                     <TextPanel
                         onClose={() => { setShowTextPanel(false); setActiveLeftTool(null); }}
                         onAddText={handleAddText}
+                        onAddCurvedText={addCurvedText}
                     />
                 )}
 
@@ -1015,24 +1045,19 @@ export default function EditorUI() {
                                     </div>
                                 </>
                             )}
-                            {/* Layer actions */}
-                            <div className="flex items-center gap-1 border-r border-gray-200 pr-3 mr-1">
-                                <button onClick={bringForward} title="Bring Forward" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 font-bold text-[10px] transition-colors">
-                                    UP
-                                </button>
-                                <button onClick={sendBackward} title="Send Backward" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 font-bold text-[10px] transition-colors">
-                                    DN
-                                </button>
-                            </div>
-                            {/* Delete */}
-                            <button onClick={deleteSelected} title="Delete selected" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
-                                <X className="w-4 h-4" />
-                            </button>
+                            {/* Layer actions and Delete were moved to Fabric object controls directly */}
                         </div>
                     )}
 
                     <div className="flex-1 flex items-center justify-center relative p-8">
-                        <div id="product-capture-area" className="relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md">
+                        <style>{`
+                            .has-design .print-area-placeholder {
+                                opacity: 0;
+                                transition: opacity 0.2s ease-in-out;
+                                pointer-events: none;
+                            }
+                        `}</style>
+                        <div id="product-capture-area" className={`relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md ${(canvas?.getObjects().length || 0) > 0 ? 'has-design' : ''}`}>
                             {renderMockup()}
                         </div>
                     </div>
