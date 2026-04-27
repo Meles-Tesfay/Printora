@@ -83,65 +83,69 @@ function ProductsPageContent() {
   }, [products]);
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/60">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-[13px] font-black tracking-widest text-gray-500 hover:text-gray-900 transition-colors uppercase"
-            >
-              Home
-            </Link>
-            <span className="text-gray-300">/</span>
-            <span className="text-[13px] font-black tracking-widest text-gray-900 uppercase">
-              Products
+    <div className="p-4 md:p-8">
+      {/* Page Header Area */}
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-8 h-[1px] bg-[#A1FF4D]" />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400">
+              Stenvio Catalog
             </span>
           </div>
+          <h1 className="text-4xl md:text-5xl font-black text-[#111] uppercase tracking-tighter">
+            {typeFilter ? typeFilter.replace(/-/g, ' ') : 'All Products'}
+          </h1>
+        </div>
 
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <Link
-              href="/products"
-              className={`px-4 py-2 rounded-full text-[12px] font-black tracking-widest uppercase border transition-colors ${
-                !typeFilter
-                  ? "bg-[#111] text-white border-[#111]"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
-              }`}
-            >
-              All
-            </Link>
-            {types.map(([slug, label]) => (
-              <Link
-                key={slug}
-                href={`/products?type=${encodeURIComponent(slug)}`}
-                className={`px-4 py-2 rounded-full text-[12px] font-black tracking-widest uppercase border transition-colors ${
-                  typeFilter === slug
-                    ? "bg-[#111] text-white border-[#111]"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
-                }`}
-              >
-                {label}
-              </Link>
+        {!loading && (
+          <div className="bg-white border border-gray-100 px-6 py-3 rounded-2xl shadow-sm">
+            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest mr-2">Results:</span>
+            <span className="text-sm font-black text-[#111]">{filtered.length}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Grid Area */}
+      <div className="min-w-0">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="h-80 bg-white border border-gray-100 rounded-[2rem] animate-pulse" />
             ))}
           </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        {loading ? (
-          <div className="text-gray-500 font-medium">Loading products…</div>
         ) : error ? (
-          <div className="text-red-600 font-medium">Failed to load: {error}</div>
+          <div className="bg-red-50 border border-red-100 p-10 rounded-[2rem] text-center">
+            <p className="text-red-600 font-bold mb-2 tracking-tight text-lg">Catalog unavailable</p>
+            <p className="text-red-400 text-sm max-w-md mx-auto">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-6 px-6 py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
-          <div className="text-gray-500 font-medium">No products found.</div>
+          <div className="py-32 text-center bg-white border border-gray-100 rounded-[2rem]">
+            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-200">
+                  <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 14l6-6M9 8l6 6" />
+               </svg>
+            </div>
+            <h3 className="text-2xl font-black text-[#111] mb-2">No matching products</h3>
+            <p className="text-gray-400 text-sm font-medium">We couldn't find anything in the "{typeFilter}" category.</p>
+            <Link href="/products" className="inline-block mt-8 px-8 py-3 bg-[#111] text-white rounded-xl text-xs font-black uppercase hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all">
+              Explore All Categories
+            </Link>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {filtered.map((product) => (
               <div
                 key={product.id}
-                className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
               >
-                <div className="h-52 bg-gray-50 overflow-hidden relative">
+                <div className="h-64 bg-gray-50 overflow-hidden relative">
                   {product.image_url ? (
                     <img
                       src={product.image_url}
@@ -149,25 +153,18 @@ function ProductsPageContent() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-200">
-                      <svg
-                        width="48"
-                        height="48"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      >
+                    <div className="w-full h-full flex items-center justify-center text-gray-100">
+                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
                         <path d="M3 9h18M9 21V9" />
                       </svg>
                     </div>
                   )}
-                  <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                  <div className="absolute top-4 left-4 flex gap-1.5 flex-wrap">
                     {(product.tags || []).slice(0, 2).map((tag) => (
                       <span
                         key={tag}
-                        className="bg-white/90 backdrop-blur-sm text-[#111] text-[9px] font-black px-2 py-1 rounded-full shadow-sm uppercase tracking-wide"
+                        className="bg-white/95 backdrop-blur-sm text-[#111] text-[9px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-wider"
                       >
                         {tag}
                       </span>
@@ -175,9 +172,9 @@ function ProductsPageContent() {
                   </div>
                 </div>
 
-                <div className="p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-5 h-5 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[9px] font-black text-[#1B2412]">
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-6 h-6 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[10px] font-black text-[#1B2412]">
                       {product.supplier?.full_name?.[0]?.toUpperCase() || "S"}
                     </div>
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">
@@ -185,47 +182,29 @@ function ProductsPageContent() {
                     </span>
                   </div>
 
-                  <h3 className="font-black text-[#111] text-base mb-1 leading-tight">
+                  <h3 className="font-black text-[#111] text-base mb-2 leading-tight group-hover:text-[#A1FF4D] transition-colors">
                     {product.name}
                   </h3>
-                  <p className="text-xs text-gray-400 mb-3 line-clamp-2 font-medium">
+                  <p className="text-xs text-gray-400 mb-6 line-clamp-2 font-medium leading-relaxed">
                     {product.description}
                   </p>
 
-                  {product.available_colors?.length ? (
-                    <div className="flex gap-1.5 mb-4 flex-wrap">
-                      {product.available_colors.slice(0, 8).map((c, idx) => (
-                        <div
-                          key={`${c.hex || "x"}-${idx}`}
-                          title={c.name}
-                          className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                          style={{ backgroundColor: c.hex || "#e5e7eb" }}
-                        />
-                      ))}
-                      {product.available_colors.length > 8 ? (
-                        <span className="text-[9px] font-bold text-gray-400">
-                          +{product.available_colors.length - 8}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div className="flex items-center justify-between">
+                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] block mb-1">
                         {product.product_type}
                       </span>
                       <p className="text-lg font-black text-[#111]">
-                        ${product.price}
+                        ${product.price.toLocaleString()}
                       </p>
                     </div>
                     <Link
-                      href={`/editor?supplier_product_id=${encodeURIComponent(
-                        product.id
-                      )}`}
-                      className="bg-[#111] text-white px-4 py-2.5 rounded-xl font-black text-xs hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-95"
+                      href={`/product/${product.id}`}
+                      className="bg-[#111] text-white w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-lg hover:shadow-[#A1FF4D]/20 group/btn"
                     >
-                      Design →
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover/btn:translate-x-0.5 transition-transform">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
                     </Link>
                   </div>
                 </div>
@@ -233,7 +212,7 @@ function ProductsPageContent() {
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,106 +1,161 @@
-'use client';
-
-import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import React, { useState, useEffect, use } from 'react';
+import { ChevronRight, ChevronLeft, Check, Loader2, AlertCircle, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
-export default function ProductDetailPage(props) {
-  // Use `use` for params since Next.js 15+ sometimes requires async params unrolling
-  // but for a pure markup demo we'll just mock statically.
-  const product = {
-    id: "demo",
-    title: 'Tie-Dye Tee, Spiral',
-    brand: 'Gildan 5000',
-    price: 16.73,
-    images: [
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop&q=80',
-      'https://placehold.co/800x800/f3f4f6/4b5563?text=Back+View',
-      'https://placehold.co/800x800/f3f4f6/4b5563?text=Side+View',
-      'https://placehold.co/800x800/f3f4f6/4b5563?text=Detail+View'
-    ]
-  };
+export default function ProductDetailPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const productId = params.id;
 
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
 
+  useEffect(() => {
+    async function fetchProduct() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('supplier_products')
+          .select('*, supplier:profiles(full_name)')
+          .eq('id', productId)
+          .single();
+
+        if (error) throw error;
+        setProduct(data);
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fafafa]">
+        <Loader2 className="w-10 h-10 text-[#A1FF4D] animate-spin mb-4" />
+        <p className="text-sm font-black uppercase tracking-widest text-gray-400 animate-pulse">Loading Product Details...</p>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fafafa] px-6">
+        <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-black text-[#111] mb-2 uppercase tracking-tight">Product Not Found</h2>
+          <p className="text-gray-500 text-sm mb-6 leading-relaxed">The product you're looking for might have been removed or the link is invalid.</p>
+          <Link href="/products" className="inline-block px-8 py-3 bg-[#111] text-white rounded-xl text-xs font-black uppercase hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all">
+            Back to Catalog
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Use product image or fallback
+  const displayImages = product.image_url ? [product.image_url] : ['https://placehold.co/800x800/f3f4f6/4b5563?text=No+Image+Available'];
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        {/* Left Side: Images */}
-        <div className="flex flex-col">
-          {/* Main Image */}
-          <div className="relative w-full aspect-square bg-[#e5e5e5] rounded-md overflow-hidden mb-4 group cursor-zoom-in">
-            <img 
-              src={product.images[activeImage]} 
-              alt={product.title} 
-              className="w-full h-full object-cover transition-opacity duration-300"
-            />
-            {/* Heart Icon from the mockup picture */}
-            <div className="absolute top-4 right-4 bg-white p-2 rounded-md shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700 hover:text-red-500 transition-colors">
-                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-               </svg>
-            </div>
-          </div>
-          
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Navigation / Breadcrumb */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center gap-3 mb-8">
+          <Link href="/products" className="text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors">Catalog</Link>
+          <ChevronRight size={12} className="text-gray-300" />
+          <span className="text-[11px] font-black uppercase tracking-widest text-gray-900 truncate max-w-[200px]">{product.name}</span>
         </div>
 
-        {/* Right Side: Details */}
-        <div className="flex flex-col pt-2">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">{product.title}</h1>
-          <div className="flex items-center text-gray-600 text-lg mb-8">
-            <span className="font-medium mr-2">{product.brand}</span>
-            <a href="#" className="underline font-semibold hover:text-gray-900">Product details</a>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Left Side: Images (5 cols) */}
+          <div className="lg:col-span-7 flex flex-col">
+            <div className="relative w-full aspect-square bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm group">
+              <img 
+                src={displayImages[activeImage]} 
+                alt={product.name} 
+                className="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute top-6 left-6 flex gap-2">
+                 <span className="bg-[#A1FF4D] text-[#1B2412] text-[10px] font-black px-3 py-1.5 rounded-full shadow-sm uppercase tracking-wider">
+                   {product.product_type}
+                 </span>
+              </div>
+            </div>
           </div>
 
-          {/* Features Bullets */}
-          <ul className="list-disc list-inside space-y-2 text-gray-800 font-medium mb-12 ml-1">
-            <li>100% Preshrunk cotton</li>
-            <li>Medium fabric (5.3 oz/yd² (180 g/m²))</li>
-            <li>Classic Fit</li>
-            <li>Runs true to size</li>
-            <li>Slight color variations may occur due to the dyeing process</li>
-          </ul>
-
-          {/* Printify Choice Box (Start Designing Box) */}
-          {/* Stenvio Studio Box (Start Designing Box) */}
-          <div className="bg-[#e2fccc] rounded-lg p-6 border border-[#c4eab0]">
-            <div className="flex items-center mb-4">
-              <span className="font-extrabold text-2xl tracking-tighter text-gray-900 italic mr-1">Stenvio</span>
-              <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest bg-transparent">Studio</span>
-            </div>
-            <p className="text-gray-900 font-medium mb-6 text-[15px]">
-              Premium blanks, ready for your creative vision. High-quality materials for local craft.
-            </p>
-            
-            <div className="space-y-4 mb-8">
-              <div className="flex items-center text-gray-900">
-                <Check className="text-green-700 mr-3" size={20} strokeWidth={3} />
-                <span className="text-base font-bold text-gray-900 uppercase tracking-widest">In Stock & Ready</span>
+          {/* Right Side: Details (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col">
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[10px] font-black text-[#1B2412]">
+                  {product.supplier?.full_name?.[0]?.toUpperCase() || 'S'}
+                </div>
+                <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                  {product.supplier?.full_name || 'Verified Supplier'}
+                </span>
               </div>
-              <div className="flex items-center text-gray-900">
-                <Check className="text-green-700 mr-3" size={20} strokeWidth={3} />
-                <span className="text-base"><strong>Local Fulfillment</strong> network</span>
+              
+              <h1 className="text-4xl md:text-5xl font-black text-[#111] uppercase tracking-tighter leading-[0.9] mb-4">
+                {product.name}
+              </h1>
+              
+              <p className="text-3xl font-black text-[#111] mb-6 tracking-tight">
+                ${product.price.toLocaleString()}
+              </p>
+              
+              <div className="h-[1px] w-full bg-gray-100 mb-8" />
+              
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-gray-400 mb-3">Description</h3>
+              <p className="text-gray-500 font-medium leading-relaxed mb-10 text-[15px]">
+                {product.description || 'No description provided for this premium blank product.'}
+              </p>
+
+              {/* Design Box */}
+              <div className="bg-[#111] rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-black/20">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#A1FF4D]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                
+                <h3 className="text-xl font-black uppercase tracking-tight mb-2 flex items-center gap-2">
+                  <ShoppingBag size={20} className="text-[#A1FF4D]" />
+                  Ready to Create?
+                </h3>
+                <p className="text-gray-400 text-sm font-medium mb-8 leading-relaxed">
+                  Start your design process now with our professional-grade editor. Add your logos, text, and graphics instantly.
+                </p>
+                
+                <div className="space-y-4 mb-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-[#A1FF4D]/20 flex items-center justify-center">
+                      <Check size={12} className="text-[#A1FF4D]" strokeWidth={4} />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-300">High-Res Templates</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-[#A1FF4D]/20 flex items-center justify-center">
+                      <Check size={12} className="text-[#A1FF4D]" strokeWidth={4} />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-300">Live 3D Preview</span>
+                  </div>
+                </div>
+
+                <Link 
+                  href={`/editor?supplier_product_id=${encodeURIComponent(product.id)}`}
+                  className="group relative block w-full bg-[#A1FF4D] text-[#1B2412] py-5 rounded-2xl font-black uppercase text-sm text-center shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-[0.98]"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    Start Designing
+                    <ChevronRight size={18} strokeWidth={3} className="transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Link>
               </div>
             </div>
-
-            <Link href={`/editor`} className="block w-full group">
-               <button className="relative w-full overflow-hidden rounded-xl py-4 px-6 font-extrabold text-lg text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-95"
-                 style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #14532d 100%)' }}>
-                 {/* Shimmer overlay */}
-                 <span className="pointer-events-none absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out" />
-                 <span className="relative flex items-center justify-center gap-3">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                     <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/>
-                     <circle cx="12" cy="8" r="6"/>
-                   </svg>
-                   Start Designing
-                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-200 group-hover:translate-x-1">
-                     <path d="M5 12h14"/>
-                     <path d="m12 5 7 7-7 7"/>
-                   </svg>
-                 </span>
-               </button>
-            </Link>
           </div>
         </div>
       </div>

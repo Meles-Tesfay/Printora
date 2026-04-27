@@ -509,7 +509,6 @@ function OrderDetail({ order }: { order: any }) {
               </div>
             )}
 
-<<<<<<< HEAD
           {/* Rejected action */}
           {order.status === "REJECTED" && (
             <Link
@@ -519,92 +518,30 @@ function OrderDetail({ order }: { order: any }) {
               <PenTool size={14} /> Redesign & Resubmit
             </Link>
           )}
-=======
-            {/* Design Preview */}
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Mockup */}
-                <div className="bg-gray-50 rounded-2xl overflow-hidden aspect-square flex items-center justify-center p-4 border border-gray-100">
-                    {order.mockup_image_url ? (
-                        <img src={order.mockup_image_url} className="w-full h-full object-contain" alt="Your design" />
-                    ) : (
-                        <div className="text-gray-200 flex flex-col items-center gap-2">
-                            <Package size={40} />
-                            <p className="text-xs font-bold text-gray-300">No preview</p>
-                        </div>
-                    )}
-                </div>
 
-                {/* Details */}
-                <div className="space-y-3">
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product</p>
-                        <p className="font-black text-[#111] text-base">{order.product_type}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Color</p>
-                            <p className="font-black text-[#111] text-sm">{order.variants?.color || "Default"}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">View</p>
-                            <p className="font-black text-[#111] text-sm">{order.variants?.view || "Front"}</p>
-                        </div>
-                    </div>
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Submitted</p>
-                        <p className="font-bold text-[#111] text-sm">{new Date(order.created_at).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                    </div>
-
-                    {/* Supplier proof (if completed) */}
-                    {order.supplier_proof_image_url && (
-                        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Completion Proof</p>
-                                <a
-                                    href={order.supplier_proof_image_url}
-                                    download={`proof-${order.id.slice(0,8)}.jpg`}
-                                    className="flex items-center gap-1 bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:bg-green-700 active:scale-95 transition-all"
-                                >
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    Download
-                                </a>
-                            </div>
-                            <img src={order.supplier_proof_image_url} className="w-full rounded-xl" alt="Proof" />
-                        </div>
-                    )}
-
-                    {/* Rejected action */}
-                    {order.status === "REJECTED" && (
-                        <Link
-                            href="/editor"
-                            className="flex items-center justify-center gap-2 w-full bg-[#111] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all"
-                        >
-                            <PenTool size={14} /> Redesign & Resubmit
-                        </Link>
-                    )}
-                </div>
+          {/* Supplier proof (if completed) */}
+          {order.status === "COMPLETED_BY_SUPPLIER" && order.supplier_proof_image_url && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">
+                  Completion Proof
+                </p>
+                <a
+                  href={order.supplier_proof_image_url}
+                  download={`proof-${order.id.slice(0, 8)}.jpg`}
+                  className="flex items-center gap-1 bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:bg-green-700 active:scale-95 transition-all"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                </a>
+              </div>
+              <img
+                src={order.supplier_proof_image_url}
+                className="w-full rounded-xl"
+                alt="Proof"
+              />
             </div>
-
-            {/* Timeline */}
-            <div className="px-6 pb-6">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Activity Timeline</p>
-                <div className="space-y-2">
-                    {[
-                        { date: order.created_at, label: "Design submitted for review", active: true },
-                        { date: order.status !== "PENDING_ADMIN" ? order.updated_at : null, label: "Admin reviewed & approved", active: ["ASSIGNED_TO_SUPPLIER", "COMPLETED_BY_SUPPLIER"].includes(order.status) },
-                        { date: order.status === "COMPLETED_BY_SUPPLIER" ? order.updated_at : null, label: "Production complete", active: order.status === "COMPLETED_BY_SUPPLIER" },
-                    ].map((item, i) => (
-                        <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${item.active ? "bg-[#A1FF4D]/10" : "opacity-30"}`}>
-                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${item.active ? "bg-[#A1FF4D]" : "bg-gray-300"}`} />
-                            <div>
-                                <p className={`text-[11px] font-bold ${item.active ? "text-[#2B3220]" : "text-gray-400"}`}>{item.label}</p>
-                                {item.date && <p className="text-[10px] text-gray-400">{new Date(item.date).toLocaleString()}</p>}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
->>>>>>> 27f5a042396237b4993db14e61d1617fe8012a8b
+          )}
         </div>
       </div>
 
@@ -623,10 +560,9 @@ function OrderDetail({ order }: { order: any }) {
             {
               date: order.status !== "PENDING_ADMIN" ? order.updated_at : null,
               label: "Admin reviewed & approved",
-              active: [
-                "ASSIGNED_TO_SUPPLIER",
-                "COMPLETED_BY_SUPPLIER",
-              ].includes(order.status),
+              active: ["ASSIGNED_TO_SUPPLIER", "COMPLETED_BY_SUPPLIER"].includes(
+                order.status
+              ),
             },
             {
               date:

@@ -119,7 +119,7 @@ function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (fo
 
     const filtered = FONTS.filter(f => {
         const matchSearch = f.name.toLowerCase().includes(search.toLowerCase());
-        const matchCat = !activeCategory || f.category === activeCategory;
+        const matchCat = !activeCategory || activeCategory === 'ALL' || f.category === activeCategory;
         return matchSearch && matchCat;
     });
 
@@ -193,13 +193,15 @@ function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (fo
                 <section className="px-4 pt-5 pb-6">
                     <span className="text-[13px] font-bold text-gray-800 block mb-3">Discover fonts</span>
 
+
                     {/* Category pills */}
-                    <div className="flex gap-2 mb-4">
-                        {['Display', 'Handwriting', 'Monospace'].map(cat => (
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                        {['ALL', 'Display', 'Handwriting', 'Monospace'].map(cat => (
                             <button
                                 key={cat}
-                                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                                className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${activeCategory === cat
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${
+                                    (activeCategory === cat || (cat === 'ALL' && !activeCategory))
                                     ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
                                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
                                     }`}
@@ -208,6 +210,7 @@ function TextPanel({ onClose, onAddText }: { onClose: () => void; onAddText: (fo
                             </button>
                         ))}
                     </div>
+
 
                     {/* Font list */}
                     <div className="flex flex-col">
@@ -433,11 +436,7 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
-<<<<<<< HEAD
     const supplierProductIdFromQuery = searchParams.get('supplier_product_id');
-=======
-    const supplierProductId   = searchParams.get('supplier_product_id'); // null if customer typed the URL directly
->>>>>>> 27f5a042396237b4993db14e61d1617fe8012a8b
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
@@ -661,29 +660,17 @@ export default function EditorUI() {
             // mockup_image_url = front/active view composite (used for card thumbnails).
             // design_data kept for backward compat; _printFile = front view high-res PNG.
             const { error } = await supabase.from('custom_orders').insert({
-<<<<<<< HEAD
-                customer_id: user.id, // Now guaranteed to be the actual logged-in customer's ID
-                product_type: supplierProductType || selectedProduct.name,
-                variants: { color: selectedColor, view: selectedView.name },
-                design_data: designData, // Actual canvas state
-                mockup_image_url: dataUrl, // Snapshot image 
-                status: 'PENDING_ADMIN',
-                supplier_product_id: supplierProductId,
-=======
                 customer_id: user.id,
-                product_type: selectedProduct.name,
+                product_type: supplierProductType || selectedProduct.name,
                 variants: { color: selectedColor, view: selectedView.name },
                 design_data: {
                     _printFile: printFileDataUrl,
-                    // Embed all view designs for backward compat (active view's objects)
                     objects: allViewStates[selectedView.id]?.objects ?? [],
                 },
-                // All views with their mockup images and print files
                 design_views: design_views,
                 mockup_image_url: dataUrl,
                 status: 'PENDING_ADMIN',
                 ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
->>>>>>> 27f5a042396237b4993db14e61d1617fe8012a8b
             });
 
             if (error) {
