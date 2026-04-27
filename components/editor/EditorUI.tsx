@@ -433,6 +433,7 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
+    const supplierProductIdFromQuery = searchParams.get('supplier_product_id');
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
@@ -447,6 +448,8 @@ export default function EditorUI() {
     const [showGraphicsPanel, setShowGraphicsPanel] = useState(false);
     const [activeLeftTool, setActiveLeftTool] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [supplierProductId, setSupplierProductId] = useState<string | null>(supplierProductIdFromQuery);
+    const [supplierProductType, setSupplierProductType] = useState<string | null>(null);
 
     const printArea = selectedView.printAreas[0];
 
@@ -513,11 +516,12 @@ export default function EditorUI() {
             // Insert into the new custom_orders table
             const { error } = await supabase.from('custom_orders').insert({
                 customer_id: user.id, // Now guaranteed to be the actual logged-in customer's ID
-                product_type: selectedProduct.name,
+                product_type: supplierProductType || selectedProduct.name,
                 variants: { color: selectedColor, view: selectedView.name },
                 design_data: designData, // Actual canvas state
                 mockup_image_url: dataUrl, // Snapshot image 
-                status: 'PENDING_ADMIN'
+                status: 'PENDING_ADMIN',
+                supplier_product_id: supplierProductId,
             });
 
             if (error) {
@@ -543,6 +547,51 @@ export default function EditorUI() {
         setSelectedView(fromQuery.views.find(v => v.id === fromQuery.defaultViewId) || fromQuery.views[0]);
         setViewStates({});
     }, [requestedTemplate, selectedProduct.id]);
+
+    useEffect(() => {
+        if (!supplierProductIdFromQuery) return;
+        setSupplierProductId(supplierProductIdFromQuery);
+
+        let cancelled = false;
+        (async () => {
+            const { data, error } = await supabase
+                .from('supplier_products')
+                .select('id, product_type, available_colors')
+                .eq('id', supplierProductIdFromQuery)
+                .single();
+
+            if (cancelled) return;
+            if (error || !data) return;
+
+            const productType = (data as any).product_type as string;
+            setSupplierProductType(productType);
+
+            const normalized = (productType || '').toLowerCase();
+            const templateId =
+                normalized.includes('hoodie') ? 'premium-hoodie'
+                    : (normalized.includes('hat') || normalized.includes('cap')) ? 'classic-cap'
+                        : (normalized.includes('sweater') || normalized.includes('crewneck')) ? 'crewneck-sweater'
+                            : 'classic-tshirt';
+
+            const template = PRODUCT_TEMPLATES.find((p) => p.id === templateId);
+            if (template && template.id !== selectedProduct.id) {
+                setSelectedProduct(template);
+                setSelectedColor(template.defaultColorHex);
+                setSelectedView(template.views.find(v => v.id === template.defaultViewId) || template.views[0]);
+                setViewStates({});
+            }
+
+            const colors = (data as any).available_colors as Array<{ hex?: string }> | null | undefined;
+            const firstHex = colors?.find(c => typeof c?.hex === 'string')?.hex;
+            if (firstHex) setSelectedColor(firstHex);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+        // We intentionally only re-run when the query param changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [supplierProductIdFromQuery]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;

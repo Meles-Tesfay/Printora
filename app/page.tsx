@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -17,20 +16,12 @@ import {
 import { supabase } from "@/lib/supabase";
 
 export default function Home() {
-  const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
-  const handleDesignNowNavigate =
-    (path: string) =>
-    (e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-      router.push(path);
-    };
 
   useEffect(() => {
     // Get initial session
@@ -662,11 +653,9 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
 
                     {/* Read More button overlay */}
-                    <button
-                      type="button"
-                      onClick={handleDesignNowNavigate("/products/t-shirts")}
-                      onTouchEnd={handleDesignNowNavigate("/products/t-shirts")}
-                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto touch-manipulation"
+                    <Link
+                      href="/products?type=t-shirts"
+                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto"
                     >
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">
                         Design Now
@@ -685,7 +674,7 @@ export default function Home() {
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -754,11 +743,9 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <button
-                      type="button"
-                      onClick={handleDesignNowNavigate("/products/bags")}
-                      onTouchEnd={handleDesignNowNavigate("/products/bags")}
-                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto touch-manipulation"
+                    <Link
+                      href="/products?type=bags"
+                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto"
                     >
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">
                         Design Now
@@ -777,7 +764,7 @@ export default function Home() {
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -846,11 +833,9 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <button
-                      type="button"
-                      onClick={handleDesignNowNavigate("/products/mugs")}
-                      onTouchEnd={handleDesignNowNavigate("/products/mugs")}
-                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto touch-manipulation"
+                    <Link
+                      href="/products?type=mugs"
+                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto"
                     >
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">
                         Design Now
@@ -869,7 +854,7 @@ export default function Home() {
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -935,11 +920,9 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <button
-                      type="button"
-                      onClick={handleDesignNowNavigate("/products")}
-                      onTouchEnd={handleDesignNowNavigate("/products")}
-                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto touch-manipulation"
+                    <Link
+                      href="/products"
+                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto"
                     >
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">
                         Design Now
@@ -958,7 +941,7 @@ export default function Home() {
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1027,11 +1010,9 @@ export default function Home() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
                     {/* Read More button overlay */}
-                    <button
-                      type="button"
-                      onClick={handleDesignNowNavigate("/products/phone-cases")}
-                      onTouchEnd={handleDesignNowNavigate("/products/phone-cases")}
-                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto touch-manipulation"
+                    <Link
+                      href="/products/phone-cases"
+                      className="absolute bottom-6 left-6 flex items-center gap-3 z-20 cursor-pointer pointer-events-auto"
                     >
                       <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">
                         Design Now
@@ -1050,7 +1031,7 @@ export default function Home() {
                           <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
                       </div>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1490,7 +1471,9 @@ export default function Home() {
                           </p>
                         </div>
                         <Link
-                          href="/editor"
+                          href={`/editor?supplier_product_id=${encodeURIComponent(
+                            product.id,
+                          )}`}
                           className="bg-[#111] text-white px-4 py-2.5 rounded-xl font-black text-xs hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-95"
                         >
                           Design →
