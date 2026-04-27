@@ -574,7 +574,7 @@ export default function EditorUI() {
 
     const printArea = selectedView.printAreas[0];
 
-    const { canvasRef, canvas, addText, addImage } = useEditorCanvas({
+    const { canvasRef, canvas, addText, addImage, updateActiveObject, deleteSelected, bringForward, sendBackward } = useEditorCanvas({
         printArea,
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
@@ -856,8 +856,11 @@ export default function EditorUI() {
     };
 
     const handleAddText = (font?: string) => {
-        addText();
-        // font selection is a future enhancement
+        if (activeObject && activeObject.type === 'i-text' && font) {
+            updateActiveObject({ fontFamily: font });
+        } else {
+            addText('Double click to edit', font ? { fontFamily: font } : undefined);
+        }
     };
 
     const renderMockup = () => {
@@ -988,6 +991,46 @@ export default function EditorUI() {
 
                 {/* ═══════════ CENTER: Canvas ═══════════ */}
                 <div className="flex-1 flex flex-col relative bg-[#F4F4F4]">
+                    {/* PROPERTIES TOOLBAR */}
+                    {activeObject && (
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-200 flex items-center px-3 py-2 gap-2 z-40 transition-all animate-in fade-in slide-in-from-top-4 duration-200">
+                            {activeObject.type === 'i-text' && (
+                                <>
+                                    {/* Font Size */}
+                                    <div className="flex items-center gap-1 border-r border-gray-200 pr-3 mr-1">
+                                        <button onClick={() => updateActiveObject({ fontSize: Math.max(10, (activeObject.fontSize || 32) - 2) })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Minus className="w-4 h-4" /></button>
+                                        <span className="text-[13px] font-bold w-8 text-center">{Math.round(activeObject.fontSize || 32)}</span>
+                                        <button onClick={() => updateActiveObject({ fontSize: (activeObject.fontSize || 32) + 2 })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Plus className="w-4 h-4" /></button>
+                                    </div>
+                                    {/* Color Picker */}
+                                    <div className="flex items-center gap-2 border-r border-gray-200 pr-3 mr-1">
+                                        <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform focus-within:ring-2 focus-within:ring-gray-900 focus-within:ring-offset-1" style={{ backgroundColor: activeObject.fill as string || '#000000' }} title="Text color">
+                                            <input 
+                                                type="color" 
+                                                value={activeObject.fill as string || '#000000'}
+                                                onChange={(e) => updateActiveObject({ fill: e.target.value })}
+                                                className="opacity-0 w-full h-full cursor-pointer"
+                                            />
+                                        </label>
+                                    </div>
+                                </>
+                            )}
+                            {/* Layer actions */}
+                            <div className="flex items-center gap-1 border-r border-gray-200 pr-3 mr-1">
+                                <button onClick={bringForward} title="Bring Forward" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 font-bold text-[10px] transition-colors">
+                                    UP
+                                </button>
+                                <button onClick={sendBackward} title="Send Backward" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 font-bold text-[10px] transition-colors">
+                                    DN
+                                </button>
+                            </div>
+                            {/* Delete */}
+                            <button onClick={deleteSelected} title="Delete selected" className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
                     <div className="flex-1 flex items-center justify-center relative p-8">
                         <div id="product-capture-area" className="relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md">
                             {renderMockup()}

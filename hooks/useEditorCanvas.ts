@@ -186,6 +186,9 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         if (activeObject) {
             activeObject.set(updates);
             canvas.renderAll();
+            // Force React re-render by creating a new reference or just triggering the callback
+            onSelectionChangeRef.current?.(null);
+            setTimeout(() => onSelectionChangeRef.current?.(activeObject), 0);
         }
     };
 
