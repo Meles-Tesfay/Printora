@@ -1,4 +1,0 @@
-NEXT_PUBLIC_SUPABASE_URL=https://rygmvbukvloxwsjssfjc.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_MG1n3hIxcZREQv5U2aaYrg_4ejgYPF1
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_ZTB9VLVpAsHQl3IkFASYYw_27K0JzdP
-DATABASE_URL="postgresql://postgres:xay6wCAUKKvHmCeH@db.rygmvbukvloxwsjssfjc.supabase.co:5432/postgres"
