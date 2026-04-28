@@ -9,9 +9,10 @@ interface UseEditorCanvasProps {
     canvasSize?: { width: number, height: number };
     onSelectionChange?: (activeObject: fabric.Object | null) => void;
     initialState?: CanvasDesignState;
+    viewId?: string;
 }
 
-export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, initialState }: UseEditorCanvasProps) {
+export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, initialState, viewId }: UseEditorCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
     const [canvasRevision, setCanvasRevision] = useState(0);
@@ -126,7 +127,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
             canvas.clear();
             canvas.setBackgroundColor('transparent', () => { });
         }
-    }, [canvas, initialState]);
+    }, [canvas, initialState, viewId]);
 
     const addText = (textStr = 'Double click to edit', options: fabric.ITextOptions = {}) => {
         if (!canvas || !printArea) return;

@@ -614,6 +614,7 @@ export default function EditorUI() {
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
         initialState: viewStates[selectedView.id],
+        viewId: selectedView.id,
     });
 
     const handleViewChange = (viewId: string) => {
