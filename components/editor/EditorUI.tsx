@@ -609,7 +609,7 @@ export default function EditorUI() {
 
     const printArea = selectedView.printAreas[0];
 
-    const { canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject } = useEditorCanvas({
+    const { canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject, canvasRevision } = useEditorCanvas({
         printArea,
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
@@ -1052,25 +1052,53 @@ export default function EditorUI() {
                                 <div className="flex items-center gap-3 border-r border-gray-200 pr-3 mr-1">
                                     <div className="flex flex-col items-center gap-0.5">
                                         <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Fill</span>
-                                        <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform focus-within:ring-2 focus-within:ring-gray-900 focus-within:ring-offset-1" style={{ backgroundColor: (activeObject.fill || activeObject.stroke) as string || '#000000' }} title="Color">
-                                            <input 
-                                                type="color" 
-                                                value={(activeObject.fill || activeObject.stroke) as string || '#000000'}
-                                                onChange={(e) => updateActiveObject(activeObject.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
-                                                className="opacity-0 w-full h-full cursor-pointer"
-                                            />
-                                        </label>
+                                        <div className="flex items-center gap-0.5">
+                                            <button 
+                                                onClick={() => updateActiveObject(activeObject.type === 'line' ? { stroke: 'transparent' } : { fill: 'transparent' })}
+                                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
+                                                title="No Fill"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                            <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform relative" style={{ backgroundColor: ((activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) === 'transparent' ? '#ffffff' : (activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) as string || '#000000') }} title="Fill Color">
+                                                {((activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) === 'transparent') && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <div className="w-[120%] h-px bg-red-500 rotate-45"></div>
+                                                    </div>
+                                                )}
+                                                <input 
+                                                    type="color" 
+                                                    value={((activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) === 'transparent' ? '#000000' : (activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) as string || '#000000')}
+                                                    onChange={(e) => updateActiveObject(activeObject.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
+                                                    className="opacity-0 w-full h-full cursor-pointer"
+                                                />
+                                            </label>
+                                        </div>
                                     </div>
                                     <div className="flex flex-col items-center gap-0.5">
                                         <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Stroke</span>
-                                        <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: activeObject.stroke as string || 'transparent' }} title="Stroke Color">
-                                            <input 
-                                                type="color" 
-                                                value={activeObject.stroke as string || '#000000'}
-                                                onChange={(e) => updateActiveObject({ stroke: e.target.value, strokeWidth: activeObject.strokeWidth || 1 })}
-                                                className="opacity-0 w-full h-full cursor-pointer"
-                                            />
-                                        </label>
+                                        <div className="flex items-center gap-0.5">
+                                            <button 
+                                                onClick={() => updateActiveObject({ stroke: 'transparent', strokeWidth: 0 })}
+                                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
+                                                title="No Stroke"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                            <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform relative" style={{ backgroundColor: (activeObject.stroke === 'transparent' || !activeObject.strokeWidth) ? '#ffffff' : activeObject.stroke as string || '#000000' }} title="Stroke Color">
+                                                {(activeObject.stroke === 'transparent' || !activeObject.strokeWidth) && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                        <div className="w-[120%] h-px bg-red-500 rotate-45"></div>
+                                                    </div>
+                                                )}
+                                                <input 
+                                                    type="color" 
+                                                    value={(activeObject.stroke === 'transparent' ? '#000000' : activeObject.stroke as string || '#000000')}
+                                                    onChange={(e) => updateActiveObject({ stroke: e.target.value, strokeWidth: activeObject.strokeWidth || 1 })}
+                                                    className="opacity-0 w-full h-full cursor-pointer"
+                                                />
+                                            </label>
+                                        </div>
                                     </div>
                                     <div className="flex flex-col items-center gap-0.5 w-16">
                                         <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Border</span>
