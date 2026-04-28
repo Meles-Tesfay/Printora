@@ -16,11 +16,65 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
     const [canvasRevision, setCanvasRevision] = useState(0);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [isPanning, setIsPanning] = useState(false);
+
+    const [history, setHistory] = useState<string[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
 
     const onSelectionChangeRef = useRef(onSelectionChange);
     useEffect(() => {
         onSelectionChangeRef.current = onSelectionChange;
     }, [onSelectionChange]);
+
+    // Save history function
+    const saveHistory = () => {
+        if (!canvas || isInitialLoad.current) return;
+        const json = JSON.stringify(canvas.toJSON());
+        
+        setHistory(prev => {
+            const newHistory = prev.slice(0, historyIndex + 1);
+            if (newHistory.length > 0 && newHistory[newHistory.length - 1] === json) {
+                return prev;
+            }
+            newHistory.push(json);
+            if (newHistory.length > 50) {
+                newHistory.shift();
+                return newHistory;
+            }
+            return newHistory;
+        });
+        setHistoryIndex(prev => {
+            const newIdx = prev + 1;
+            return newIdx > 49 ? 49 : newIdx;
+        });
+        setCanvasRevision(r => r + 1);
+    };
+
+    // Undo/Redo functions
+    const undo = () => {
+        if (historyIndex > 0 && canvas) {
+            const prevIndex = historyIndex - 1;
+            const state = history[prevIndex];
+            canvas.loadFromJSON(state, () => {
+                canvas.renderAll();
+                setHistoryIndex(prevIndex);
+                setCanvasRevision(r => r + 1);
+            });
+        }
+    };
+
+    const redo = () => {
+        if (historyIndex < history.length - 1 && canvas) {
+            const nextIndex = historyIndex + 1;
+            const state = history[nextIndex];
+            canvas.loadFromJSON(state, () => {
+                canvas.renderAll();
+                setHistoryIndex(nextIndex);
+                setCanvasRevision(r => r + 1);
+            });
+        }
+    };
 
     // Initialize canvas
     useEffect(() => {
@@ -28,14 +82,14 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
 
         // Create Fabric canvas
         const newCanvas = new fabric.Canvas(canvasRef.current, {
-            preserveObjectStacking: true, // Crucial for z-index management
-            selection: true, // Allow multi-selection
+            preserveObjectStacking: true,
+            selection: true,
             backgroundColor: 'transparent',
         });
 
         // Default settings for objects
         fabric.Object.prototype.transparentCorners = false;
-        fabric.Object.prototype.cornerColor = '#16a34a'; // Primary color
+        fabric.Object.prototype.cornerColor = '#16a34a';
         fabric.Object.prototype.cornerStyle = 'circle';
         fabric.Object.prototype.borderColor = '#16a34a';
         fabric.Object.prototype.cornerSize = 10;
@@ -58,6 +112,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
                 if (canvas) {
                     canvas.remove(target);
                     canvas.requestRenderAll();
+                    saveHistory();
                 }
                 return true;
             },
@@ -75,6 +130,11 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         newCanvas.on('selection:created', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
         newCanvas.on('selection:updated', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
         newCanvas.on('selection:cleared', () => onSelectionChangeRef.current?.(null));
+        
+        // History events
+        newCanvas.on('object:added', () => saveHistory());
+        newCanvas.on('object:modified', () => saveHistory());
+        newCanvas.on('object:removed', () => saveHistory());
 
         setCanvas(newCanvas);
 
@@ -84,16 +144,23 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         };
     }, []);
 
+    // Initial history save
+    useEffect(() => {
+        if (canvas && history.length === 0) {
+            const json = JSON.stringify(canvas.toJSON());
+            setHistory([json]);
+            setHistoryIndex(0);
+        }
+    }, [canvas]);
+
     // Resize canvas when print area changes
     useEffect(() => {
         if (canvas && printArea) {
-            // If canvasSize is provided, the canvas covers the full mockup, and printArea is just a clipping mask
             const useFullCanvas = !!canvasSize;
             canvas.setWidth(useFullCanvas ? canvasSize.width : printArea.width);
             canvas.setHeight(useFullCanvas ? canvasSize.height : printArea.height);
 
             if (useFullCanvas) {
-                // Apply Clipping Mask so elements hide outside the chest bounding box
                 const clipPath = new fabric.Rect({
                     left: printArea.left,
                     top: printArea.top,
@@ -102,32 +169,112 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
                     absolutePositioned: true
                 });
                 canvas.clipPath = clipPath;
-                
-                // Optional: Draw a visual dashed bounding box for the print area that doesn't export
-                // We'll skip drawing lines directly on canvas to keep export clean, we rely on HTML or overlay instead.
             }
 
             canvas.renderAll();
         }
     }, [canvas, printArea, canvasSize]);
 
-    // Handle restoring state (if we switch views and come back)
+    const isInitialLoad = useRef(false);
+
+    // Handle restoring state
     useEffect(() => {
         if (canvas && initialState && initialState.objects) {
+            isInitialLoad.current = true;
             canvas.clear();
             canvas.setBackgroundColor('transparent', () => { });
-            // Load from JSON
             fabric.util.enlivenObjects(initialState.objects, (objects: fabric.Object[]) => {
+                // Batch add to avoid triggering too many events
                 objects.forEach((obj) => {
                     canvas.add(obj);
                 });
                 canvas.renderAll();
+                
+                const json = JSON.stringify(canvas.toJSON());
+                setHistory([json]);
+                setHistoryIndex(0);
+                
+                // Done loading
+                setTimeout(() => {
+                    isInitialLoad.current = false;
+                }, 100);
             }, "");
         } else if (canvas && !initialState) {
             canvas.clear();
             canvas.setBackgroundColor('transparent', () => { });
+            const json = JSON.stringify(canvas.toJSON());
+            setHistory([json]);
+            setHistoryIndex(0);
+            isInitialLoad.current = false;
         }
     }, [canvas, initialState, viewId]);
+    
+    // Handle Zoom
+    const setZoom = (value: number) => {
+        if (!canvas) return;
+        const newZoom = Math.min(Math.max(0.05, value), 5);
+        setZoomLevel(newZoom);
+        const center = canvas.getCenter();
+        canvas.zoomToPoint(new fabric.Point(center.left, center.top), newZoom);
+        canvas.renderAll();
+    };
+
+    // Handle Panning (Hand Tool)
+    useEffect(() => {
+        if (!canvas) return;
+
+        if (isPanning) {
+            canvas.defaultCursor = 'grab';
+            canvas.selection = false;
+            canvas.forEachObject(obj => {
+                obj.selectable = false;
+                obj.hoverCursor = 'grab';
+            });
+        } else {
+            canvas.defaultCursor = 'default';
+            canvas.selection = true;
+            canvas.forEachObject(obj => {
+                obj.selectable = true;
+                obj.hoverCursor = 'move';
+            });
+        }
+        canvas.renderAll();
+
+        const handleMouseDown = (opt: any) => {
+            if (!isPanning) return;
+            const evt = opt.e;
+            (canvas as any).isDragging = true;
+            canvas.selection = false;
+            (canvas as any).lastPosX = evt.clientX || evt.touches?.[0]?.clientX;
+            (canvas as any).lastPosY = evt.clientY || evt.touches?.[0]?.clientY;
+        };
+
+        const handleMouseMove = (opt: any) => {
+            if (!(canvas as any).isDragging) return;
+            const e = opt.e;
+            const vpt = canvas.viewportTransform!;
+            vpt[4] += (e.clientX || e.touches?.[0]?.clientX) - (canvas as any).lastPosX;
+            vpt[5] += (e.clientY || e.touches?.[0]?.clientY) - (canvas as any).lastPosY;
+            canvas.requestRenderAll();
+            (canvas as any).lastPosX = e.clientX || e.touches?.[0]?.clientX;
+            (canvas as any).lastPosY = e.clientY || e.touches?.[0]?.clientY;
+        };
+
+        const handleMouseUp = () => {
+            (canvas as any).isDragging = false;
+            canvas.selection = isPanning ? false : true;
+        };
+
+        canvas.on('mouse:down', handleMouseDown);
+        canvas.on('mouse:move', handleMouseMove);
+        canvas.on('mouse:up', handleMouseUp);
+
+        return () => {
+            canvas.off('mouse:down', handleMouseDown);
+            canvas.off('mouse:move', handleMouseMove);
+            canvas.off('mouse:up', handleMouseUp);
+        };
+    }, [canvas, isPanning]);
 
     const addText = (textStr = 'Double click to edit', options: fabric.ITextOptions = {}) => {
         if (!canvas || !printArea) return;
@@ -158,7 +305,6 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         const centerX = canvasSize ? printArea.left + printArea.width / 2 : printArea.width / 2;
         const centerY = canvasSize ? printArea.top + printArea.height / 2 : printArea.height / 2;
         
-        // Use a path for text to curve along
         const path = new fabric.Path('M -100 0 Q 0 -100 100 0', { fill: '', stroke: '', objectCaching: false, visible: false });
         
         const text = new fabric.IText('CURVED TEXT', {
@@ -245,7 +391,6 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         if (!canvas || !printArea) return;
 
         fabric.Image.fromURL(url, (img) => {
-            // Scale down image if it's too large for the print area
             const maxWidth = printArea.width * 0.8;
             const maxHeight = printArea.height * 0.8;
 
@@ -279,6 +424,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
                 canvas.remove(object);
             });
             canvas.renderAll();
+            saveHistory();
         }
     };
 
@@ -288,6 +434,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         if (activeObject) {
             canvas.bringForward(activeObject);
             canvas.renderAll();
+            saveHistory();
         }
     };
 
@@ -297,6 +444,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         if (activeObject) {
             canvas.sendBackwards(activeObject);
             canvas.renderAll();
+            saveHistory();
         }
     };
 
@@ -306,7 +454,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         if (activeObject) {
             activeObject.set(updates);
             canvas.renderAll();
-            // Force React re-render without unmounting the toolbar
+            saveHistory();
             setCanvasRevision(r => r + 1);
         }
     };
@@ -316,9 +464,17 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!canvas) return;
             const activeObject = canvas.getActiveObject();
-            if (!activeObject) return;
+            
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                e.preventDefault();
+                redo();
+            }
 
-            // Don't trigger if user is editing text
+            if (!activeObject) return;
             if (activeObject instanceof fabric.IText && activeObject.isEditing) {
                 return;
             }
@@ -330,7 +486,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canvas]);
+    }, [canvas, history, historyIndex]);
 
     return {
         canvasRef,
@@ -343,6 +499,14 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         bringForward,
         sendBackward,
         updateActiveObject,
-        canvasRevision
+        undo,
+        redo,
+        canUndo: historyIndex > 0,
+        canRedo: historyIndex < history.length - 1,
+        canvasRevision,
+        zoomLevel,
+        setZoom,
+        isPanning,
+        setIsPanning
     };
 }

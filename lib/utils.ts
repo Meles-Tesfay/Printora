@@ -4,3 +4,18 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+export function isDarkColor(hex: string) {
+  if (!hex || hex === 'transparent') return false;
+  const color = hex.replace('#', '');
+  if (color.length === 3) {
+    const r = parseInt(color[0] + color[0], 16);
+    const g = parseInt(color[1] + color[1], 16);
+    const b = parseInt(color[2] + color[2], 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.4;
+  }
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.4;
+}

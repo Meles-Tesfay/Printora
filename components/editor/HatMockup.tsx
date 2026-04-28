@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProductView, PrintArea } from '@/types/editor';
+import { isDarkColor } from '@/lib/utils';
 
 interface HatMockupProps {
     selectedView: ProductView;
@@ -8,11 +9,10 @@ interface HatMockupProps {
     canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
-const INK = '#222222';
 const SW = '1.2';
 
 // --- FRONT (from Figma SVG: hat front.svg) ---
-function FrontHat({ color }: { color: string }) {
+function FrontHat({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 686 763" xmlns="http://www.w3.org/2000/svg" className="w-full h-full overflow-visible" style={{ display: 'block' }}>
             {/* Color fill — covers the full hat body + brim */}
@@ -35,7 +35,7 @@ function FrontHat({ color }: { color: string }) {
                 stroke="none"
             />
 
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 {/* Main crown bottom line */}
                 <path d="M33.5 753.721C384.478 652.826 386.358 712.715 660.5 756.5" />
                 {/* Left eyelets */}
@@ -74,11 +74,13 @@ function FrontHat({ color }: { color: string }) {
 }
 
 export default function HatMockup({ selectedView, selectedColor, printArea, canvasRef }: HatMockupProps) {
+    const strokeColor = isDarkColor(selectedColor) ? 'rgba(255,255,255,0.45)' : '#222222';
+
     return (
         <div className="relative flex-shrink-0" style={{ width: 500, height: 540 }}>
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center" style={{ zIndex: 0 }}>
-                <div className="w-[80%] h-[80%]">
-                    <FrontHat color={selectedColor} />
+            <div className="absolute inset-0 pointer-events-none flex items-start justify-center pt-8" style={{ zIndex: 0 }}>
+                <div className="w-[78%] h-[78%]">
+                    <FrontHat color={selectedColor} strokeColor={strokeColor} />
                 </div>
             </div>
 

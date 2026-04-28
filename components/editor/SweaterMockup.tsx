@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProductView, PrintArea } from '@/types/editor';
+import { isDarkColor } from '@/lib/utils';
 
 interface SweaterMockupProps {
     selectedView: ProductView;
@@ -8,11 +9,10 @@ interface SweaterMockupProps {
     canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
-const INK = '#222222';
 const SW = '1.2';
 
 // --- FRONT (from Figma SVG: sweate front.svg) ---
-function FrontSweater({ color }: { color: string }) {
+function FrontSweater({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 272 335" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
             <path d={`
@@ -33,7 +33,7 @@ function FrontSweater({ color }: { color: string }) {
                 Z
             `} fill={color} stroke="none" />
 
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M182.5 8.5C231.557 27.1609 245.5 55.4043 245.5 66.5" />
                 <path d="M244.5 65.5C245.518 67.4986 290.83 295.838 261.81 305.331C261.81 317.49 261.5 339.694 261.5 330.5" />
                 <path d="M100 1C100 25 159.5 37 171.5 1" />
@@ -65,7 +65,7 @@ function FrontSweater({ color }: { color: string }) {
 }
 
 // --- BACK (from Figma SVG: sweaterr back.svg) ---
-function BackSweater({ color }: { color: string }) {
+function BackSweater({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 273 335" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
             <path d={`
@@ -96,7 +96,7 @@ function BackSweater({ color }: { color: string }) {
                 Z
             `} fill={color} stroke="none" />
 
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M87.0166 8.90801C39.5165 27.408 26.0166 55.408 26.0166 66.408" />
                 <path d="M27.0166 65.908C26.0166 67.908 -18.4834 296.408 10.0166 305.908C10.0166 318.075 10 340.108 10 330.908" />
                 <path d="M10.0166 332.908C51.0166 335.908 47.5166 331.908 52.0166 332.908" />
@@ -126,7 +126,7 @@ function BackSweater({ color }: { color: string }) {
 }
 
 // --- LEFT SIDE (new SVG from user) ---
-function LeftSideSweater({ color }: { color: string }) {
+function LeftSideSweater({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 93 331" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
             {/* Sleeve body fill */}
@@ -139,7 +139,7 @@ function LeftSideSweater({ color }: { color: string }) {
                 d="M23.4021 316L24.5074 330.5H68.5026L70.1596 316C55.7814 313 25.7294 314 23.4021 316Z"
                 fill={color} stroke="none"
             />
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8.6056 120.5C-32.6155 -3.01139 97.0314 -72.2823 92.3774 120.5" />
                 <path d="M8.50001 120.5L23.4021 316M92.5 120.5L70.1596 316M70.1596 316L68.5026 330.5H24.5074L23.4021 316M70.1596 316C55.7814 313 25.7294 314 23.4021 316" />
             </g>
@@ -148,7 +148,7 @@ function LeftSideSweater({ color }: { color: string }) {
 }
 
 // --- RIGHT SIDE (new SVG from user) ---
-function RightSideSweater({ color }: { color: string }) {
+function RightSideSweater({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 104 331" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
             {/* Sleeve body fill */}
@@ -161,7 +161,7 @@ function RightSideSweater({ color }: { color: string }) {
                 d="M25.5 316.001L27.3542 330.501H76.5869L77.8238 316.001C75.2195 314.001 41.5898 313.001 25.5 316.001Z"
                 fill={color} stroke="none"
             />
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M94.4253 120.501C140.575 -3.01077 -4.57321 -72.2817 0.637249 120.501" />
                 <path d="M94.5 120.501L77.8238 316.001M0.499992 120.501L25.5 316.001M25.5 316.001L27.3542 330.501H76.5869L77.8238 316.001M25.5 316.001C41.5898 313.001 75.2195 314.001 77.8238 316.001" />
             </g>
@@ -170,19 +170,21 @@ function RightSideSweater({ color }: { color: string }) {
 }
 
 export default function SweaterMockup({ selectedView, selectedColor, printArea, canvasRef }: SweaterMockupProps) {
+    const strokeColor = isDarkColor(selectedColor) ? 'rgba(255,255,255,0.45)' : '#222222';
+
     const getViewComponent = () => {
         switch (selectedView.id) {
-            case 'back': return <BackSweater color={selectedColor} />;
-            case 'left-side': return <LeftSideSweater color={selectedColor} />;
-            case 'right-side': return <RightSideSweater color={selectedColor} />;
-            default: return <FrontSweater color={selectedColor} />;
+            case 'back': return <BackSweater color={selectedColor} strokeColor={strokeColor} />;
+            case 'left-side': return <LeftSideSweater color={selectedColor} strokeColor={strokeColor} />;
+            case 'right-side': return <RightSideSweater color={selectedColor} strokeColor={strokeColor} />;
+            default: return <FrontSweater color={selectedColor} strokeColor={strokeColor} />;
         }
     };
 
     return (
         <div className="relative flex-shrink-0" style={{ width: 500, height: 540 }}>
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center" style={{ zIndex: 0 }}>
-                <div className="w-[85%] h-[85%]">
+            <div className="absolute inset-0 pointer-events-none flex items-start justify-center pt-8" style={{ zIndex: 0 }}>
+                <div className="w-[83%] h-[83%]">
                     {getViewComponent()}
                 </div>
             </div>

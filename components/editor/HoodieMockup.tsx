@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProductView, PrintArea } from '@/types/editor';
+import { isDarkColor } from '@/lib/utils';
 
 interface HoodieMockupProps {
     selectedView: ProductView;
@@ -8,11 +9,10 @@ interface HoodieMockupProps {
     canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
-const INK = '#222222';
 const SW = '1.2';
 
 // --- FRONT HOODIE (from Figma SVG: hoodie front.svg, viewBox 586x736, scaled to fit 500x540) ---
-function FrontHoodie({ color }: { color: string }) {
+function FrontHoodie({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 586 736" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
             {/* Filled silhouette */}
@@ -66,7 +66,7 @@ function FrontHoodie({ color }: { color: string }) {
                 C344.5,148.813 256.5,151.813 205.5,105.313
             `} fill={color} stroke="none" />
 
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 {/* Left body */}
                 <path d="M17.7532 669.313C-13.0365 638.248 0.739887 492.752 32.7043 373.885C56.3446 231.641 73.4333 124.71 158.5 105.313" />
                 {/* Left cuff area */}
@@ -141,7 +141,7 @@ function FrontHoodie({ color }: { color: string }) {
 }
 
 // --- BACK HOODIE (from Figma SVG: hodddie back.svg) ---
-function BackHoodie({ color }: { color: string }) {
+function BackHoodie({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         <svg viewBox="0 0 496 671" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
             {/* Filled silhouette */}
@@ -164,7 +164,7 @@ function BackHoodie({ color }: { color: string }) {
                 Z
             `} fill={color} stroke="none" />
 
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 {/* Hood */}
                 <path d="M138.5 8.16188C191 -4.83813 341 1.16184 346 8.16189C362 18.1619 370 95.6618 364 80.6618C358 65.6618 297.5 157.662 243.5 157.662C189.5 157.662 138.5 66.6618 122.5 80.6618" />
                 {/* Left cuff area */}
@@ -206,7 +206,7 @@ function BackHoodie({ color }: { color: string }) {
 }
 
 // --- LEFT HAND ---
-function LeftHandHoodie({ color }: { color: string }) {
+function LeftHandHoodie({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         // viewBox cropped to arm area (y 290..870) for better size in editor
         <svg viewBox="0 290 271 580" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
@@ -224,7 +224,7 @@ function LeftHandHoodie({ color }: { color: string }) {
                    Z"
                 fill={color} stroke="none"
             />
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M83.7642 391.5C130.264 338.5 187.147 355.878 224.147 391.378M93.5 321.5C73.5 395.5 82.9819 523.5 82.9819 568M222.764 316C229.764 391 227.5 360.5 219.5 430.5" />
                 <path d="M140 808C208 736 211 455.5 219 430M89.5 554.5C57.0004 603.5 65.5 760 60.5 781.5" />
                 <path d="M60.5567 780.849C113.503 795.051 123.03 801.615 139.592 810.772" />
@@ -239,7 +239,7 @@ function LeftHandHoodie({ color }: { color: string }) {
 
 
 // --- RIGHT HAND ---
-function RightHandHoodie({ color }: { color: string }) {
+function RightHandHoodie({ color, strokeColor }: { color: string, strokeColor: string }) {
     return (
         // viewBox cropped to arm area (y 290..870) for better size in editor
         <svg viewBox="0 290 271 580" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" style={{ display: 'block' }}>
@@ -257,7 +257,7 @@ function RightHandHoodie({ color }: { color: string }) {
                    Z"
                 fill={color} stroke="none"
             />
-            <g fill="none" stroke={INK} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
+            <g fill="none" stroke={strokeColor} strokeWidth={SW} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M192.893 385.5C145.188 332.5 86.8303 349.878 48.8711 385.378M182.905 315.5C203.423 389.5 193.696 517.5 193.696 562M50.2898 310C43.1083 385 45.4308 354.5 53.6382 424.5" />
                 <path d="M134.745 802C65.2433 730 62.1767 449.5 54 424M186.36 548.5C219.577 597.5 210.89 754 216 775.5" />
                 <path d="M215.319 774.849C161.441 789.051 151.746 795.615 134.892 804.772" />
@@ -270,18 +270,20 @@ function RightHandHoodie({ color }: { color: string }) {
 }
 
 export default function HoodieMockup({ selectedView, selectedColor, printArea, canvasRef }: HoodieMockupProps) {
+    const strokeColor = isDarkColor(selectedColor) ? 'rgba(255,255,255,0.45)' : '#222222';
+
     const getViewComponent = () => {
         switch (selectedView.id) {
-            case 'back': return <BackHoodie color={selectedColor} />;
-            case 'left-hand': return <LeftHandHoodie color={selectedColor} />;
-            case 'right-hand': return <RightHandHoodie color={selectedColor} />;
-            default: return <FrontHoodie color={selectedColor} />;
+            case 'back': return <BackHoodie color={selectedColor} strokeColor={strokeColor} />;
+            case 'left-hand': return <LeftHandHoodie color={selectedColor} strokeColor={strokeColor} />;
+            case 'right-hand': return <RightHandHoodie color={selectedColor} strokeColor={strokeColor} />;
+            default: return <FrontHoodie color={selectedColor} strokeColor={strokeColor} />;
         }
     };
 
     return (
         <div className="relative flex-shrink-0" style={{ width: 500, height: 540 }}>
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center" style={{ zIndex: 0 }}>
+            <div className="absolute inset-0 pointer-events-none flex items-start justify-center pt-8" style={{ zIndex: 0 }}>
                 {(selectedView.id === 'left-hand' || selectedView.id === 'right-hand') ? (
                     <div style={{ height: '92%', aspectRatio: '271 / 580' }}>
                         {getViewComponent()}

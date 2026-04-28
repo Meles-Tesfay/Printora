@@ -20,7 +20,7 @@ const EditorUI = dynamic(() => import('@/components/editor/EditorUI'), {
 
 function EditorContent() {
     return (
-        <div className="min-h-screen bg-[#0e0e10] flex flex-col">
+        <div className="h-screen bg-[#0e0e10] flex flex-col overflow-hidden">
             {/* Editor Navbar */}
             <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#141416]/95 backdrop-blur-xl">
                 <div className="px-5 h-14 flex items-center justify-between">

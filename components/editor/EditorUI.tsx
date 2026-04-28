@@ -19,7 +19,6 @@ import {
     Undo2,
     Redo2,
     ArrowLeft,
-    Hand,
     X,
     Minus,
     Plus,
@@ -142,7 +141,7 @@ function TextPanel({ onClose, onAddText, onAddCurvedText }: { onClose: () => voi
     });
 
     return (
-        <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
+        <div className="absolute left-[88px] top-0 bottom-0 w-[340px] bg-white border-r border-gray-200 flex flex-col z-30 shadow-[2px_0_12px_rgba(0,0,0,0.06)] animate-in slide-in-from-left duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">Add text</h2>
@@ -344,7 +343,7 @@ function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage
     const filtered = assets.filter(a => a.file_name.toLowerCase().includes(search.toLowerCase()));
 
     return (
-        <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
+        <div className="absolute left-[88px] top-0 bottom-0 w-[340px] bg-white border-r border-gray-200 flex flex-col z-30 shadow-[2px_0_12px_rgba(0,0,0,0.06)] animate-in slide-in-from-left duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">My library</h2>
@@ -518,7 +517,7 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
     ];
 
     return (
-        <div className="w-[340px] flex-shrink-0 h-full bg-white border-r border-gray-200 flex flex-col z-20 shadow-[2px_0_12px_rgba(0,0,0,0.06)]">
+        <div className="absolute left-[88px] top-0 bottom-0 w-[340px] bg-white border-r border-gray-200 flex flex-col z-30 shadow-[2px_0_12px_rgba(0,0,0,0.06)] animate-in slide-in-from-left duration-300">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">Graphics</h2>
@@ -587,6 +586,75 @@ function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () =
     );
 }
 
+/* ─── Templates Panel ────────────────────────────────────────────────────── */
+function TemplatesPanel({ onClose, onLoadTemplate }: { onClose: () => void; onLoadTemplate: (template: any) => void }) {
+    const [templates, setTemplates] = useState<any[]>([]);
+
+    useEffect(() => {
+        const saved = JSON.parse(localStorage.getItem('printora_templates') || '[]');
+        setTemplates(saved);
+    }, []);
+
+    const handleDelete = (index: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const updated = [...templates];
+        updated.splice(index, 1);
+        setTemplates(updated);
+        localStorage.setItem('printora_templates', JSON.stringify(updated));
+    };
+
+    return (
+        <div className="absolute left-[88px] top-0 bottom-0 w-[340px] bg-white border-r border-gray-200 flex flex-col z-30 shadow-[2px_0_12px_rgba(0,0,0,0.06)] animate-in slide-in-from-left duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-[17px] font-bold text-gray-900 tracking-tight">My templates</h2>
+                <button
+                    onClick={onClose}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scrollbar-thin">
+                {templates.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <LayoutTemplate className="w-12 h-12 text-gray-200" />
+                        <div className="text-center">
+                            <h3 className="text-[14px] font-bold text-gray-800 mb-1">No templates yet</h3>
+                            <p className="text-[12px] text-gray-400 max-w-[200px] leading-relaxed">Save your current design as a template to see it here.</p>
+                        </div>
+                    </div>
+                ) : (
+                    templates.map((t, i) => (
+                        <div 
+                            key={i}
+                            className="group relative flex flex-col p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all bg-gray-50 cursor-pointer"
+                            onClick={() => onLoadTemplate(t)}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-bold text-[14px] text-gray-800 truncate pr-6">{t.name || `Template ${i + 1}`}</h4>
+                                <button 
+                                    onClick={(e) => handleDelete(i, e)}
+                                    className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white text-gray-400 hover:text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full border border-gray-200" style={{ backgroundColor: t.color }} />
+                                <span className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">{t.productTemplateId.replace(/-/g, ' ')}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-2 font-medium uppercase tracking-tighter">Click to resume editing</p>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
 /* ─── Main Editor UI ─────────────────────────────────────────────────────── */
 export default function EditorUI() {
     const searchParams = useSearchParams();
@@ -594,28 +662,106 @@ export default function EditorUI() {
     const supplierProductId   = searchParams.get('supplier_product_id'); // null if customer typed the URL directly
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
-    const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(initialTemplate);
-    const [selectedColor, setSelectedColor] = useState<string>(initialTemplate.defaultColorHex);
-    const [selectedView, setSelectedView] = useState<ProductView>(
-        initialTemplate.views.find(v => v.id === initialTemplate.defaultViewId) || initialTemplate.views[0]
-    );
-    const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>({});
+    const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(() => {
+        // Priority 1: URL parameter
+        if (requestedTemplate) {
+            const p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
+            if (p) return p;
+        }
+        // Priority 2: Saved state
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('printora_editor_state');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    const p = PRODUCT_TEMPLATES.find(t => t.id === data.productTemplateId);
+                    if (p) return p;
+                } catch {}
+            }
+        }
+        return initialTemplate;
+    });
+
+    const [selectedColor, setSelectedColor] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('printora_editor_state');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    // Only use saved color if it's the same product as current
+                    if (data.productTemplateId === selectedProduct?.id && data.color) {
+                        return data.color;
+                    }
+                } catch {}
+            }
+        }
+        return initialTemplate.defaultColorHex;
+    });
+
+    const [selectedView, setSelectedView] = useState<ProductView>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('printora_editor_state');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    // Only use saved view if it's the same product as current
+                    if (data.productTemplateId === selectedProduct?.id && data.viewId) {
+                        const v = selectedProduct.views.find(view => view.id === data.viewId);
+                        if (v) return v;
+                    }
+                } catch {}
+            }
+        }
+        return selectedProduct.views.find(v => v.id === selectedProduct.defaultViewId) || selectedProduct.views[0];
+    });
+
+    const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('printora_editor_state');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    // We can keep all view states even if product changes (they just won't be used)
+                    return data.viewStates || {};
+                } catch {}
+            }
+        }
+        return {};
+    });
     const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
     const [showTextPanel, setShowTextPanel] = useState(false);
     const [showLibraryPanel, setShowLibraryPanel] = useState(false);
     const [showGraphicsPanel, setShowGraphicsPanel] = useState(false);
+    const [showTemplatesPanel, setShowTemplatesPanel] = useState(false);
     const [activeLeftTool, setActiveLeftTool] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     const printArea = selectedView.printAreas[0];
 
-    const { canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject, canvasRevision } = useEditorCanvas({
+    const { 
+        canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject, canvasRevision,
+        undo, redo, canUndo, canRedo
+    } = useEditorCanvas({
         printArea,
         canvasSize: { width: 500, height: 540 },
         onSelectionChange: setActiveObject,
         initialState: viewStates[selectedView.id],
         viewId: selectedView.id,
     });
+
+    const handleLoadTemplate = (template: any) => {
+        const product = PRODUCT_TEMPLATES.find(p => p.id === template.productTemplateId);
+        if (product) {
+            setSelectedProduct(product);
+            setSelectedColor(template.color);
+            setViewStates(template.viewStates || {});
+            const view = product.views.find(v => v.id === product.defaultViewId) || product.views[0];
+            setSelectedView(view);
+            // Close panel after loading
+            setShowTemplatesPanel(false);
+            setActiveLeftTool(null);
+        }
+    };
 
     const handleViewChange = (viewId: string) => {
         if (canvas) {
@@ -627,6 +773,42 @@ export default function EditorUI() {
         const newView = selectedProduct.views.find(v => v.id === viewId);
         if (newView) setSelectedView(newView);
     };
+
+    // Persistence: Load from URL query (if present) to override local storage for fresh navigation
+    useEffect(() => {
+        if (requestedTemplate && requestedTemplate !== selectedProduct.id) {
+            const fromQuery = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate);
+            if (fromQuery) {
+                setSelectedProduct(fromQuery);
+                setSelectedColor(fromQuery.defaultColorHex);
+                setSelectedView(fromQuery.views.find(v => v.id === fromQuery.defaultViewId) || fromQuery.views[0]);
+                setViewStates({});
+            }
+        }
+    }, [requestedTemplate]);
+
+    // Sync viewStates with canvas changes
+    useEffect(() => {
+        // Only sync if the canvas has actually been modified (revision > 0)
+        // This prevents the initial empty canvas from overwriting loaded state
+        if (canvas && canvasRevision > 0) {
+            setViewStates(prev => ({
+                ...prev,
+                [selectedView.id]: { objects: canvas.toJSON().objects },
+            }));
+        }
+    }, [canvasRevision, selectedView.id]);
+
+    // Persistence: Save on change
+    useEffect(() => {
+        const state = {
+            productTemplateId: selectedProduct.id,
+            color: selectedColor,
+            viewId: selectedView.id,
+            viewStates,
+        };
+        localStorage.setItem('printora_editor_state', JSON.stringify(state));
+    }, [selectedProduct, selectedColor, selectedView, viewStates]);
 
     // ── Helper: composite SVG silhouette from a given viewId onto an offscreen canvas ──
     const compositeViewMockup = async (viewDesignJson: any): Promise<string> => {
@@ -883,11 +1065,13 @@ export default function EditorUI() {
             setShowTextPanel(false);
             setShowLibraryPanel(false);
             setShowGraphicsPanel(false);
+            setShowTemplatesPanel(false);
         } else {
             setActiveLeftTool(tool);
             setShowTextPanel(tool === 'text');
             setShowLibraryPanel(tool === 'library');
             setShowGraphicsPanel(tool === 'graphics');
+            setShowTemplatesPanel(tool === 'templates');
         }
     };
 
@@ -939,7 +1123,7 @@ export default function EditorUI() {
     ];
 
     return (
-        <div className="flex flex-col h-screen bg-[#F4F4F4] text-gray-800 font-sans overflow-hidden">
+        <div className="flex-1 flex flex-col h-full bg-[#F4F4F4] text-gray-800 font-sans overflow-hidden">
 
             {/* Top Navigation Bar */}
             <div className="h-14 bg-white flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0">
@@ -950,8 +1134,20 @@ export default function EditorUI() {
                     <div className="h-5 w-[1px] bg-gray-300" />
                     <div className="flex items-center gap-3">
                         <HelpCircle className="w-5 h-5 text-gray-500" />
-                        <button className="text-gray-400 hover:text-gray-600"><Undo2 className="w-5 h-5" /></button>
-                        <button className="text-gray-400 hover:text-gray-600"><Redo2 className="w-5 h-5" /></button>
+                        <button 
+                            onClick={undo}
+                            disabled={!canUndo}
+                            className={`${canUndo ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 cursor-not-allowed'}`}
+                        >
+                            <Undo2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                            onClick={redo}
+                            disabled={!canRedo}
+                            className={`${canRedo ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 cursor-not-allowed'}`}
+                        >
+                            <Redo2 className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -961,6 +1157,31 @@ export default function EditorUI() {
                     </div>
                     <button className="w-9 h-9 flex items-center justify-center bg-[#E5E5DF] rounded-md text-gray-700">
                         <Wand2 className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={handleSaveProduct}
+                        disabled={isSaving}
+                        className={`${isSaving ? 'bg-gray-300' : 'bg-gray-900 hover:bg-gray-800'} text-white font-bold px-8 py-1.5 rounded text-sm uppercase transition-colors ml-2 shadow-sm`}
+                    >
+                        {isSaving ? 'Saving...' : 'Save product'}
+                    </button>
+                    <button
+                        onClick={() => {
+                            // Simple template save logic (to localStorage for now)
+                            const state = {
+                                productTemplateId: selectedProduct.id,
+                                color: selectedColor,
+                                viewStates,
+                                name: `Template ${new Date().toLocaleTimeString()}`
+                            };
+                            const templates = JSON.parse(localStorage.getItem('printora_templates') || '[]');
+                            templates.push(state);
+                            localStorage.setItem('printora_templates', JSON.stringify(templates));
+                            alert('Design saved to your templates!');
+                        }}
+                        className="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-1.5 rounded text-sm uppercase transition-colors ml-2 hover:bg-gray-50 shadow-sm"
+                    >
+                        Save Template
                     </button>
                 </div>
             </div>
@@ -1023,6 +1244,14 @@ export default function EditorUI() {
                         onClose={() => { setShowGraphicsPanel(false); setActiveLeftTool(null); }}
                         onAddShape={addShape}
                         onAddCurvedText={addCurvedText}
+                    />
+                )}
+
+                {/* ═══════════ TEMPLATES PANEL (slide-in) ═══════════ */}
+                {showTemplatesPanel && (
+                    <TemplatesPanel
+                        onClose={() => { setShowTemplatesPanel(false); setActiveLeftTool(null); }}
+                        onLoadTemplate={handleLoadTemplate}
                     />
                 )}
 
@@ -1129,7 +1358,7 @@ export default function EditorUI() {
                         </div>
                     )}
 
-                    <div className="flex-1 flex items-center justify-center relative p-8">
+                    <div className="flex-1 flex flex-col items-center justify-center relative p-4 overflow-hidden">
                         <style>{`
                             .has-design .print-area-placeholder {
                                 opacity: 0;
@@ -1137,13 +1366,13 @@ export default function EditorUI() {
                                 pointer-events: none;
                             }
                         `}</style>
-                        <div id="product-capture-area" className={`relative z-10 w-full h-full max-w-2xl max-h-[80vh] flex justify-center items-center drop-shadow-md ${(canvas?.getObjects().length || 0) > 0 ? 'has-design' : ''}`}>
+                        <div id="product-capture-area" className={`relative z-10 w-full h-full max-w-2xl flex justify-center items-center drop-shadow-md ${(canvas?.getObjects().length || 0) > 0 ? 'has-design' : ''}`}>
                             {renderMockup()}
                         </div>
                     </div>
 
                     {/* View Pills */}
-                    <div className="absolute bottom-16 left-0 right-0 flex items-center justify-center gap-3 z-30">
+                    <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-3 z-30">
                         {selectedProduct.views.map(view => (
                             <button
                                 key={view.id}
@@ -1158,30 +1387,6 @@ export default function EditorUI() {
                         ))}
                     </div>
 
-                    {/* Bottom Status Bar */}
-                    <div className="h-12 bg-white flex items-center justify-between px-4 border-t border-gray-200 mt-auto z-40 relative">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 border border-gray-300 rounded overflow-hidden">
-                                <button className="w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 border-r border-gray-300">
-                                    <Minus className="w-4 h-4" />
-                                </button>
-                                <span className="text-[13px] font-semibold text-gray-700 min-w-[3ch] text-center">9%</span>
-                                <button className="w-8 h-8 flex items-center justify-center bg-white hover:bg-gray-50 text-gray-600 border-l border-gray-300">
-                                    <Plus className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <button className="text-gray-500 hover:text-gray-800">
-                                <Hand className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <button
-                            onClick={handleSaveProduct}
-                            disabled={isSaving}
-                            className={`${isSaving ? 'bg-gray-300' : 'bg-gray-900 hover:bg-gray-800'} text-white font-bold px-10 py-1.5 rounded text-sm uppercase transition-colors`}
-                        >
-                            {isSaving ? 'Saving...' : 'Save product'}
-                        </button>
-                    </div>
                 </div>
 
                 {/* ═══════════ RIGHT PANEL: Variants & Layers ═══════════ */}
