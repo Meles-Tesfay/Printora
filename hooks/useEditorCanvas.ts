@@ -14,6 +14,7 @@ interface UseEditorCanvasProps {
 export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, initialState }: UseEditorCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+    const [canvasRevision, setCanvasRevision] = useState(0);
 
     const onSelectionChangeRef = useRef(onSelectionChange);
     useEffect(() => {
@@ -304,9 +305,8 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         if (activeObject) {
             activeObject.set(updates);
             canvas.renderAll();
-            // Force React re-render by creating a new reference or just triggering the callback
-            onSelectionChangeRef.current?.(null);
-            setTimeout(() => onSelectionChangeRef.current?.(activeObject), 0);
+            // Force React re-render without unmounting the toolbar
+            setCanvasRevision(r => r + 1);
         }
     };
 
@@ -341,6 +341,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         deleteSelected,
         bringForward,
         sendBackward,
-        updateActiveObject
+        updateActiveObject,
+        canvasRevision
     };
 }

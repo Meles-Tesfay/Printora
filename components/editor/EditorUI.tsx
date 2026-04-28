@@ -1020,8 +1020,8 @@ export default function EditorUI() {
                 {showGraphicsPanel && (
                     <GraphicsPanel
                         onClose={() => { setShowGraphicsPanel(false); setActiveLeftTool(null); }}
-                        onAddShape={() => { /* future shape logic */ }}
-                        onAddCurvedText={handleAddText}
+                        onAddShape={addShape}
+                        onAddCurvedText={addCurvedText}
                     />
                 )}
 
@@ -1038,22 +1038,64 @@ export default function EditorUI() {
                                         <span className="text-[13px] font-bold w-8 text-center">{Math.round(activeObject.fontSize || 32)}</span>
                                         <button onClick={() => updateActiveObject({ fontSize: (activeObject.fontSize || 32) + 2 })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Plus className="w-4 h-4" /></button>
                                     </div>
+                                    {/* Font Styles */}
+                                    <div className="flex items-center gap-1 border-r border-gray-200 pr-3 mr-1">
+                                        <button onClick={() => updateActiveObject({ fontWeight: activeObject.fontWeight === 'bold' ? 'normal' : 'bold' })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors ${activeObject.fontWeight === 'bold' ? 'bg-gray-200 text-gray-900 font-bold' : 'text-gray-600'}`}>B</button>
+                                        <button onClick={() => updateActiveObject({ fontStyle: activeObject.fontStyle === 'italic' ? 'normal' : 'italic' })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors italic ${activeObject.fontStyle === 'italic' ? 'bg-gray-200 text-gray-900' : 'text-gray-600 font-serif'}`}>I</button>
+                                        <button onClick={() => updateActiveObject({ underline: !activeObject.underline })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors underline ${activeObject.underline ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}>U</button>
+                                    </div>
                                 </>
                             )}
                             
                             {/* Color Picker (for everything except images) */}
                             {activeObject.type !== 'image' && (
-                                <div className="flex items-center gap-2 border-r border-gray-200 pr-3 mr-1">
-                                    <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform focus-within:ring-2 focus-within:ring-gray-900 focus-within:ring-offset-1" style={{ backgroundColor: (activeObject.fill || activeObject.stroke) as string || '#000000' }} title="Color">
+                                <div className="flex items-center gap-3 border-r border-gray-200 pr-3 mr-1">
+                                    <div className="flex flex-col items-center gap-0.5">
+                                        <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Fill</span>
+                                        <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform focus-within:ring-2 focus-within:ring-gray-900 focus-within:ring-offset-1" style={{ backgroundColor: (activeObject.fill || activeObject.stroke) as string || '#000000' }} title="Color">
+                                            <input 
+                                                type="color" 
+                                                value={(activeObject.fill || activeObject.stroke) as string || '#000000'}
+                                                onChange={(e) => updateActiveObject(activeObject.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
+                                                className="opacity-0 w-full h-full cursor-pointer"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-0.5">
+                                        <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Stroke</span>
+                                        <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform" style={{ backgroundColor: activeObject.stroke as string || 'transparent' }} title="Stroke Color">
+                                            <input 
+                                                type="color" 
+                                                value={activeObject.stroke as string || '#000000'}
+                                                onChange={(e) => updateActiveObject({ stroke: e.target.value, strokeWidth: activeObject.strokeWidth || 1 })}
+                                                className="opacity-0 w-full h-full cursor-pointer"
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-0.5 w-16">
+                                        <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Border</span>
                                         <input 
-                                            type="color" 
-                                            value={(activeObject.fill || activeObject.stroke) as string || '#000000'}
-                                            onChange={(e) => updateActiveObject(activeObject.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
-                                            className="opacity-0 w-full h-full cursor-pointer"
+                                            type="range" min="0" max="20" 
+                                            value={activeObject.strokeWidth || 0} 
+                                            onChange={(e) => updateActiveObject({ strokeWidth: parseInt(e.target.value) })}
+                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-700"
                                         />
-                                    </label>
+                                    </div>
                                 </div>
                             )}
+
+                            {/* Opacity for all objects */}
+                            <div className="flex items-center gap-2 pr-1">
+                                <div className="flex flex-col items-center gap-0.5 w-16">
+                                    <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Opacity</span>
+                                    <input 
+                                        type="range" min="0" max="100" 
+                                        value={(activeObject.opacity ?? 1) * 100} 
+                                        onChange={(e) => updateActiveObject({ opacity: parseInt(e.target.value) / 100 })}
+                                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-700"
+                                    />
+                                </div>
+                            </div>
                             {/* Layer actions and Delete were moved to Fabric object controls directly */}
                         </div>
                     )}
