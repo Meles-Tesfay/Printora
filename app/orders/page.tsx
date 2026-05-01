@@ -259,7 +259,7 @@ function OrdersContent() {
                         {/* Order Detail (right) */}
                         <div className="lg:col-span-3">
                             {selectedOrder ? (
-                                <OrderDetail order={selectedOrder} />
+                                <OrderDetail order={selectedOrder} onRefresh={initPage} />
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full py-24 text-center bg-white rounded-3xl border border-gray-100">
                                     <Package size={36} className="text-gray-200 mb-3" />
@@ -274,7 +274,10 @@ function OrdersContent() {
     );
 }
 
-function OrderDetail({ order }: { order: any }) {
+function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }) {
+    const [finalReceipt, setFinalReceipt] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING_ADMIN;
     const Icon = cfg.icon;
     const currentStep = cfg.step;
@@ -393,6 +396,63 @@ function OrderDetail({ order }: { order: any }) {
                                 </a>
                             </div>
                             <img src={order.supplier_proof_image_url} className="w-full rounded-xl" alt="Proof" />
+                            
+                            {/* Final Payment Section */}
+                            {!order.variants?.finalReceiptUrl ? (
+                                <div className="mt-4 pt-4 border-t border-green-200">
+                                    <p className="text-sm font-black text-green-800 mb-2">Production is complete! 🎉</p>
+                                    <p className="text-xs text-green-700 font-medium mb-3">Please pay the remaining balance of <span className="font-bold">${(((order.variants?.quality === "Premium" ? 30 : 25) * (order.variants?.quantity || 1)) / 2).toFixed(2)}</span> to Bank Account (CBE) 100021312323 to arrange delivery.</p>
+                                    
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[10px] font-black text-green-600 uppercase tracking-widest">Upload Final Receipt</label>
+                                        <input 
+                                            type="file" 
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => setFinalReceipt(event.target?.result as string);
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
+                                            className="w-full text-xs text-green-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700 transition-all"
+                                        />
+                                        {finalReceipt && (
+                                            <div className="mt-2">
+                                                <img src={finalReceipt} className="h-20 rounded-lg object-contain bg-white/50 p-1 border border-green-200" alt="Final Receipt" />
+                                                <button 
+                                                    onClick={async () => {
+                                                        setIsSubmitting(true);
+                                                        const newVariants = { ...order.variants, finalReceiptUrl: finalReceipt };
+                                                        await supabase.from('custom_orders').update({ variants: newVariants }).eq('id', order.id);
+                                                        setIsSubmitting(false);
+                                                        onRefresh();
+                                                    }}
+                                                    disabled={isSubmitting}
+                                                    className="w-full mt-2 bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all"
+                                                >
+                                                    {isSubmitting ? 'Submitting...' : 'Submit Final Payment'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="mt-4 pt-4 border-t border-green-200 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-black text-green-800 mb-1">Final payment submitted! ✅</p>
+                                        <p className="text-xs text-green-700 font-medium">We are verifying your payment and preparing your order for delivery.</p>
+                                    </div>
+                                    <a
+                                        href={order.variants.finalReceiptUrl}
+                                        download={`final-receipt-${order.id.slice(0,8)}.jpg`}
+                                        className="flex items-center gap-1 bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:bg-green-700 active:scale-95 transition-all flex-shrink-0"
+                                    >
+                                        View Receipt
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     )}
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ShoppingBag, CheckCircle, Clock, XCircle, BarChart3, Users,
   User, Box, Truck, ArrowRight, ShieldCheck, AlertCircle,
-  Package, Palette, Loader2, LogOut, Eye
+  Package, Palette, Loader2, LogOut, Eye, Download
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -537,8 +537,8 @@ export default function AdminDashboard() {
       {/* Order Detail Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden">
-            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-xl font-black text-[#111] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>
                 Order Details
               </h3>
@@ -546,37 +546,90 @@ export default function AdminDashboard() {
                 <XCircle size={28} />
               </button>
             </div>
-            <div className="p-8 space-y-4">
-              {selectedOrder.mockup_image_url && (
-                <div className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden">
-                  <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain" alt="Design" />
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer</p>
-                  <p className="font-black text-[#111] text-sm">{selectedOrder.customer?.full_name || 'N/A'}</p>
-                  <p className="text-xs text-gray-500">{selectedOrder.customer?.email}</p>
-                </div>
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product</p>
-                  <p className="font-black text-[#111] text-sm">{selectedOrder.product_type}</p>
-                  <p className="text-xs text-gray-500">{selectedOrder.variants?.color} • {selectedOrder.variants?.view}</p>
-                </div>
-                <div className="bg-green-50 rounded-2xl p-4 col-span-2">
-                  <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Auto-Assign To</p>
-                  <p className="font-black text-[#111] text-sm">
-                    {selectedOrder.supplier_product?.supplier?.full_name || '⚠️ No linked supplier product — will need manual routing'}
-                  </p>
-                </div>
+            <div className="p-6 flex flex-col md:flex-row gap-6 max-h-[80vh] overflow-y-auto">
+              {/* Left Column: Images */}
+              <div className="w-full md:w-1/2 flex flex-col gap-4">
+                 {selectedOrder.mockup_image_url && (
+                   <div className="w-full h-64 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group">
+                     <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">Design Mockup</p>
+                     <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
+                   </div>
+                 )}
+                 {selectedOrder.variants?.receiptDataUrl && (
+                   <div className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative flex items-center justify-center group">
+                      <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">Payment Receipt</p>
+                      <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-4" alt="Receipt" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <a 
+                             href={selectedOrder.variants.receiptDataUrl} 
+                             download={`Receipt_${selectedOrder.id}.png`}
+                             className="bg-[#ccff00] text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-all hover:bg-[#b3e600]"
+                          >
+                             <Download size={14} /> Download
+                          </a>
+                      </div>
+                   </div>
+                 )}
               </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
-                  Reject Order
-                </button>
-                <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-1 bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg">
-                  ✓ Approve & Assign
-                </button>
+
+              {/* Right Column: Details */}
+              <div className="w-full md:w-1/2 flex flex-col gap-4">
+                 <div className="grid grid-cols-2 gap-4">
+                   <div className="bg-gray-50 rounded-2xl p-4">
+                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer</p>
+                     <p className="font-black text-[#111] text-sm">{selectedOrder.customer?.full_name || 'N/A'}</p>
+                     <p className="text-xs text-gray-500">{selectedOrder.customer?.email}</p>
+                   </div>
+                   <div className="bg-gray-50 rounded-2xl p-4">
+                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Amount & Status</p>
+                     <p className="font-black text-emerald-600 text-sm">
+                       ${((selectedOrder.variants?.quality === "Premium" ? 30 : 25) * (selectedOrder.variants?.quantity || 1)).toFixed(2)} Total
+                     </p>
+                     <p className="text-xs text-gray-500 font-medium mt-0.5">Paid: ${(((selectedOrder.variants?.quality === "Premium" ? 30 : 25) * (selectedOrder.variants?.quantity || 1)) / 2).toFixed(2)} (Advance)</p>
+                   </div>
+                 </div>
+
+                 <div className="bg-gray-50 rounded-2xl p-4">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product Details</p>
+                    <div className="grid grid-cols-2 gap-y-3 mt-3">
+                        <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Type</p>
+                            <p className="font-black text-[#111] text-xs">{selectedOrder.product_type}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Variant</p>
+                            <p className="font-black text-[#111] text-xs">{selectedOrder.variants?.color} • {selectedOrder.variants?.view}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Size</p>
+                            <p className="font-black text-[#111] text-xs">{selectedOrder.variants?.size || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Quantity</p>
+                            <p className="font-black text-[#111] text-xs">{selectedOrder.variants?.quantity || 1}</p>
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Quality</p>
+                            <p className="font-black text-[#111] text-xs">{selectedOrder.variants?.quality || 'Standard'}</p>
+                        </div>
+                    </div>
+                 </div>
+
+                 <div className="bg-green-50 rounded-2xl p-4">
+                   <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">Auto-Assign To</p>
+                   <p className="font-black text-[#111] text-sm">
+                     {selectedOrder.supplier_product?.supplier?.full_name || '⚠️ No linked supplier product — will need manual routing'}
+                   </p>
+                 </div>
+
+                 <div className="flex gap-3 mt-auto pt-2">
+                   <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
+                     Reject
+                   </button>
+                   <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg">
+                     ✓ Approve & Assign
+                   </button>
+                 </div>
               </div>
             </div>
           </div>

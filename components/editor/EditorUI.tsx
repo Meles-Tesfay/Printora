@@ -747,6 +747,13 @@ export default function EditorUI() {
     // Track the DB order ID when editing an existing order
     const [dbOrderId, setDbOrderId] = useState<string | null>(editOrderId);
 
+    // Payment modal state
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [orderSize, setOrderSize] = useState("L");
+    const [orderQuantity, setOrderQuantity] = useState(1);
+    const [orderQuality, setOrderQuality] = useState("Standard");
+    const [receiptDataUrl, setReceiptDataUrl] = useState("");
+
     const printArea = selectedView.printAreas[0];
 
     const { 
@@ -865,6 +872,30 @@ export default function EditorUI() {
         // Also keep localStorage for backwards compat / crash recovery
         localStorage.setItem('printora_editor_state', JSON.stringify(state));
     }, [selectedProduct, selectedColor, selectedView, viewStates, loadedTemplateId]);
+
+    // Check if user is logged in before showing the payment modal
+    const handleOrderClick = async () => {
+        setIsSaving(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                // Save their work to localStorage so they don't lose it
+                localStorage.setItem('printora_pending_design', JSON.stringify({
+                    productTemplateId: selectedProduct.id,
+                    color: selectedColor,
+                    view: selectedView.id,
+                    viewStates,
+                }));
+                window.location.href = "/login";
+                return;
+            }
+            setShowPaymentModal(true);
+        } catch (e) {
+            console.error('Auth error', e);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // ── Helper: composite SVG silhouette from a given viewId onto an offscreen canvas ──
     const compositeViewMockup = async (viewDesignJson: any): Promise<string> => {
@@ -1048,11 +1079,20 @@ export default function EditorUI() {
                 return;
             }
 
+            const finalVariants = {
+                color: selectedColor,
+                view: selectedView.name,
+                size: orderSize,
+                quantity: orderQuantity,
+                quality: orderQuality,
+                receiptDataUrl: receiptDataUrl || null,
+            };
+
             if (dbOrderId) {
                 // ── UPDATE existing order ──
                 const { error } = await supabase.from('custom_orders').update({
                     product_type: selectedProduct.name,
-                    variants: { color: selectedColor, view: selectedView.name },
+                    variants: finalVariants,
                     design_data: {
                         _printFile: printFileDataUrl,
                         objects: allViewStates[selectedView.id]?.objects ?? [],
@@ -1073,7 +1113,7 @@ export default function EditorUI() {
                 const { data: newOrder, error } = await supabase.from('custom_orders').insert({
                     customer_id: user.id,
                     product_type: selectedProduct.name,
-                    variants: { color: selectedColor, view: selectedView.name },
+                    variants: finalVariants,
                     design_data: {
                         _printFile: printFileDataUrl,
                         objects: allViewStates[selectedView.id]?.objects ?? [],
@@ -1242,11 +1282,11 @@ export default function EditorUI() {
                         <Wand2 className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={handleSaveProduct}
+                        onClick={handleOrderClick}
                         disabled={isSaving}
-                        className={`${isSaving ? 'bg-gray-300' : 'bg-gray-900 hover:bg-gray-800'} text-white font-bold px-8 py-1.5 rounded text-sm uppercase transition-colors ml-2 shadow-sm`}
+                        className={`${isSaving ? 'bg-gray-300' : 'bg-[#A1FF4D] hover:bg-[#8ee643] text-[#1B2412]'} font-bold px-8 py-1.5 rounded text-sm uppercase transition-colors ml-2 shadow-sm`}
                     >
-                        {isSaving ? 'Saving...' : dbOrderId ? 'Update Design' : 'Save product'}
+                        {isSaving ? 'Checking...' : dbOrderId ? 'Update Order' : 'Order'}
                     </button>
                     <button
                         onClick={() => {
@@ -1516,26 +1556,13 @@ export default function EditorUI() {
                         </div>
                         <div className="bg-gray-50 px-6 py-4 flex flex-col gap-2">
                             <button 
-                                onClick={async () => {
-                                    // Save as template logic
-                                    const state = {
-                                        id: loadedTemplateId || `${selectedProduct.id}-${Date.now()}`,
-                                        productTemplateId: selectedProduct.id,
-                                        color: selectedColor,
-                                        viewStates,
-                                        name: `Template ${new Date().toLocaleTimeString()}`
-                                    };
-                                    const templates = JSON.parse(localStorage.getItem('printora_templates') || '[]');
-                                    const existingIndex = templates.findIndex((t: any) => t.id === state.id);
-                                    if (existingIndex >= 0) templates[existingIndex] = state;
-                                    else templates.push(state);
-                                    localStorage.setItem('printora_templates', JSON.stringify(templates));
-                                    
-                                    window.history.back();
+                                onClick={() => {
+                                    handleOrderClick();
+                                    setShowExitDialog(false);
                                 }}
                                 className="w-full bg-gray-900 text-white rounded-lg py-2.5 font-semibold text-sm hover:bg-gray-800 transition-colors shadow-sm"
                             >
-                                Save & Leave
+                                Continue to Order
                             </button>
                             <button 
                                 onClick={() => {
@@ -1552,6 +1579,114 @@ export default function EditorUI() {
                                 Cancel
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment / Order Modal */}
+            {showPaymentModal && (
+                <div className="fixed inset-0 bg-black/40 z-[999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-xl flex flex-col gap-4 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-gray-900">Complete Your Order</h2>
+                            <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-2xl p-4 flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-600">Product:</span>
+                                <span className="text-sm font-bold text-gray-900">{selectedProduct.name}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-600">Price per unit:</span>
+                                <span className="text-sm font-bold text-gray-900">$25.00</span>
+                            </div>
+                            <div className="flex justify-between items-center border-t border-gray-200 pt-2 mt-1">
+                                <span className="text-sm font-medium text-gray-600">Total Price:</span>
+                                <span className="text-sm font-bold text-emerald-600">${((orderQuality === "Premium" ? 30 : 25) * orderQuantity).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-bold text-gray-900">Select Size</label>
+                                <select 
+                                    value={orderSize} 
+                                    onChange={(e) => setOrderSize(e.target.value)}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                                >
+                                    <option value="S">Small (S)</option>
+                                    <option value="M">Medium (M)</option>
+                                    <option value="L">Large (L)</option>
+                                    <option value="XL">Extra Large (XL)</option>
+                                    <option value="XXL">Double Extra Large (XXL)</option>
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-bold text-gray-900">Quality</label>
+                                <select 
+                                    value={orderQuality} 
+                                    onChange={(e) => setOrderQuality(e.target.value)}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                                >
+                                    <option value="Standard">Standard</option>
+                                    <option value="Premium">Premium (+ $5)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-bold text-gray-900">Quantity</label>
+                            <input 
+                                type="number" 
+                                min="1"
+                                max="999"
+                                value={orderQuantity} 
+                                onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                            />
+                        </div>
+
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col gap-3">
+                            <div>
+                                <p className="text-[11px] font-black text-emerald-600 uppercase tracking-wider mb-1">Payment Instructions</p>
+                                <p className="text-sm font-medium text-gray-800">Please pay half the total amount (<span className="font-bold">${(( (orderQuality === "Premium" ? 30 : 25) * orderQuantity) / 2).toFixed(2)}</span>) to the following account to start production:</p>
+                            </div>
+                            <div className="bg-white rounded-xl p-3 border border-emerald-100 flex flex-col items-center">
+                                <span className="text-xs text-gray-500 font-medium">Bank Account (CBE)</span>
+                                <span className="text-lg font-black text-gray-900 tracking-wider">100021312323</span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-bold text-gray-900">Upload Receipt Screenshot</label>
+                            <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (event) => setReceiptDataUrl(event.target?.result as string);
+                                        reader.readAsDataURL(file);
+                                    }
+                                }}
+                                className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 transition-all"
+                            />
+                            {receiptDataUrl && <div className="mt-2 rounded-lg border border-gray-200 overflow-hidden w-24 h-24 relative"><img src={receiptDataUrl} className="object-cover w-full h-full" alt="Receipt" /></div>}
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                setShowPaymentModal(false);
+                                handleSaveProduct();
+                            }}
+                            className="w-full bg-[#1B2412] text-white py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-[0.98] mt-2 shadow-sm"
+                        >
+                            Confirm & Order
+                        </button>
                     </div>
                 </div>
             )}
