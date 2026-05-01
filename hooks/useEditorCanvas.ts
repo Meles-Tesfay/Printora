@@ -17,6 +17,8 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
     const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
     const [canvasRevision, setCanvasRevision] = useState(0);
     const [zoomLevel, setZoomLevel] = useState(1);
+    // liveProps: plain state mirroring active object's editable properties so toolbar re-renders live
+    const [liveProps, setLiveProps] = useState<Record<string, any>>({});
     const [isPanning, setIsPanning] = useState(false);
 
     const [history, setHistory] = useState<string[]>([]);
@@ -51,28 +53,46 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         setCanvasRevision(r => r + 1);
     };
 
-    // Undo/Redo functions
+    // Undo/Redo: use enlivenObjects (loadFromJSON crashes with Turbopack)
+    const applyHistoryState = (stateJson: string) => {
+        if (!canvas) return;
+        isInitialLoad.current = true;
+        const state = JSON.parse(stateJson);
+        canvas.clear();
+        canvas.setBackgroundColor('transparent', () => {});
+        fabric.util.enlivenObjects(
+            state.objects || [],
+            (objects: fabric.Object[]) => {
+                objects.forEach(obj => canvas.add(obj));
+                if (printArea && canvasSize) {
+                    canvas.clipPath = new fabric.Rect({
+                        left: printArea.left, top: printArea.top,
+                        width: printArea.width, height: printArea.height,
+                        absolutePositioned: true,
+                    });
+                }
+                canvas.renderAll();
+                setTimeout(() => { isInitialLoad.current = false; }, 50);
+            },
+            'fabric'
+        );
+    };
+
     const undo = () => {
         if (historyIndex > 0 && canvas) {
             const prevIndex = historyIndex - 1;
-            const state = history[prevIndex];
-            canvas.loadFromJSON(state, () => {
-                canvas.renderAll();
-                setHistoryIndex(prevIndex);
-                setCanvasRevision(r => r + 1);
-            });
+            applyHistoryState(history[prevIndex]);
+            setHistoryIndex(prevIndex);
+            setCanvasRevision(r => r + 1);
         }
     };
 
     const redo = () => {
         if (historyIndex < history.length - 1 && canvas) {
             const nextIndex = historyIndex + 1;
-            const state = history[nextIndex];
-            canvas.loadFromJSON(state, () => {
-                canvas.renderAll();
-                setHistoryIndex(nextIndex);
-                setCanvasRevision(r => r + 1);
-            });
+            applyHistoryState(history[nextIndex]);
+            setHistoryIndex(nextIndex);
+            setCanvasRevision(r => r + 1);
         }
     };
 
@@ -126,10 +146,25 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
             cornerSize: 20
         });
 
+        // Sync liveProps from a fabric object
+        const syncLive = (obj: fabric.Object | null) => {
+            if (!obj) { setLiveProps({}); return; }
+            setLiveProps({
+                type: obj.type,
+                fill: (obj as any).fill ?? '#000000',
+                stroke: (obj as any).stroke ?? 'transparent',
+                strokeWidth: (obj as any).strokeWidth ?? 0,
+                opacity: obj.opacity ?? 1,
+                fontSize: (obj as any).fontSize ?? 32,
+                fontWeight: (obj as any).fontWeight ?? 'normal',
+                fontStyle: (obj as any).fontStyle ?? 'normal',
+                underline: (obj as any).underline ?? false,
+            });
+        };
         // Event listeners for selection
-        newCanvas.on('selection:created', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
-        newCanvas.on('selection:updated', () => onSelectionChangeRef.current?.(newCanvas.getActiveObject() || null));
-        newCanvas.on('selection:cleared', () => onSelectionChangeRef.current?.(null));
+        newCanvas.on('selection:created', () => { const o = newCanvas.getActiveObject(); onSelectionChangeRef.current?.(o || null); syncLive(o || null); });
+        newCanvas.on('selection:updated', () => { const o = newCanvas.getActiveObject(); onSelectionChangeRef.current?.(o || null); syncLive(o || null); });
+        newCanvas.on('selection:cleared', () => { onSelectionChangeRef.current?.(null); syncLive(null); });
         
         // History events
         newCanvas.on('object:added', () => saveHistory());
@@ -176,38 +211,63 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
     }, [canvas, printArea, canvasSize]);
 
     const isInitialLoad = useRef(false);
+    // Track which viewId we last loaded, so we don't re-run restore on every viewStates sync
+    const lastRestoredViewId = useRef<string>('__none__');
 
-    // Handle restoring state
-    useEffect(() => {
-        if (canvas && initialState && initialState.objects) {
-            isInitialLoad.current = true;
-            canvas.clear();
-            canvas.setBackgroundColor('transparent', () => { });
-            fabric.util.enlivenObjects(initialState.objects, (objects: fabric.Object[]) => {
-                // Batch add to avoid triggering too many events
-                objects.forEach((obj) => {
-                    canvas.add(obj);
+    const doRestore = (objects: any[]) => {
+        if (!canvas) return;
+        isInitialLoad.current = true;
+        canvas.clear();
+        canvas.setBackgroundColor('transparent', () => {});
+        if (objects.length === 0) {
+            if (printArea && canvasSize) {
+                canvas.clipPath = new fabric.Rect({
+                    left: printArea.left, top: printArea.top,
+                    width: printArea.width, height: printArea.height,
+                    absolutePositioned: true,
                 });
-                canvas.renderAll();
-                
-                const json = JSON.stringify(canvas.toJSON());
-                setHistory([json]);
-                setHistoryIndex(0);
-                
-                // Done loading
-                setTimeout(() => {
-                    isInitialLoad.current = false;
-                }, 100);
-            }, "");
-        } else if (canvas && !initialState) {
-            canvas.clear();
-            canvas.setBackgroundColor('transparent', () => { });
+            }
+            canvas.renderAll();
             const json = JSON.stringify(canvas.toJSON());
             setHistory([json]);
             setHistoryIndex(0);
             isInitialLoad.current = false;
+            return;
         }
+        fabric.util.enlivenObjects(objects, (enlived: fabric.Object[]) => {
+            enlived.forEach(obj => canvas.add(obj));
+            if (printArea && canvasSize) {
+                canvas.clipPath = new fabric.Rect({
+                    left: printArea.left, top: printArea.top,
+                    width: printArea.width, height: printArea.height,
+                    absolutePositioned: true,
+                });
+            }
+            canvas.renderAll();
+            const json = JSON.stringify(canvas.toJSON());
+            setHistory([json]);
+            setHistoryIndex(0);
+            setTimeout(() => { isInitialLoad.current = false; }, 100);
+        }, 'fabric');
+    };
+
+    // Handle restoring state when view changes or on initial load.
+    // Guard: only restore when the view actually switches OR the canvas is empty but
+    // initialState has objects (handles async editOrderId loading).
+    // Do NOT restore just because viewStates was synced during normal editing.
+    useEffect(() => {
+        if (!canvas) return;
+        const viewChanged = lastRestoredViewId.current !== viewId;
+        const hasState   = !!(initialState?.objects?.length);
+        const isEmpty    = canvas.getObjects().length === 0;
+
+        if (!viewChanged && !isEmpty) return; // Canvas already showing this view's content
+        if (!viewChanged && isEmpty && !hasState) return; // Nothing to load
+
+        lastRestoredViewId.current = viewId;
+        doRestore(initialState?.objects ?? []);
     }, [canvas, initialState, viewId]);
+
     
     // Handle Zoom
     const setZoom = (value: number) => {
@@ -412,7 +472,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
             canvas.add(img);
             canvas.setActiveObject(img);
             canvas.renderAll();
-        });
+        }, { crossOrigin: 'anonymous' });
     };
 
     const deleteSelected = () => {
@@ -448,14 +508,21 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         }
     };
 
-    const updateActiveObject = (updates: Record<string, any>) => {
+    const updateActiveObject = (updates: Record<string, any>, saveToHistory = true) => {
         if (!canvas) return;
         const activeObject = canvas.getActiveObject();
         if (activeObject) {
             activeObject.set(updates);
-            canvas.renderAll();
-            saveHistory();
-            setCanvasRevision(r => r + 1);
+            canvas.requestRenderAll();
+            // Update liveProps so toolbar re-renders with fresh values immediately
+            setLiveProps(prev => ({ ...prev, ...updates }));
+            if (saveToHistory) {
+                // saveHistory() internally calls setCanvasRevision → triggers viewStates sync.
+                // Do NOT call setCanvasRevision separately: during slider drag (saveToHistory=false)
+                // we must NOT trigger the sync or initialState changes and clears the canvas.
+                saveHistory();
+            }
+            // No setCanvasRevision here — only saveHistory() should bump revision
         }
     };
 
@@ -504,6 +571,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
         canUndo: historyIndex > 0,
         canRedo: historyIndex < history.length - 1,
         canvasRevision,
+        liveProps,
         zoomLevel,
         setZoom,
         isPanning,

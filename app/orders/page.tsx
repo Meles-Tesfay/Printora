@@ -279,6 +279,16 @@ function OrderDetail({ order }: { order: any }) {
     const Icon = cfg.icon;
     const currentStep = cfg.step;
 
+    // Build the edit link: map product_type → template ID
+    const PRODUCT_TYPE_MAP: Record<string, string> = {
+        'Classic T-Shirt': 'classic-tshirt',
+        'Premium Hoodie': 'premium-hoodie',
+        'Crewneck Sweater': 'crewneck-sweater',
+        'Classic Cap': 'classic-cap',
+    };
+    const templateId = PRODUCT_TYPE_MAP[order.product_type] || 'classic-tshirt';
+    const editUrl = `/editor?edit_order=${order.id}&template=${templateId}`;
+
     return (
         <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
             {/* Status Header */}
@@ -386,13 +396,23 @@ function OrderDetail({ order }: { order: any }) {
                         </div>
                     )}
 
+                    {/* Edit action — available while still pending */}
+                    {order.status === "PENDING_ADMIN" && (
+                        <Link
+                            href={editUrl}
+                            className="flex items-center justify-center gap-2 w-full bg-[#1B2412] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all"
+                        >
+                            <PenTool size={14} /> Edit Design
+                        </Link>
+                    )}
+
                     {/* Rejected action */}
                     {order.status === "REJECTED" && (
                         <Link
-                            href="/editor"
+                            href={editUrl}
                             className="flex items-center justify-center gap-2 w-full bg-[#111] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all"
                         >
-                            <PenTool size={14} /> Redesign & Resubmit
+                            <PenTool size={14} /> Redesign &amp; Resubmit
                         </Link>
                     )}
                 </div>

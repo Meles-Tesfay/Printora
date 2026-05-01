@@ -659,7 +659,8 @@ function TemplatesPanel({ onClose, onLoadTemplate }: { onClose: () => void; onLo
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
-    const supplierProductId   = searchParams.get('supplier_product_id'); // null if customer typed the URL directly
+    const supplierProductId   = searchParams.get('supplier_product_id');
+    const editOrderId         = searchParams.get('edit_order'); // null for new designs
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(() => {
@@ -715,16 +716,15 @@ export default function EditorUI() {
         return selectedProduct.views.find(v => v.id === selectedProduct.defaultViewId) || selectedProduct.views[0];
     });
 
+    // Detect page refresh vs fresh navigation (for canvas state restoration)
+    const isReload = typeof window !== 'undefined' &&
+        (performance.getEntriesByType('navigation') as PerformanceNavigationTiming[])[0]?.type === 'reload';
+
     const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('printora_editor_state');
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    // We can keep all view states even if product changes (they just won't be used)
-                    return data.viewStates || {};
-                } catch {}
-            }
+        // Only restore canvas objects on refresh; fresh navigation always starts blank
+        if (typeof window !== 'undefined' && isReload && !requestedTemplate && !editOrderId) {
+            const sess = sessionStorage.getItem('printora_canvas_session');
+            if (sess) { try { return JSON.parse(sess).viewStates || {}; } catch {} }
         }
         return {};
     });
@@ -735,11 +735,22 @@ export default function EditorUI() {
     const [showTemplatesPanel, setShowTemplatesPanel] = useState(false);
     const [activeLeftTool, setActiveLeftTool] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    // Restore loadedTemplateId from session (survives refresh, not nav-away)
+    const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(() => {
+        if (typeof window !== 'undefined' && isReload) {
+            const sess = sessionStorage.getItem('printora_canvas_session');
+            if (sess) { try { return JSON.parse(sess).loadedTemplateId || null; } catch {} }
+        }
+        return null;
+    });
+    const [showExitDialog, setShowExitDialog] = useState(false);
+    // Track the DB order ID when editing an existing order
+    const [dbOrderId, setDbOrderId] = useState<string | null>(editOrderId);
 
     const printArea = selectedView.printAreas[0];
 
     const { 
-        canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject, canvasRevision,
+        canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject, canvasRevision, liveProps,
         undo, redo, canUndo, canRedo
     } = useEditorCanvas({
         printArea,
@@ -757,6 +768,9 @@ export default function EditorUI() {
             setViewStates(template.viewStates || {});
             const view = product.views.find(v => v.id === product.defaultViewId) || product.views[0];
             setSelectedView(view);
+            setLoadedTemplateId(template.id || null);
+            // If the template has an associated DB order, track it for update-on-save
+            if (template.dbOrderId) setDbOrderId(template.dbOrderId);
             // Close panel after loading
             setShowTemplatesPanel(false);
             setActiveLeftTool(null);
@@ -787,28 +801,70 @@ export default function EditorUI() {
         }
     }, [requestedTemplate]);
 
-    // Sync viewStates with canvas changes
+    // When opening an existing order for editing, load its saved design data
     useEffect(() => {
-        // Only sync if the canvas has actually been modified (revision > 0)
-        // This prevents the initial empty canvas from overwriting loaded state
+        if (!editOrderId) return;
+        (async () => {
+            const { data: order } = await supabase
+                .from('custom_orders')
+                .select('design_data, design_views, variants, product_type')
+                .eq('id', editOrderId)
+                .single();
+            if (!order) return;
+
+            // Restore color
+            if (order.variants?.color) setSelectedColor(order.variants.color);
+
+            // Rebuild viewStates from design_views (preferred) or design_data
+            if (order.design_views && order.design_views.length > 0) {
+                const restored: Record<string, any> = {};
+                order.design_views.forEach((dv: any) => {
+                    if (dv.design?.objects?.length) {
+                        restored[dv.viewId] = { objects: dv.design.objects };
+                    }
+                });
+                setViewStates(restored);
+            } else if (order.design_data?.objects?.length) {
+                // Fallback: old single-view format
+                setViewStates({ [selectedView.id]: { objects: order.design_data.objects } });
+            }
+        })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editOrderId]);
+
+    // Ref always holds the current view ID — updated each render before effects run.
+    // This lets the sync effect use the latest view ID without listing it as a dependency.
+    const selectedViewIdRef = React.useRef(selectedView.id);
+    selectedViewIdRef.current = selectedView.id;
+
+    // Sync viewStates with canvas changes.
+    // IMPORTANT: selectedView.id is intentionally NOT in deps — adding it would cause the
+    // effect to fire on view-switch while the canvas still shows the old view's objects,
+    // corrupting the new view's slot in viewStates.
+    useEffect(() => {
         if (canvas && canvasRevision > 0) {
             setViewStates(prev => ({
                 ...prev,
-                [selectedView.id]: { objects: canvas.toJSON().objects },
+                [selectedViewIdRef.current]: { objects: canvas.toJSON().objects },
             }));
         }
-    }, [canvasRevision, selectedView.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canvasRevision]);
 
-    // Persistence: Save on change
+    // Persistence: Save canvas state to sessionStorage on every change
+    // (survives refresh but cleared on fresh navigation)
     useEffect(() => {
         const state = {
             productTemplateId: selectedProduct.id,
             color: selectedColor,
             viewId: selectedView.id,
             viewStates,
+            loadedTemplateId,
         };
+        sessionStorage.setItem('printora_canvas_session', JSON.stringify(state));
+        // Also keep localStorage for backwards compat / crash recovery
         localStorage.setItem('printora_editor_state', JSON.stringify(state));
-    }, [selectedProduct, selectedColor, selectedView, viewStates]);
+    }, [selectedProduct, selectedColor, selectedView, viewStates, loadedTemplateId]);
 
     // ── Helper: composite SVG silhouette from a given viewId onto an offscreen canvas ──
     const compositeViewMockup = async (viewDesignJson: any): Promise<string> => {
@@ -992,31 +1048,49 @@ export default function EditorUI() {
                 return;
             }
 
-            // Insert into custom_orders — all edited views are stored in design_views.
-            // mockup_image_url = front/active view composite (used for card thumbnails).
-            // design_data kept for backward compat; _printFile = front view high-res PNG.
-            const { error } = await supabase.from('custom_orders').insert({
-                customer_id: user.id,
-                product_type: selectedProduct.name,
-                variants: { color: selectedColor, view: selectedView.name },
-                design_data: {
-                    _printFile: printFileDataUrl,
-                    // Embed all view designs for backward compat (active view's objects)
-                    objects: allViewStates[selectedView.id]?.objects ?? [],
-                },
-                // All views with their mockup images and print files
-                design_views: design_views,
-                mockup_image_url: dataUrl,
-                status: 'PENDING_ADMIN',
-                ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
-            });
+            if (dbOrderId) {
+                // ── UPDATE existing order ──
+                const { error } = await supabase.from('custom_orders').update({
+                    product_type: selectedProduct.name,
+                    variants: { color: selectedColor, view: selectedView.name },
+                    design_data: {
+                        _printFile: printFileDataUrl,
+                        objects: allViewStates[selectedView.id]?.objects ?? [],
+                    },
+                    design_views: design_views,
+                    mockup_image_url: dataUrl,
+                    status: 'PENDING_ADMIN',
+                }).eq('id', dbOrderId);
 
-            if (error) {
-                console.error('Error saving order:', error);
-                alert('Failed to save product: ' + error.message);
+                if (error) {
+                    console.error('Error updating order:', error);
+                    alert('Failed to update design: ' + error.message);
+                } else {
+                    window.location.href = '/orders?submitted=true';
+                }
             } else {
-                // Redirect to customer orders page to track status
-                window.location.href = '/orders?submitted=true';
+                // ── INSERT new order ──
+                const { data: newOrder, error } = await supabase.from('custom_orders').insert({
+                    customer_id: user.id,
+                    product_type: selectedProduct.name,
+                    variants: { color: selectedColor, view: selectedView.name },
+                    design_data: {
+                        _printFile: printFileDataUrl,
+                        objects: allViewStates[selectedView.id]?.objects ?? [],
+                    },
+                    design_views: design_views,
+                    mockup_image_url: dataUrl,
+                    status: 'PENDING_ADMIN',
+                    ...(supplierProductId ? { supplier_product_id: supplierProductId } : {}),
+                }).select().single();
+
+                if (error) {
+                    console.error('Error saving order:', error);
+                    alert('Failed to save product: ' + error.message);
+                } else {
+                    if (newOrder) setDbOrderId(newOrder.id);
+                    window.location.href = '/orders?submitted=true';
+                }
             }
         } catch (e: any) {
             console.error('Save error:', e);
@@ -1128,7 +1202,16 @@ export default function EditorUI() {
             {/* Top Navigation Bar */}
             <div className="h-14 bg-white flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0">
                 <div className="flex items-center gap-4">
-                    <button className="text-gray-600 hover:text-gray-900">
+                    <button 
+                        className="text-gray-600 hover:text-gray-900"
+                        onClick={() => {
+                            if (canvasRevision > 0) {
+                                setShowExitDialog(true);
+                            } else {
+                                window.history.back();
+                            }
+                        }}
+                    >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="h-5 w-[1px] bg-gray-300" />
@@ -1163,25 +1246,40 @@ export default function EditorUI() {
                         disabled={isSaving}
                         className={`${isSaving ? 'bg-gray-300' : 'bg-gray-900 hover:bg-gray-800'} text-white font-bold px-8 py-1.5 rounded text-sm uppercase transition-colors ml-2 shadow-sm`}
                     >
-                        {isSaving ? 'Saving...' : 'Save product'}
+                        {isSaving ? 'Saving...' : dbOrderId ? 'Update Design' : 'Save product'}
                     </button>
                     <button
                         onClick={() => {
-                            // Simple template save logic (to localStorage for now)
+                            if (!canvas) return;
+                            // Flush current canvas into viewStates before saving template
+                            const currentObjects = canvas.toJSON().objects;
+                            const freshViewStates = { ...viewStates, [selectedView.id]: { objects: currentObjects } };
+
+                            const existing = loadedTemplateId
+                                ? JSON.parse(localStorage.getItem('printora_templates') || '[]').find((t: any) => t.id === loadedTemplateId)
+                                : null;
+
                             const state = {
+                                id: loadedTemplateId || `${selectedProduct.id}-${Date.now()}`,
                                 productTemplateId: selectedProduct.id,
                                 color: selectedColor,
-                                viewStates,
-                                name: `Template ${new Date().toLocaleTimeString()}`
+                                viewStates: freshViewStates,
+                                // Keep original creation name; only set on first save
+                                name: existing?.name || `Template ${new Date().toLocaleTimeString()}`,
+                                dbOrderId: dbOrderId || undefined,
                             };
                             const templates = JSON.parse(localStorage.getItem('printora_templates') || '[]');
-                            templates.push(state);
+                            const existingIndex = templates.findIndex((t: any) => t.id === state.id);
+                            if (existingIndex >= 0) templates[existingIndex] = state;
+                            else templates.push(state);
                             localStorage.setItem('printora_templates', JSON.stringify(templates));
-                            alert('Design saved to your templates!');
+                            setLoadedTemplateId(state.id);
+                            setShowTemplatesPanel(true);
+                            setActiveLeftTool('templates');
                         }}
                         className="bg-white border border-gray-300 text-gray-700 font-bold px-4 py-1.5 rounded text-sm uppercase transition-colors ml-2 hover:bg-gray-50 shadow-sm"
                     >
-                        Save Template
+                        {loadedTemplateId ? 'Update Template' : 'Save Template'}
                     </button>
                 </div>
             </div>
@@ -1257,104 +1355,88 @@ export default function EditorUI() {
 
                 {/* ═══════════ CENTER: Canvas ═══════════ */}
                 <div className="flex-1 flex flex-col relative bg-[#F4F4F4]">
-                    {/* PROPERTIES TOOLBAR */}
+                    {/* PROPERTIES TOOLBAR — reads from liveProps (plain state) for live drag updates */}
                     {activeObject && (
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-200 flex items-center px-3 py-2 gap-2 z-40 transition-all animate-in fade-in slide-in-from-top-4 duration-200">
-                            {activeObject.type === 'i-text' && (
+                            {liveProps.type === 'i-text' && (
                                 <>
                                     {/* Font Size */}
                                     <div className="flex items-center gap-1 border-r border-gray-200 pr-3 mr-1">
-                                        <button onClick={() => updateActiveObject({ fontSize: Math.max(10, (activeObject.fontSize || 32) - 2) })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Minus className="w-4 h-4" /></button>
-                                        <span className="text-[13px] font-bold w-8 text-center">{Math.round(activeObject.fontSize || 32)}</span>
-                                        <button onClick={() => updateActiveObject({ fontSize: (activeObject.fontSize || 32) + 2 })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Plus className="w-4 h-4" /></button>
+                                        <button onClick={() => updateActiveObject({ fontSize: Math.max(10, (liveProps.fontSize || 32) - 2) })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Minus className="w-4 h-4" /></button>
+                                        <span className="text-[13px] font-bold w-8 text-center">{Math.round(liveProps.fontSize || 32)}</span>
+                                        <button onClick={() => updateActiveObject({ fontSize: (liveProps.fontSize || 32) + 2 })} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"><Plus className="w-4 h-4" /></button>
                                     </div>
                                     {/* Font Styles */}
                                     <div className="flex items-center gap-1 border-r border-gray-200 pr-3 mr-1">
-                                        <button onClick={() => updateActiveObject({ fontWeight: activeObject.fontWeight === 'bold' ? 'normal' : 'bold' })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors ${activeObject.fontWeight === 'bold' ? 'bg-gray-200 text-gray-900 font-bold' : 'text-gray-600'}`}>B</button>
-                                        <button onClick={() => updateActiveObject({ fontStyle: activeObject.fontStyle === 'italic' ? 'normal' : 'italic' })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors italic ${activeObject.fontStyle === 'italic' ? 'bg-gray-200 text-gray-900' : 'text-gray-600 font-serif'}`}>I</button>
-                                        <button onClick={() => updateActiveObject({ underline: !activeObject.underline })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors underline ${activeObject.underline ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}>U</button>
+                                        <button onClick={() => updateActiveObject({ fontWeight: liveProps.fontWeight === 'bold' ? 'normal' : 'bold' })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors ${liveProps.fontWeight === 'bold' ? 'bg-gray-200 text-gray-900 font-bold' : 'text-gray-600'}`}>B</button>
+                                        <button onClick={() => updateActiveObject({ fontStyle: liveProps.fontStyle === 'italic' ? 'normal' : 'italic' })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors italic ${liveProps.fontStyle === 'italic' ? 'bg-gray-200 text-gray-900' : 'text-gray-600 font-serif'}`}>I</button>
+                                        <button onClick={() => updateActiveObject({ underline: !liveProps.underline })} className={`w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors underline ${liveProps.underline ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}>U</button>
                                     </div>
                                 </>
                             )}
-                            
+
                             {/* Color Picker (for everything except images) */}
-                            {activeObject.type !== 'image' && (
+                            {liveProps.type !== 'image' && (
                                 <div className="flex items-center gap-3 border-r border-gray-200 pr-3 mr-1">
+                                    {/* Fill */}
                                     <div className="flex flex-col items-center gap-0.5">
                                         <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Fill</span>
                                         <div className="flex items-center gap-0.5">
-                                            <button 
-                                                onClick={() => updateActiveObject(activeObject.type === 'line' ? { stroke: 'transparent' } : { fill: 'transparent' })}
-                                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
-                                                title="No Fill"
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
-                                            <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform relative" style={{ backgroundColor: ((activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) === 'transparent' ? '#ffffff' : (activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) as string || '#000000') }} title="Fill Color">
-                                                {((activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) === 'transparent') && (
-                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                        <div className="w-[120%] h-px bg-red-500 rotate-45"></div>
-                                                    </div>
+                                            <button onClick={() => updateActiveObject(liveProps.type === 'line' ? { stroke: 'transparent' } : { fill: 'transparent' })} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors" title="No Fill"><X className="w-3.5 h-3.5" /></button>
+                                            <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform relative"
+                                                style={{ backgroundColor: (liveProps.type === 'line' ? liveProps.stroke : liveProps.fill) === 'transparent' ? '#ffffff' : (liveProps.type === 'line' ? liveProps.stroke : liveProps.fill) || '#000000' }}
+                                                title="Fill Color">
+                                                {(liveProps.type === 'line' ? liveProps.stroke : liveProps.fill) === 'transparent' && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[120%] h-px bg-red-500 rotate-45" /></div>
                                                 )}
-                                                <input 
-                                                    type="color" 
-                                                    value={((activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) === 'transparent' ? '#000000' : (activeObject.type === 'line' ? activeObject.stroke : activeObject.fill) as string || '#000000')}
-                                                    onChange={(e) => updateActiveObject(activeObject.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
-                                                    className="opacity-0 w-full h-full cursor-pointer"
-                                                />
+                                                <input type="color"
+                                                    value={(liveProps.type === 'line' ? liveProps.stroke : liveProps.fill) === 'transparent' ? '#000000' : (liveProps.type === 'line' ? liveProps.stroke : liveProps.fill) || '#000000'}
+                                                    onChange={(e) => updateActiveObject(liveProps.type === 'line' ? { stroke: e.target.value } : { fill: e.target.value })}
+                                                    className="opacity-0 w-full h-full cursor-pointer" />
                                             </label>
                                         </div>
                                     </div>
+                                    {/* Stroke color */}
                                     <div className="flex flex-col items-center gap-0.5">
                                         <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Stroke</span>
                                         <div className="flex items-center gap-0.5">
-                                            <button 
-                                                onClick={() => updateActiveObject({ stroke: 'transparent', strokeWidth: 0 })}
-                                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
-                                                title="No Stroke"
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
-                                            <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform relative" style={{ backgroundColor: (activeObject.stroke === 'transparent' || !activeObject.strokeWidth) ? '#ffffff' : activeObject.stroke as string || '#000000' }} title="Stroke Color">
-                                                {(activeObject.stroke === 'transparent' || !activeObject.strokeWidth) && (
-                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                                        <div className="w-[120%] h-px bg-red-500 rotate-45"></div>
-                                                    </div>
+                                            <button onClick={() => updateActiveObject({ stroke: 'transparent', strokeWidth: 0 })} className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors" title="No Stroke"><X className="w-3.5 h-3.5" /></button>
+                                            <label className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer overflow-hidden shadow-sm hover:scale-110 transition-transform relative"
+                                                style={{ backgroundColor: (liveProps.stroke === 'transparent' || !liveProps.strokeWidth) ? '#ffffff' : liveProps.stroke || '#000000' }}
+                                                title="Stroke Color">
+                                                {(liveProps.stroke === 'transparent' || !liveProps.strokeWidth) && (
+                                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-[120%] h-px bg-red-500 rotate-45" /></div>
                                                 )}
-                                                <input 
-                                                    type="color" 
-                                                    value={(activeObject.stroke === 'transparent' ? '#000000' : activeObject.stroke as string || '#000000')}
-                                                    onChange={(e) => updateActiveObject({ stroke: e.target.value, strokeWidth: activeObject.strokeWidth || 1 })}
-                                                    className="opacity-0 w-full h-full cursor-pointer"
-                                                />
+                                                <input type="color"
+                                                    value={liveProps.stroke === 'transparent' ? '#000000' : liveProps.stroke || '#000000'}
+                                                    onChange={(e) => updateActiveObject({ stroke: e.target.value, strokeWidth: liveProps.strokeWidth || 1 })}
+                                                    className="opacity-0 w-full h-full cursor-pointer" />
                                             </label>
                                         </div>
                                     </div>
+                                    {/* Border width slider */}
                                     <div className="flex flex-col items-center gap-0.5 w-16">
                                         <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Border</span>
-                                        <input 
-                                            type="range" min="0" max="20" 
-                                            value={activeObject.strokeWidth || 0} 
-                                            onChange={(e) => updateActiveObject({ strokeWidth: parseInt(e.target.value) })}
-                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-700"
-                                        />
+                                        <input type="range" min="0" max="20"
+                                            value={liveProps.strokeWidth || 0}
+                                            onChange={(e) => updateActiveObject({ strokeWidth: parseInt(e.target.value), stroke: (liveProps.stroke && liveProps.stroke !== 'transparent') ? liveProps.stroke : '#000000' }, false)}
+                                            onPointerUp={(e) => updateActiveObject({ strokeWidth: parseInt((e.target as HTMLInputElement).value), stroke: (liveProps.stroke && liveProps.stroke !== 'transparent') ? liveProps.stroke : '#000000' }, true)}
+                                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-700" />
                                     </div>
                                 </div>
                             )}
 
-                            {/* Opacity for all objects */}
+                            {/* Opacity slider */}
                             <div className="flex items-center gap-2 pr-1">
                                 <div className="flex flex-col items-center gap-0.5 w-16">
                                     <span className="text-[9px] text-gray-500 uppercase tracking-wide font-bold">Opacity</span>
-                                    <input 
-                                        type="range" min="0" max="100" 
-                                        value={(activeObject.opacity ?? 1) * 100} 
-                                        onChange={(e) => updateActiveObject({ opacity: parseInt(e.target.value) / 100 })}
-                                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-700"
-                                    />
+                                    <input type="range" min="0" max="100"
+                                        value={Math.round((liveProps.opacity ?? 1) * 100)}
+                                        onChange={(e) => updateActiveObject({ opacity: parseInt(e.target.value) / 100 }, false)}
+                                        onPointerUp={(e) => updateActiveObject({ opacity: parseInt((e.target as HTMLInputElement).value) / 100 }, true)}
+                                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-700" />
                                 </div>
                             </div>
-                            {/* Layer actions and Delete were moved to Fabric object controls directly */}
                         </div>
                     )}
 
@@ -1421,6 +1503,58 @@ export default function EditorUI() {
                 </div>
 
             </div>
+
+            {/* Professional Exit Dialog */}
+            {showExitDialog && (
+                <div className="fixed inset-0 bg-black/40 z-[999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Unsaved changes</h3>
+                            <p className="text-gray-500 text-sm leading-relaxed">
+                                You have unsaved changes in your design. If you leave now, you might lose your recent edits. Do you want to save before leaving?
+                            </p>
+                        </div>
+                        <div className="bg-gray-50 px-6 py-4 flex flex-col gap-2">
+                            <button 
+                                onClick={async () => {
+                                    // Save as template logic
+                                    const state = {
+                                        id: loadedTemplateId || `${selectedProduct.id}-${Date.now()}`,
+                                        productTemplateId: selectedProduct.id,
+                                        color: selectedColor,
+                                        viewStates,
+                                        name: `Template ${new Date().toLocaleTimeString()}`
+                                    };
+                                    const templates = JSON.parse(localStorage.getItem('printora_templates') || '[]');
+                                    const existingIndex = templates.findIndex((t: any) => t.id === state.id);
+                                    if (existingIndex >= 0) templates[existingIndex] = state;
+                                    else templates.push(state);
+                                    localStorage.setItem('printora_templates', JSON.stringify(templates));
+                                    
+                                    window.history.back();
+                                }}
+                                className="w-full bg-gray-900 text-white rounded-lg py-2.5 font-semibold text-sm hover:bg-gray-800 transition-colors shadow-sm"
+                            >
+                                Save & Leave
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    window.history.back();
+                                }}
+                                className="w-full bg-white text-red-600 rounded-lg py-2.5 font-semibold text-sm hover:bg-red-50 transition-colors border border-red-100"
+                            >
+                                Leave without saving
+                            </button>
+                            <button 
+                                onClick={() => setShowExitDialog(false)}
+                                className="w-full text-gray-500 rounded-lg py-2 font-medium text-sm hover:bg-gray-100 transition-colors mt-1"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
