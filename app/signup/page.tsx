@@ -11,6 +11,8 @@ export default function SignupPage() {
     lastName: '',
     email: '',
     password: '',
+    phone: '',
+    location: '',
     role: 'CUSTOMER'
   });
 
@@ -30,7 +32,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { firstName, lastName, email, password, role } = formData;
+    const { firstName, lastName, email, password, phone, location, role } = formData;
 
     // 1. Sign up the user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -51,6 +53,8 @@ export default function SignupPage() {
           id: authData.user.id,
           email: email,
           full_name: `${firstName} ${lastName}`,
+          phone: phone,
+          location: location,
           role: role
         });
 
@@ -140,27 +144,74 @@ export default function SignupPage() {
             <div className="flex-1 h-px bg-gray-300"></div>
           </div>
 
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex flex-col gap-1.5 flex-1">
                 <label className="text-[14px] font-bold text-gray-800">First name</label>
-                <input type="text" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" />
+                <input 
+                  type="text" 
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                  required
+                />
               </div>
               <div className="flex flex-col gap-1.5 flex-1">
                 <label className="text-[14px] font-bold text-gray-800">Last name</label>
-                <input type="text" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" />
+                <input 
+                  type="text" 
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                  required
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[14px] font-bold text-gray-800">Email</label>
-              <input type="email" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" />
+              <input 
+                type="email" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                required
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[14px] font-bold text-gray-800">Phone number</label>
+                <input 
+                  type="tel" 
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[14px] font-bold text-gray-800">Location (City, Country)</label>
+                <input 
+                  type="text" 
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                  required
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5 relative">
               <label className="text-[14px] font-bold text-gray-800">Password</label>
               <div className="relative">
-                <input type="password" className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900 pr-12" />
+                <input 
+                  type="password" 
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900 pr-12" 
+                  required
+                />
                 <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                 </button>
@@ -171,14 +222,14 @@ export default function SignupPage() {
               <label className="text-[14px] font-bold text-gray-800">I want to:</label>
               <div className="grid grid-cols-2 gap-4">
                 <label className="relative cursor-pointer group">
-                  <input type="radio" name="role" value="CUSTOMER" defaultChecked className="peer sr-only" />
+                  <input type="radio" name="role" value="CUSTOMER" checked={formData.role === 'CUSTOMER'} onChange={(e) => setFormData({...formData, role: e.target.value})} className="peer sr-only" />
                   <div className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-300 rounded-xl peer-checked:border-[#A1FF4C] peer-checked:bg-[#A1FF4C]/5 transition-all text-center group-hover:bg-gray-50">
                     <User size={20} className="text-gray-400 peer-checked:text-[#1B2412]" />
                     <span className="text-[13px] font-bold text-gray-700">Buy Products</span>
                   </div>
                 </label>
                 <label className="relative cursor-pointer group">
-                  <input type="radio" name="role" value="SUPPLIER" className="peer sr-only" />
+                  <input type="radio" name="role" value="SUPPLIER" checked={formData.role === 'SUPPLIER'} onChange={(e) => setFormData({...formData, role: e.target.value})} className="peer sr-only" />
                   <div className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-300 rounded-xl peer-checked:border-[#A1FF4C] peer-checked:bg-[#A1FF4C]/5 transition-all text-center group-hover:bg-gray-50">
                     <ShoppingBag size={20} className="text-gray-400 peer-checked:text-[#1B2412]" />
                     <span className="text-[13px] font-bold text-gray-700">Sell Products</span>

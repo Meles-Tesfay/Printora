@@ -38,6 +38,8 @@ export default function SupplierDashboard() {
   const [proofUrl, setProofUrl] = useState('');
   const [proofPreview, setProofPreview] = useState('');
   const [fulfillLoading, setFulfillLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("my-products");
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -94,7 +96,6 @@ export default function SupplierDashboard() {
       .from("custom_orders")
       .select("*")
       .eq("supplier_id", uid)
-      .eq("status", "ASSIGNED_TO_SUPPLIER")
       .order("created_at", { ascending: false });
 
     if (error) { console.error("Fetch orders error:", error); setOrders([]); return; }
@@ -131,6 +132,30 @@ export default function SupplierDashboard() {
     }));
   };
 
+  const handleEditProduct = (p: any) => {
+    setEditingProductId(p.id);
+    setForm({
+      name: p.name,
+      description: p.description || "",
+      product_type: p.product_type,
+      price: p.price?.toString() || "",
+      image_url: p.image_url,
+      tags: p.tags || [],
+      available_colors: p.available_colors || [],
+    });
+    setActiveTab("add-product");
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    const { error } = await supabase.from("supplier_products").delete().eq("id", id);
+    if (error) alert("Error deleting product: " + error.message);
+    else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) fetchProducts(user.id);
+    }
+  };
+
   const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -139,24 +164,32 @@ export default function SupplierDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from("supplier_products")
-      .insert({
-        supplier_id: user.id,
-        name: form.name,
-        description: form.description,
-        product_type: form.product_type,
-        price: parseFloat(form.price) || 0,
-        image_url: form.image_url,
-        tags: form.tags,
-        available_colors: form.available_colors,
-        status: "PENDING",
-      });
+    const payload = {
+      supplier_id: user.id,
+      name: form.name,
+      description: form.description,
+      product_type: form.product_type,
+      price: parseFloat(form.price) || 0,
+      image_url: form.image_url,
+      tags: form.tags,
+      available_colors: form.available_colors,
+      status: "PENDING",
+    };
+
+    let error;
+    if (editingProductId) {
+      const res = await supabase.from("supplier_products").update(payload).eq("id", editingProductId);
+      error = res.error;
+    } else {
+      const res = await supabase.from("supplier_products").insert(payload);
+      error = res.error;
+    }
 
     if (error) {
       alert("Error submitting product: " + error.message);
     } else {
-      setShowForm(false);
+      setEditingProductId(null);
+      setActiveTab('my-products');
       setForm({ name: "", description: "", product_type: "T-Shirt", price: "", image_url: "", tags: [], available_colors: [] });
       fetchProducts(user.id);
     }
@@ -166,10 +199,17 @@ export default function SupplierDashboard() {
   const handleFulfill = async () => {
     if (!selectedOrder || !proofUrl.trim()) return;
     setFulfillLoading(true);
-    // proofUrl holds either a base64 data URL (from file upload) or a plain https:// URL
+
+    const qty = selectedOrder.variants?.quantity || 1;
+    let nextStatus = "COMPLETED_BY_SUPPLIER";
+
+    if (qty > 1 && ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(selectedOrder.status)) {
+      nextStatus = "SAMPLE_AWAITING_APPROVAL";
+    }
+
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "COMPLETED_BY_SUPPLIER", supplier_proof_image_url: proofUrl.trim() })
+      .update({ status: nextStatus, supplier_proof_image_url: proofUrl.trim() })
       .eq("id", selectedOrder.id);
     setFulfillLoading(false);
     if (error) alert("Error: " + error.message);
@@ -312,13 +352,42 @@ export default function SupplierDashboard() {
         )}
 
         <nav className="flex-1 p-4 space-y-1">
-          <span className="flex items-center gap-3 px-4 py-3 bg-[#A1FF4D]/10 text-[#2B3220] rounded-xl font-bold">
-            <BarChart3 size={18} /> Dashboard
-          </span>
+          <button 
+            onClick={() => setActiveTab("my-products")}
+            className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "my-products" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <BarChart3 size={18} /> My Products
+          </button>
+          
           <div className="pt-2">
             <p className="px-4 text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Products</p>
-            <button onClick={() => setShowForm(true)} className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-xl w-full transition-all text-sm font-bold">
+            <button 
+              onClick={() => setActiveTab("add-product")}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "add-product" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+            >
               <Plus size={16} /> Add New Product
+            </button>
+          </div>
+
+          <div className="pt-2">
+            <p className="px-4 text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Orders</p>
+            <button 
+              onClick={() => setActiveTab("orders")}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+            >
+              <ShoppingBag size={16} /> Fulfillments
+            </button>
+            <button 
+              onClick={() => setActiveTab("pending-approvals")}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "pending-approvals" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+            >
+              <Clock size={16} /> Pending Approvals
+            </button>
+            <button 
+              onClick={() => setActiveTab("completed")}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "completed" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+            >
+              <CheckCircle size={16} /> Completed
             </button>
           </div>
         </nav>
@@ -339,15 +408,12 @@ export default function SupplierDashboard() {
             </h1>
             <p className="text-gray-500 font-medium text-sm">Manage your products and fulfill orders.</p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-[#A1FF4D] text-[#1B2412] px-6 py-3 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/40 transition-all hover:scale-105 text-sm"
-          >
-            <Plus size={18} /> ADD NEW PRODUCT
-          </button>
         </div>
 
-        {/* Stats */}
+        {/* === MY PRODUCTS TAB === */}
+        {activeTab === "my-products" && (
+          <>
+            {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {stats.map((stat, i) => (
             <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow rounded-2xl">
@@ -375,7 +441,7 @@ export default function SupplierDashboard() {
             <div className="p-16 text-center">
               <Box size={40} className="mx-auto text-gray-200 mb-4" />
               <p className="text-sm font-bold text-gray-400">No products yet. Add your first product!</p>
-              <button onClick={() => setShowForm(true)} className="mt-4 bg-[#2B3220] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-black transition-all">
+              <button onClick={() => setActiveTab("add-product")} className="mt-4 bg-[#2B3220] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-black transition-all">
                 Add Product
               </button>
             </div>
@@ -437,63 +503,253 @@ export default function SupplierDashboard() {
           )}
         </div>
 
-        {/* Assigned Orders */}
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-[#1B2412] text-white p-2 rounded-xl">
-              <ShoppingBag size={18} />
-            </div>
-            <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
-              Pending Custom Fulfillments
-            </h2>
-            {orders.length > 0 && (
-              <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{orders.length}</span>
-            )}
-          </div>
+        {/* End of My Products Tab */}
+        {activeTab === "my-products" && <></>}
+        </>
+        )}
 
-          {orders.length === 0 ? (
-            <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-              <Clock size={40} className="mx-auto text-gray-200 mb-4" />
-              <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No assigned orders at the moment</p>
+        {/* === ADD PRODUCT TAB === */}
+        {activeTab === "add-product" && (
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 max-w-4xl">
+            <div className="mb-8">
+              <h2 className="text-2xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>
+                Add New Product
+              </h2>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Fill in all details for your product listing</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {orders.map((order) => (
-                <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
-                  <CardContent className="p-0 flex h-44">
-                    <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                      {order.mockup_image_url
-                        ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" />
-                        : <Box size={36} className="text-gray-200" />
-                      }
-                    </div>
-                    <div className="flex-1 p-5 flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                          <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">NEW</span>
-                        </div>
-                        <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
-                            <User size={10} className="text-gray-400" />
-                          </div>
-                          <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }}
-                        className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95"
-                      >
-                        View &amp; Fulfill
+
+            <form onSubmit={handleSubmitProduct} className="space-y-6">
+              {/* Product Name */}
+              <div>
+                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
+                  <Package size={12} className="inline mr-1" /> Product Name *
+                </label>
+                <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium Black Mug" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Description</label>
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe your product..." rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all" />
+              </div>
+
+              {/* Type & Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Product Type *</label>
+                  <div className="relative">
+                    <select required value={form.product_type} onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold appearance-none cursor-pointer transition-all">
+                      {PRODUCT_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Price (USD) *</label>
+                  <input required type="number" min="0" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="24.99" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+                </div>
+              </div>
+
+              {/* Image URL */}
+              <div>
+                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2"><Upload size={12} className="inline mr-1" /> Product Showcase Image URL *</label>
+                <input required type="url" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm transition-all" />
+                {form.image_url && (
+                  <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-gray-200">
+                    <img src={form.image_url} className="w-full h-full object-cover" alt="Preview" onError={e => (e.currentTarget.style.display = 'none')} />
+                  </div>
+                )}
+              </div>
+
+              {/* Available Colors */}
+              <div>
+                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3"><Palette size={12} className="inline mr-1" /> Available Colors * (select all that apply)</label>
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_COLORS.map(color => {
+                    const selected = form.available_colors.some(c => c.hex === color.hex);
+                    return (
+                      <button key={color.hex} type="button" onClick={() => handleColorToggle(color)} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-[11px] font-bold transition-all ${selected ? 'border-[#A1FF4C] bg-[#A1FF4C]/10 text-[#1B2412]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}>
+                        <div className="w-4 h-4 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
+                        {color.name}
                       </button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    );
+                  })}
+                </div>
+                {form.available_colors.length === 0 && <p className="text-[10px] text-red-400 font-bold mt-2 uppercase tracking-widest">Please select at least one color</p>}
+              </div>
+
+              {/* Product Tags */}
+              <div>
+                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3"><Tag size={12} className="inline mr-1" /> Tags (optional)</label>
+                <div className="flex flex-wrap gap-2">
+                  {["Bestseller", "Trending", "New", "Premium", "Eco-Friendly", "Limited"].map(tag => {
+                    const selected = form.tags.includes(tag);
+                    return (
+                      <button key={tag} type="button" onClick={() => handleTagToggle(tag)} className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all ${selected ? 'bg-[#2B3220] text-white border-[#2B3220]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Submit */}
+              <div className="flex gap-3 pt-4">
+                <button type="submit" disabled={formLoading || form.available_colors.length === 0} className="w-full bg-[#A1FF4D] text-[#1B2412] py-4 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {formLoading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                  {formLoading ? "Submitting..." : "Submit for Approval"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* === ORDERS TAB === */}
+        {activeTab === "orders" && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><ShoppingBag size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+                Pending Fulfillments
+              </h2>
             </div>
-          )}
-        </div>
+            {(() => {
+              const filtered = orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER" || o.status === "SAMPLE_REJECTED");
+              return filtered.length === 0 ? (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
+                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No assigned orders at the moment</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filtered.map((order) => (
+                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
+                      <CardContent className="p-0 flex h-44">
+                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
+                        </div>
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
+                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
+                            View &amp; Fulfill
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* === PENDING APPROVALS TAB === */}
+        {activeTab === "pending-approvals" && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Clock size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+                Pending Approvals
+              </h2>
+            </div>
+            {(() => {
+              const filtered = orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL" || o.status === "PRODUCTION_APPROVED_AND_PAID");
+              return filtered.length === 0 ? (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
+                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No pending approvals at the moment</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filtered.map((order) => (
+                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
+                      <CardContent className="p-0 flex h-44">
+                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
+                        </div>
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                              <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-2 py-0.5 rounded-full text-center leading-tight max-w-[100px]">{order.status.replace(/_/g, ' ')}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
+                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
+                            {order.status === "PRODUCTION_APPROVED_AND_PAID" ? "Complete Order" : "View"}
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* === COMPLETED TAB === */}
+        {activeTab === "completed" && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><CheckCircle size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+                Completed Productions
+              </h2>
+            </div>
+            {(() => {
+              const filtered = orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER");
+              return filtered.length === 0 ? (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
+                  <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No completed orders yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filtered.map((order) => (
+                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group opacity-70 hover:opacity-100">
+                      <CardContent className="p-0 flex h-44">
+                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
+                        </div>
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                              <span className="bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
+                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-green-500/10 text-green-600 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-center">
+                            Delivered
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </main>
 
       {/* ===== ORDER DETAIL + DESIGN EXTRACTION MODAL ===== */}
@@ -697,202 +953,31 @@ export default function SupplierDashboard() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3">
-                  <button onClick={() => setSelectedOrder(null)} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleFulfill}
-                    disabled={fulfillLoading || !proofUrl.trim()}
-                    className="flex-1 bg-[#A1FF4D] text-[#1B2412] py-3.5 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {fulfillLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                    {fulfillLoading ? 'Saving...' : 'Mark as Fulfilled'}
-                  </button>
-                </div>
+                {selectedOrder.status === 'SAMPLE_AWAITING_APPROVAL' ? (
+                  <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl text-sm font-bold text-center">
+                    Sample uploaded. Waiting for customer approval.
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <button onClick={() => setSelectedOrder(null)} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleFulfill}
+                      disabled={fulfillLoading || !proofUrl.trim()}
+                      className="flex-1 bg-[#A1FF4D] text-[#1B2412] py-3.5 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {fulfillLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                      {fulfillLoading ? 'Saving...' : ((selectedOrder.variants?.quantity || 1) > 1 && ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(selectedOrder.status)) ? 'Upload Sample Proof' : 'Upload Final Proof'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         );
       })()}
 
-      {/* Add Product Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl my-4">
-            <div className="p-8 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-[2.5rem] z-10">
-              <div>
-                <h2 className="text-2xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>
-                  Add New Product
-                </h2>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Fill in all details for your product listing</p>
-              </div>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-900 transition-colors p-2">
-                <XCircle size={28} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitProduct} className="p-8 space-y-6">
-              {/* Product Name */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
-                  <Package size={12} className="inline mr-1" /> Product Name *
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Premium Black Mug"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Describe your product — materials, print quality, special features..."
-                  rows={3}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all"
-                />
-              </div>
-
-              {/* Type & Price row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
-                    Product Type *
-                  </label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={form.product_type}
-                      onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold appearance-none cursor-pointer transition-all"
-                    >
-                      {PRODUCT_TYPES.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
-                    Price (USD) *
-                  </label>
-                  <input
-                    required
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.price}
-                    onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                    placeholder="24.99"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Image URL */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
-                  <Upload size={12} className="inline mr-1" /> Product Showcase Image URL *
-                </label>
-                <input
-                  required
-                  type="url"
-                  value={form.image_url}
-                  onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))}
-                  placeholder="https://... (paste a direct image link)"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm transition-all"
-                />
-                {form.image_url && (
-                  <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={form.image_url} className="w-full h-full object-cover" alt="Preview" onError={e => (e.currentTarget.style.display = 'none')} />
-                  </div>
-                )}
-              </div>
-
-              {/* Available Colors */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3">
-                  <Palette size={12} className="inline mr-1" /> Available Colors * (select all that apply)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {PRESET_COLORS.map(color => {
-                    const selected = form.available_colors.some(c => c.hex === color.hex);
-                    return (
-                      <button
-                        key={color.hex}
-                        type="button"
-                        onClick={() => handleColorToggle(color)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-[11px] font-bold transition-all ${selected ? 'border-[#A1FF4C] bg-[#A1FF4C]/10 text-[#1B2412]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-                          }`}
-                      >
-                        <div className="w-4 h-4 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
-                        {color.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                {form.available_colors.length === 0 && (
-                  <p className="text-[10px] text-red-400 font-bold mt-2 uppercase tracking-widest">Please select at least one color</p>
-                )}
-              </div>
-
-              {/* Product Tags */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3">
-                  <Tag size={12} className="inline mr-1" /> Tags (optional)
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {["Bestseller", "Trending", "New", "Premium", "Eco-Friendly", "Limited"].map(tag => {
-                    const selected = form.tags.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => handleTagToggle(tag)}
-                        className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all ${selected ? 'bg-[#2B3220] text-white border-[#2B3220]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                          }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Submit */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading || form.available_colors.length === 0}
-                  className="flex-1 bg-[#A1FF4D] text-[#1B2412] py-4 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {formLoading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                  {formLoading ? "Submitting..." : "Submit for Approval"}
-                </button>
-              </div>
-
-              <p className="text-[10px] text-gray-400 text-center font-bold uppercase tracking-widest">
-                ⚠️ Admin must approve your product before it appears in the catalog
-              </p>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -12,6 +12,8 @@ import { supabase } from "@/lib/supabase";
 
 export default function AdminDashboard() {
   const [adminProfile, setAdminProfile] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -51,11 +53,11 @@ export default function AdminDashboard() {
 
   const fetchAll = async () => {
     const [ordersRes, productsRes, suppliersRes, customersRes, allOrdersRes] = await Promise.all([
-      // Pending customer orders — simple select, no FK join
+      // Active customer orders (Pending, Assigned, In Production, etc.)
       supabase
         .from("custom_orders")
-        .select("*")
-        .eq("status", "PENDING_ADMIN")
+        .select("*, supplier_product:supplier_products(supplier_id)")
+        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"])
         .order("created_at", { ascending: false }),
 
       // Products submitted by suppliers awaiting approval
@@ -66,15 +68,16 @@ export default function AdminDashboard() {
         .order("created_at", { ascending: false }),
 
       // All suppliers
-      supabase.from("profiles").select("id, full_name, email").eq("role", "SUPPLIER"),
+      supabase.from("profiles").select("id, full_name, email, phone, location").eq("role", "SUPPLIER"),
 
       // All customers
-      supabase.from("profiles").select("id, full_name, email, created_at").eq("role", "CUSTOMER"),
+      supabase.from("profiles").select("id, full_name, email, created_at, phone, location").eq("role", "CUSTOMER"),
 
-      // All orders overview
+      // History orders overview
       supabase
         .from("custom_orders")
         .select("id, status, created_at, product_type, customer_id")
+        .in("status", ["COMPLETED_BY_SUPPLIER", "REJECTED"])
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
@@ -87,7 +90,7 @@ export default function AdminDashboard() {
       if (customerIds.length > 0) {
         const { data: customerProfiles } = await supabase
           .from("profiles")
-          .select("id, full_name, email")
+          .select("id, full_name, email, phone, location")
           .in("id", customerIds);
 
         const profileMap = Object.fromEntries((customerProfiles || []).map((p: any) => [p.id, p]));
@@ -153,6 +156,17 @@ export default function AdminDashboard() {
     else fetchAll();
   };
 
+  const handleDeleteOrder = async (id: string) => {
+    if (!confirm("Are you sure you want to completely delete this order? This cannot be undone.")) return;
+    const { error } = await supabase.from("custom_orders").delete().eq("id", id);
+    if (error) {
+      alert("Error deleting order: " + error.message);
+    } else {
+      setAllOrders(prev => prev.filter(o => o.id !== id));
+      setPendingOrders(prev => prev.filter(o => o.id !== id));
+    }
+  };
+
   // Approve a supplier product → it appears on landing page
   const handleApproveProduct = async (id: string) => {
     const { error } = await supabase
@@ -206,62 +220,65 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#fafafa] flex font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#111] text-white hidden md:flex flex-col sticky top-0 h-screen">
-        <div className="p-6 border-b border-gray-800">
-          <img src="/logo.png" alt="Logo" className="h-10 w-auto invert brightness-0" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 mt-2 block">Admin Panel</span>
+      <aside className="w-64 bg-white text-gray-800 border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen">
+        <div className="p-6 border-b border-gray-100">
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">Admin Panel</span>
         </div>
 
         {/* Admin Profile */}
         {adminProfile && (
-          <div className="p-4 mx-4 my-4 bg-white/5 rounded-2xl border border-white/10">
+          <div className="p-4 mx-4 my-4 bg-[#A1FF4D]/10 rounded-2xl border border-[#A1FF4D]/20">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center text-white font-black text-sm">
+              <div className="w-9 h-9 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-sm">
                 {adminProfile.full_name?.[0]?.toUpperCase() || 'A'}
               </div>
               <div>
-                <p className="text-[12px] font-black text-white leading-none">{adminProfile.full_name || 'Admin'}</p>
-                <p className="text-[9px] font-bold text-orange-500 mt-0.5 tracking-widest uppercase">Administrator</p>
+                <p className="text-[12px] font-black text-[#2B3220] leading-none">{adminProfile.full_name || 'Admin'}</p>
+                <p className="text-[9px] font-bold text-[#567a28] mt-0.5 tracking-widest uppercase">Administrator</p>
               </div>
             </div>
           </div>
         )}
 
         <nav className="flex-1 p-4 space-y-1">
-          <span className="flex items-center gap-3 px-4 py-3 bg-white/10 text-white rounded-xl font-bold text-sm">
-            <BarChart3 size={16} /> Overview
-          </span>
           <button
             onClick={() => setActiveTab("orders")}
-            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "orders" ? "bg-orange-500/20 text-orange-400" : "text-gray-400 hover:bg-white/5"}`}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "orders" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
             <span className="flex items-center gap-3"><ShoppingBag size={16} /> Custom Orders</span>
             {pendingOrders.length > 0 && (
-              <span className="bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingOrders.length}</span>
+              <span className="bg-[#A1FF4D] text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingOrders.length}</span>
             )}
           </button>
           <button
             onClick={() => setActiveTab("products")}
-            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "products" ? "bg-orange-500/20 text-orange-400" : "text-gray-400 hover:bg-white/5"}`}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "products" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
             <span className="flex items-center gap-3"><Package size={16} /> Product Reviews</span>
             {pendingProducts.length > 0 && (
-              <span className="bg-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingProducts.length}</span>
+              <span className="bg-[#A1FF4D] text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingProducts.length}</span>
             )}
           </button>
           <div className="pt-2">
-            <p className="px-4 text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Reports</p>
-            <span className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 rounded-xl text-sm font-bold cursor-pointer">
+            <p className="px-4 text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Users</p>
+            <button
+              onClick={() => setActiveTab("suppliers")}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "suppliers" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+            >
               <Users size={16} /> Suppliers ({suppliers.length})
-            </span>
-            <span className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 rounded-xl text-sm font-bold cursor-pointer">
+            </button>
+            <button
+              onClick={() => setActiveTab("customers")}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "customers" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+            >
               <User size={16} /> Customers ({customers.length})
-            </span>
+            </button>
           </div>
         </nav>
 
-        <div className="p-4 border-t border-gray-800 space-y-1">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-white/5 rounded-xl text-sm font-bold">
+        <div className="p-4 border-t border-gray-100 space-y-1">
+          <Link href="/" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-50 rounded-xl text-sm font-bold">
             <ArrowRight size={16} /> View Site
           </Link>
           <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-400/10 w-full rounded-xl text-sm font-bold transition-all">
@@ -272,187 +289,115 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-          <div>
-            <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
-              System Control
-            </h1>
-            <p className="text-gray-400 font-bold tracking-widest uppercase text-[10px] mt-1">Platform Overview & Administrative Actions</p>
-          </div>
-          {totalPending > 0 && (
-            <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-5 py-3 animate-pulse">
-              <AlertCircle size={20} className="text-orange-500" />
-              <span className="text-sm font-black text-orange-600 uppercase tracking-widest">
-                {totalPending} Requests Pending
-              </span>
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
+          <div className="flex items-start justify-between w-full">
+            <div>
+              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
+                System Control
+              </h1>
+              <p className="text-gray-400 font-bold tracking-widest uppercase text-[10px] mt-1">Platform Overview & Administrative Actions</p>
             </div>
-          )}
+            
+            <div className="flex flex-col items-end gap-3">
+              <button 
+                onClick={() => setShowOrderHistory(true)}
+                className="flex items-center gap-2 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-sm active:scale-95"
+              >
+                <Clock size={16} /> History
+              </button>
+              
+              {totalPending > 0 && (
+                <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-3 py-1.5 animate-pulse shadow-sm">
+                  <AlertCircle size={14} className="text-orange-500" />
+                  <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">
+                    {totalPending} Pending
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {stats.map((stat, i) => (
-            <Card key={i} className="border-none shadow-[8px_8px_24px_#e8e8e8,-8px_-8px_24px_#ffffff] rounded-[2rem] overflow-hidden">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className={`${stat.color} p-3 rounded-2xl text-white shadow-lg flex-shrink-0`}>
-                  <stat.icon size={22} />
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
-                  <p className="text-2xl font-black text-[#111] leading-none" style={{ fontFamily: 'Impact, sans-serif' }}>{stat.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Tab Header */}
-        <div className="flex gap-3 mb-6">
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`px-5 py-2.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all ${activeTab === "orders" ? "bg-[#111] text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-gray-400"}`}
-          >
-            Custom Orders {pendingOrders.length > 0 && `(${pendingOrders.length})`}
-          </button>
-          <button
-            onClick={() => setActiveTab("products")}
-            className={`px-5 py-2.5 rounded-xl font-black text-sm uppercase tracking-wider transition-all ${activeTab === "products" ? "bg-[#111] text-white" : "bg-white text-gray-500 border border-gray-200 hover:border-gray-400"}`}
-          >
-            Supplier Products {pendingProducts.length > 0 && `(${pendingProducts.length})`}
-          </button>
-        </div>
 
         {/* === ORDERS TAB === */}
         {activeTab === "orders" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                  <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Pending Customer Orders</h2>
-                  <Clock size={18} className="text-orange-500" />
-                </div>
-                <div className="p-4 space-y-3">
-                  {pendingOrders.map((order) => (
-                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50/60 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg transition-all">
-                      <div className="flex items-center gap-4 mb-3 sm:mb-0">
-                        <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
-                          {order.mockup_image_url
-                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
-                            : <Box size={24} className="text-gray-300" />
-                          }
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Active Customer Orders</h2>
+                <Clock size={18} className="text-orange-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.map((order) => (
+                  <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50/60 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
+                        {order.mockup_image_url
+                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                          : <Box size={24} className="text-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {/* Customer */}
+                          <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                            <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
+                          </span>
+                          {/* Color/Variant */}
+                          <span className="text-[10px] font-bold text-gray-500">
+                            {order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}
+                          </span>
                         </div>
-                        <div>
-                          <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {/* Customer */}
-                            <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-                              <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
-                            </span>
-                            {/* Color/Variant */}
-                            <span className="text-[10px] font-bold text-gray-500">
-                              {order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}
-                            </span>
-                          </div>
-                          {/* Supplier product info */}
-                          {order.supplier_product && (
-                            <p className="text-[10px] font-bold text-green-600 mt-1 flex items-center gap-1">
-                              <ShieldCheck size={9} /> Will auto-assign to: {order.supplier_product.supplier?.full_name}
-                            </p>
-                          )}
-                          <p className="text-[9px] text-gray-400 font-bold mt-1">
-                            {new Date(order.created_at).toLocaleString()}
+                        {/* Supplier product info */}
+                        {order.supplier_product && (
+                          <p className="text-[10px] font-bold text-green-600 mt-1 flex items-center gap-1">
+                            <ShieldCheck size={9} /> Will auto-assign to: {order.supplier_product.supplier?.full_name}
                           </p>
+                        )}
+                        <p className="text-[9px] text-gray-400 font-bold mt-1">
+                          {new Date(order.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Order Details">
+                        <Eye size={16} />
+                      </button>
+                      
+                      {order.status === "PENDING_ADMIN" ? (
+                        <>
+                          <button
+                            onClick={() => handleRejectOrder(order.id)}
+                            className="p-2.5 bg-white border-2 border-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                            title="Reject Order"
+                          >
+                            <XCircle size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleApproveOrder(order)}
+                            className="bg-[#ccff00] text-[#111] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
+                          >
+                            <CheckCircle size={16} /> APPROVE
+                          </button>
+                        </>
+                      ) : (
+                        <div className={`px-4 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center justify-center ${STATUS_COLOR[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                          {order.status?.replace(/_/g, ' ')}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all">
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleRejectOrder(order.id)}
-                          className="p-2.5 bg-white border-2 border-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
-                        >
-                          <XCircle size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleApproveOrder(order)}
-                          className="bg-[#ccff00] text-[#111] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
-                        >
-                          <CheckCircle size={16} /> APPROVE
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  ))}
-                  {pendingOrders.length === 0 && (
-                    <div className="p-16 text-center text-gray-400 italic font-medium">
-                      <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
-                      All clear! No pending orders.
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ))}
+                {pendingOrders.length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                    All clear! No pending orders.
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Right Panel - Supplier & Customer Registry */}
-            <div className="space-y-5">
-              {/* Suppliers */}
-              <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6">
-                <h3 className="text-sm font-black text-[#111] uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <Users size={14} className="text-blue-500" /> Suppliers ({suppliers.length})
-                </h3>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {suppliers.map(s => (
-                    <div key={s.id} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-xs flex-shrink-0">
-                        {s.full_name?.[0]?.toUpperCase() || 'S'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-black text-[#111] truncate">{s.full_name}</p>
-                        <p className="text-[9px] text-gray-400 font-bold truncate">{s.email}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {suppliers.length === 0 && <p className="text-xs text-gray-400 text-center py-4">No suppliers yet</p>}
-                </div>
-              </div>
-
-              {/* Customers */}
-              <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6">
-                <h3 className="text-sm font-black text-[#111] uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <User size={14} className="text-teal-500" /> Customers ({customers.length})
-                </h3>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {customers.map(c => (
-                    <div key={c.id} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-black text-xs flex-shrink-0">
-                        {c.full_name?.[0]?.toUpperCase() || 'C'}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-black text-[#111] truncate">{c.full_name || 'Customer'}</p>
-                        <p className="text-[9px] text-gray-400 font-bold truncate">{c.email}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {customers.length === 0 && <p className="text-xs text-gray-400 text-center py-4">No customers yet</p>}
-                </div>
-              </div>
-
-              {/* Recent All Orders */}
-              <div className="bg-[#111] rounded-[2rem] p-6 text-white">
-                <h3 className="text-sm font-black text-[#ccff00] uppercase tracking-widest mb-4">All Order History</h3>
-                <div className="space-y-3">
-                  {allOrders.slice(0, 6).map(o => (
-                    <div key={o.id} className="flex justify-between items-center">
-                      <p className="text-[11px] font-bold text-gray-300 truncate max-w-[130px]">{o.product_type}</p>
-                      <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${STATUS_COLOR[o.status] || 'bg-gray-700 text-gray-300'}`}>
-                        {o.status?.replace('_', ' ')}
-                      </span>
-                    </div>
-                  ))}
-                  {allOrders.length === 0 && <p className="text-xs text-gray-600 text-center py-4">No orders yet</p>}
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -530,6 +475,56 @@ export default function AdminDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* === SUPPLIERS TAB === */}
+        {activeTab === "suppliers" && (
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden p-6">
+            <h3 className="text-xl font-black text-[#111] uppercase tracking-widest mb-6 flex items-center gap-2">
+              <Users size={20} className="text-blue-500" /> Suppliers Directory ({suppliers.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {suppliers.map(s => (
+                <div key={s.id} className="flex items-start gap-4 p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:shadow-md hover:bg-white transition-all cursor-pointer" onClick={() => setSelectedUser(s)}>
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-black text-lg flex-shrink-0 mt-1">
+                    {s.full_name?.[0]?.toUpperCase() || 'S'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-[#111] truncate">{s.full_name}</p>
+                    <p className="text-xs text-gray-500 font-bold truncate mb-2">{s.email}</p>
+                    {s.phone && <p className="text-[11px] text-gray-400 font-medium">📞 {s.phone}</p>}
+                    {s.location && <p className="text-[11px] text-gray-400 font-medium mt-0.5">📍 {s.location}</p>}
+                  </div>
+                </div>
+              ))}
+              {suppliers.length === 0 && <div className="col-span-full text-center text-gray-400 py-10">No suppliers registered.</div>}
+            </div>
+          </div>
+        )}
+
+        {/* === CUSTOMERS TAB === */}
+        {activeTab === "customers" && (
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden p-6">
+            <h3 className="text-xl font-black text-[#111] uppercase tracking-widest mb-6 flex items-center gap-2">
+              <User size={20} className="text-teal-500" /> Customers Directory ({customers.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {customers.map(c => (
+                <div key={c.id} className="flex items-start gap-4 p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:shadow-md hover:bg-white transition-all cursor-pointer" onClick={() => setSelectedUser(c)}>
+                  <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 font-black text-lg flex-shrink-0 mt-1">
+                    {c.full_name?.[0]?.toUpperCase() || 'C'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-[#111] truncate">{c.full_name || 'Customer'}</p>
+                    <p className="text-xs text-gray-500 font-bold truncate mb-2">{c.email}</p>
+                    {c.phone && <p className="text-[11px] text-gray-400 font-medium">📞 {c.phone}</p>}
+                    {c.location && <p className="text-[11px] text-gray-400 font-medium mt-0.5">📍 {c.location}</p>}
+                  </div>
+                </div>
+              ))}
+              {customers.length === 0 && <div className="col-span-full text-center text-gray-400 py-10">No customers registered.</div>}
+            </div>
           </div>
         )}
       </main>
@@ -631,6 +626,81 @@ export default function AdminDashboard() {
                    </button>
                  </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden flex flex-col items-center p-8 text-center relative">
+            <button onClick={() => setSelectedUser(null)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900">
+              <XCircle size={24} />
+            </button>
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black mb-4 ${selectedUser.role === 'SUPPLIER' ? 'bg-blue-100 text-blue-600' : 'bg-teal-100 text-teal-600'}`}>
+              {selectedUser.full_name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <h3 className="text-xl font-black text-[#111]">{selectedUser.full_name || 'User'}</h3>
+            <p className="text-sm text-gray-500 font-bold mb-6">{selectedUser.email}</p>
+            
+            <div className="w-full space-y-3 text-left bg-gray-50 rounded-2xl p-5 border border-gray-100">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Phone Number</p>
+                <p className="text-sm font-bold text-gray-800">{selectedUser.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Current Location</p>
+                <p className="text-sm font-bold text-gray-800">{selectedUser.location || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Joined</p>
+                <p className="text-sm font-bold text-gray-800">{selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString() : 'Unknown'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order History Modal */}
+      {showOrderHistory && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
+          <div className="bg-[#111] rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+              <h3 className="text-xl font-black text-[#ccff00] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif' }}>
+                All Order History
+              </h3>
+              <button onClick={() => setShowOrderHistory(false)} className="text-gray-500 hover:text-white transition-colors">
+                <XCircle size={28} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              {allOrders.length === 0 ? (
+                <div className="text-center text-gray-500 py-10 italic">No order history available.</div>
+              ) : (
+                <div className="space-y-4">
+                  {allOrders.map(o => (
+                    <div key={o.id} className="flex flex-col sm:flex-row justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <p className="text-sm font-bold text-white">{o.product_type}</p>
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${STATUS_COLOR[o.status] || 'bg-gray-700 text-gray-300'}`}>
+                            {o.status?.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 font-medium">Order ID: {o.id}</p>
+                        <p className="text-[11px] text-gray-500 mt-1">{new Date(o.created_at).toLocaleString()}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteOrder(o.id)}
+                        className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-red-500/20 hover:border-red-500"
+                      >
+                        Delete Order
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

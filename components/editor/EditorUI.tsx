@@ -753,6 +753,21 @@ export default function EditorUI() {
     const [orderQuantity, setOrderQuantity] = useState(1);
     const [orderQuality, setOrderQuality] = useState("Standard");
     const [receiptDataUrl, setReceiptDataUrl] = useState("");
+    const [supplierColors, setSupplierColors] = useState<{name: string, hex: string}[] | null>(null);
+
+    // Fetch supplier product colors if customizing a specific supplier product
+    useEffect(() => {
+        if (!supplierProductId) return;
+        (async () => {
+            const { data, error } = await supabase.from('supplier_products').select('available_colors').eq('id', supplierProductId).single();
+            if (!error && data?.available_colors?.length > 0) {
+                setSupplierColors(data.available_colors);
+                // Switch to the first available color if current is not in the list
+                const hasColor = data.available_colors.find((c: any) => c.hex === selectedColor);
+                if (!hasColor) setSelectedColor(data.available_colors[0].hex);
+            }
+        })();
+    }, [supplierProductId]);
 
     const printArea = selectedView.printAreas[0];
 
@@ -1092,6 +1107,7 @@ export default function EditorUI() {
                 // ── UPDATE existing order ──
                 const { error } = await supabase.from('custom_orders').update({
                     product_type: selectedProduct.name,
+                    supplier_product_id: supplierProductId || null,
                     variants: finalVariants,
                     design_data: {
                         _printFile: printFileDataUrl,
@@ -1113,6 +1129,7 @@ export default function EditorUI() {
                 const { data: newOrder, error } = await supabase.from('custom_orders').insert({
                     customer_id: user.id,
                     product_type: selectedProduct.name,
+                    supplier_product_id: supplierProductId || null,
                     variants: finalVariants,
                     design_data: {
                         _printFile: printFileDataUrl,
@@ -1526,18 +1543,22 @@ export default function EditorUI() {
                             </button>
                         </div>
                         <div className="flex flex-wrap gap-2 mt-2">
-                            {selectedProduct.variants.map(c => (
+                            {(supplierColors?.length ? supplierColors : selectedProduct.variants).map((c: any) => {
+                                const hex = c.hex || c.colorHex;
+                                const name = c.name || c.colorName;
+                                return (
                                 <button
-                                    key={c.id}
-                                    title={c.colorName}
-                                    className={`w-7 h-7 rounded-full border-2 transition-all ${selectedColor === c.colorHex
+                                    key={hex}
+                                    title={name}
+                                    className={`w-7 h-7 rounded-full border-2 transition-all ${selectedColor === hex
                                         ? 'border-gray-400 shadow-sm'
                                         : 'border-gray-200 hover:border-gray-300'
                                         }`}
-                                    style={{ backgroundColor: c.colorHex }}
-                                    onClick={() => setSelectedColor(c.colorHex)}
+                                    style={{ backgroundColor: hex }}
+                                    onClick={() => setSelectedColor(hex)}
                                 />
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
