@@ -582,7 +582,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                     )}
 
                     {/* Feedback Section for Delivered Orders */}
-                    {order.status === "DELIVERED" && !(order.variants?.customer_rating > 0) && (
+                    {order.status === "DELIVERED" && !(Number(order.variants?.customer_rating) > 0) && (
                         <div className="bg-white border border-gray-100 rounded-2xl p-5 mt-4 shadow-sm">
                             <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-3">Rate your Experience</p>
                             

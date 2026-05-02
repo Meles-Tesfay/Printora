@@ -41,8 +41,11 @@ export default function ProductDetailPage() {
           .from("custom_orders")
           .select("id, variants, created_at, customer_id")
           .eq("supplier_product_id", id)
-          .not("variants", "is", null)
           .order("created_at", { ascending: false });
+
+        if (reviewsError) {
+          console.error("Reviews query error:", reviewsError);
+        }
 
         if (!reviewsError && reviewsData) {
           // Enrich with customer names
@@ -55,15 +58,15 @@ export default function ProductDetailPage() {
             
             const profileMap = Object.fromEntries((customerProfiles || []).map(p => [p.id, p]));
             setReviews((reviewsData || [])
-              .filter(r => r.variants?.customer_rating)
+              .filter(r => r.variants && Number(r.variants.customer_rating) > 0)
               .map(r => ({
                 ...r,
-                customer_rating: r.variants.customer_rating,
+                customer_rating: Number(r.variants.customer_rating),
                 customer_feedback: r.variants.customer_feedback,
                 customer_name: profileMap[r.customer_id]?.full_name || "Verified Customer"
               })));
           } else {
-            setReviews(reviewsData);
+            setReviews([]);
           }
         }
       } catch (err) {
