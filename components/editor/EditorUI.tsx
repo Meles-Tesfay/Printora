@@ -366,8 +366,8 @@ function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage
             {/* Upload CTA bar */}
             <div className="px-4 pt-4 pb-2">
                 <label className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-3 text-[13px] font-semibold cursor-pointer transition-all ${uploading
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-300 text-gray-600 hover:border-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'border-gray-300 text-gray-600 hover:border-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     }`}>
                     {uploading ? (
                         <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> Uploading…</>
@@ -670,13 +670,22 @@ export default function EditorUI() {
     const editOrderId = searchParams.get('edit_order'); // null for new designs
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
+    const isReload = typeof window !== 'undefined' &&
+        (performance.getEntriesByType('navigation') as PerformanceNavigationTiming[])[0]?.type === 'reload';
+
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(() => {
-        // Priority 1: URL parameter
+        // Priority 1: URL parameter (Fresh navigation or Reload with query)
         if (requestedTemplate) {
-            const p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
+            let p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
+            if (!p) p = PRODUCT_TEMPLATES.find(t => t.category === requestedTemplate || t.id.includes(requestedTemplate) || requestedTemplate.includes(t.category));
+            
+            // If it's a reload, and we have a saved session for this exact product, we can use it.
+            // But fundamentally, the product is the one requested in the URL.
             if (p) return p;
+            return initialTemplate;
         }
-        // Priority 2: Saved state
+
+        // Priority 2: Saved state (Only if no specific template is requested in URL, e.g. /editor)
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('printora_editor_state');
             if (saved) {
@@ -692,28 +701,36 @@ export default function EditorUI() {
 
     const [selectedColor, setSelectedColor] = useState<string>(() => {
         if (typeof window !== 'undefined') {
+            // If it's a fresh navigation to a specific template, we don't want the stale saved color.
+            // But if it's a reload, we do want to restore their progress.
+            if (requestedTemplate && !isReload) {
+                return selectedProduct.defaultColorHex;
+            }
+
             const saved = localStorage.getItem('printora_editor_state');
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
-                    // Only use saved color if it's the same product as current
-                    if (data.productTemplateId === selectedProduct?.id && data.color) {
+                    if (data.productTemplateId === selectedProduct.id && data.color) {
                         return data.color;
                     }
                 } catch { }
             }
         }
-        return initialTemplate.defaultColorHex;
+        return selectedProduct.defaultColorHex;
     });
 
     const [selectedView, setSelectedView] = useState<ProductView>(() => {
         if (typeof window !== 'undefined') {
+            if (requestedTemplate && !isReload) {
+                return selectedProduct.views.find(v => v.id === selectedProduct.defaultViewId) || selectedProduct.views[0];
+            }
+
             const saved = localStorage.getItem('printora_editor_state');
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
-                    // Only use saved view if it's the same product as current
-                    if (data.productTemplateId === selectedProduct?.id && data.viewId) {
+                    if (data.productTemplateId === selectedProduct.id && data.viewId) {
                         const v = selectedProduct.views.find(view => view.id === data.viewId);
                         if (v) return v;
                     }
@@ -723,15 +740,22 @@ export default function EditorUI() {
         return selectedProduct.views.find(v => v.id === selectedProduct.defaultViewId) || selectedProduct.views[0];
     });
 
-    // Detect page refresh vs fresh navigation (for canvas state restoration)
-    const isReload = typeof window !== 'undefined' &&
-        (performance.getEntriesByType('navigation') as PerformanceNavigationTiming[])[0]?.type === 'reload';
-
     const [viewStates, setViewStates] = useState<Record<string, CanvasDesignState>>(() => {
-        // Only restore canvas objects on refresh; fresh navigation always starts blank
-        if (typeof window !== 'undefined' && isReload && !requestedTemplate && !editOrderId) {
+        // Only restore canvas objects on refresh or when loading a saved state directly without a requested template
+        if (typeof window !== 'undefined' && !editOrderId) {
+            // If it's a fresh navigation to a specific product, start blank
+            if (requestedTemplate && !isReload) return {};
+
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { try { return JSON.parse(sess).viewStates || {}; } catch { } }
+            if (sess) { 
+                try { 
+                    const data = JSON.parse(sess);
+                    // Ensure the saved session actually belongs to the product we are loading
+                    if (data.productTemplateId === selectedProduct.id) {
+                        return data.viewStates || {}; 
+                    }
+                } catch { } 
+            }
         }
         return {};
     });
@@ -744,9 +768,18 @@ export default function EditorUI() {
     const [isSaving, setIsSaving] = useState(false);
     // Restore loadedTemplateId from session (survives refresh, not nav-away)
     const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(() => {
-        if (typeof window !== 'undefined' && isReload) {
+        if (typeof window !== 'undefined') {
+            if (requestedTemplate && !isReload) return null;
+            
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { try { return JSON.parse(sess).loadedTemplateId || null; } catch { } }
+            if (sess) { 
+                try { 
+                    const data = JSON.parse(sess);
+                    if (data.productTemplateId === selectedProduct.id) {
+                        return data.loadedTemplateId || null; 
+                    }
+                } catch { } 
+            }
         }
         return null;
     });
@@ -831,15 +864,18 @@ export default function EditorUI() {
         if (newView) setSelectedView(newView);
     };
 
-    // Persistence: Load from URL query (if present) to override local storage for fresh navigation
+    // Persistence: Update state when URL query changes (Next.js client-side navigation)
     useEffect(() => {
-        if (requestedTemplate && requestedTemplate !== selectedProduct.id) {
-            const fromQuery = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate);
-            if (fromQuery) {
-                setSelectedProduct(fromQuery);
-                setSelectedColor(fromQuery.defaultColorHex);
-                setSelectedView(fromQuery.views.find(v => v.id === fromQuery.defaultViewId) || fromQuery.views[0]);
+        if (requestedTemplate) {
+            let p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
+            if (!p) p = PRODUCT_TEMPLATES.find(t => t.category === requestedTemplate || t.id.includes(requestedTemplate) || requestedTemplate.includes(t.category));
+            
+            if (p && p.id !== selectedProduct.id) {
+                setSelectedProduct(p);
+                setSelectedColor(p.defaultColorHex);
+                setSelectedView(p.views.find(v => v.id === p.defaultViewId) || p.views[0]);
                 setViewStates({});
+                setLoadedTemplateId(null);
             }
         }
     }, [requestedTemplate]);
@@ -1178,14 +1214,7 @@ export default function EditorUI() {
         }
     };
 
-    useEffect(() => {
-        const fromQuery = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate);
-        if (!fromQuery || fromQuery.id === selectedProduct.id) return;
-        setSelectedProduct(fromQuery);
-        setSelectedColor(fromQuery.defaultColorHex);
-        setSelectedView(fromQuery.views.find(v => v.id === fromQuery.defaultViewId) || fromQuery.views[0]);
-        setViewStates({});
-    }, [requestedTemplate, selectedProduct.id]);
+    // UseEffect for requestedTemplate was duplicate and handled above, removing the duplicate.
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
@@ -1629,7 +1658,7 @@ export default function EditorUI() {
             {showPaymentModal && (
                 <div className="fixed inset-0 bg-black/40 z-[999] flex items-center justify-center p-4 lg:p-10 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-white rounded-[2rem] w-full max-w-5xl shadow-2xl flex flex-col lg:flex-row animate-in zoom-in-95 duration-300 overflow-hidden max-h-[95vh]">
-                        
+
                         {/* Left Column: Selections & Payment (Scrollable) */}
                         <div className="flex-[1.4] flex flex-col p-8 lg:p-12 overflow-y-auto custom-scrollbar border-r border-gray-100">
                             <div className="flex justify-between items-center mb-10">
@@ -1645,13 +1674,13 @@ export default function EditorUI() {
                                     <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center text-[13px] font-black">1</div>
                                     <h3 className="text-lg font-bold text-gray-900">Choose Size & Quality</h3>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-3">
                                         <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Size</label>
                                         <div className="relative group">
-                                            <select 
-                                                value={orderSize} 
+                                            <select
+                                                value={orderSize}
                                                 onChange={(e) => setOrderSize(e.target.value)}
                                                 className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent transition-all cursor-pointer"
                                             >
@@ -1668,8 +1697,8 @@ export default function EditorUI() {
                                     <div className="space-y-3">
                                         <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Garment Quality</label>
                                         <div className="relative group">
-                                            <select 
-                                                value={orderQuality} 
+                                            <select
+                                                value={orderQuality}
                                                 onChange={(e) => setOrderQuality(e.target.value)}
                                                 className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent transition-all cursor-pointer"
                                             >
@@ -1683,10 +1712,10 @@ export default function EditorUI() {
 
                                 <div className="space-y-3 max-w-[200px]">
                                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantity</label>
-                                    <input 
-                                        type="number" 
+                                    <input
+                                        type="number"
                                         min="1"
-                                        value={orderQuantity} 
+                                        value={orderQuantity}
                                         onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] transition-all"
                                     />
@@ -1705,11 +1734,10 @@ export default function EditorUI() {
                                         <button
                                             key={method.id}
                                             onClick={() => setSelectedPaymentMethod(method.id)}
-                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${
-                                                selectedPaymentMethod === method.id 
-                                                ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]' 
-                                                : 'border-gray-100 hover:border-gray-200 bg-white'
-                                            }`}
+                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${selectedPaymentMethod === method.id
+                                                    ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]'
+                                                    : 'border-gray-100 hover:border-gray-200 bg-white'
+                                                }`}
                                         >
                                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedPaymentMethod === method.id ? 'bg-[#ccff00] text-[#1B2412]' : 'bg-gray-50 text-gray-400'}`}>
                                                 <method.icon size={24} />
@@ -1753,13 +1781,13 @@ export default function EditorUI() {
                                     <h3 className="text-lg font-bold text-gray-900">Upload Transfer Receipt</h3>
                                 </div>
 
-                                <div 
+                                <div
                                     onClick={() => document.getElementById('checkout-receipt-upload')?.click()}
                                     className="relative border-2 border-dashed border-gray-200 rounded-[2rem] p-12 flex flex-col items-center justify-center gap-4 group cursor-pointer hover:border-[#ccff00] hover:bg-[#ccff00]/5 transition-all bg-white shadow-sm"
                                 >
-                                    <input 
+                                    <input
                                         id="checkout-receipt-upload"
-                                        type="file" 
+                                        type="file"
                                         accept="image/*"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
@@ -1771,7 +1799,7 @@ export default function EditorUI() {
                                         }}
                                         className="hidden"
                                     />
-                                    
+
                                     {receiptDataUrl ? (
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#ccff00] shadow-xl">
@@ -1780,7 +1808,7 @@ export default function EditorUI() {
                                             <div className="bg-[#ccff00] text-[#1B2412] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                                                 <Check size={12} /> Receipt Attached
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); setReceiptDataUrl(""); }}
                                                 className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline"
                                             >
@@ -1810,7 +1838,7 @@ export default function EditorUI() {
 
                             <div className="relative z-10 flex flex-col h-full">
                                 <h3 className="text-[11px] font-black text-[#ccff00] uppercase tracking-[0.2em] bg-[#1B2412] px-3 py-1.5 rounded-lg inline-block self-start mb-10">Order Summary</h3>
-                                
+
                                 <div className="space-y-10 flex-1">
                                     {/* Pricing Breakdown */}
                                     <div className="space-y-4">
@@ -1829,7 +1857,7 @@ export default function EditorUI() {
                                             <span className="text-gray-900">x {orderQuantity}</span>
                                         </div>
                                         <div className="h-px bg-gray-200 my-6" />
-                                        
+
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-end">
                                                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
