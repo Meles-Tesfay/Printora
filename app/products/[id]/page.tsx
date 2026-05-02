@@ -158,9 +158,7 @@ export default function ProductDetailPage() {
           {/* Right Column: Product Info */}
           <div className="w-full lg:w-[55%] flex flex-col">
             
-            <div className="inline-block px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-[10px] font-black uppercase tracking-wider mb-4 self-start">
-               {product.supplier?.full_name ? `By ${product.supplier.full_name}` : "Premium Catalog"}
-            </div>
+            {/* Removed Supplier Badge */}
 
             <h1 className="text-3xl lg:text-4xl font-black text-[#1c211f] leading-tight mb-4">
               {product.name}
@@ -261,43 +259,45 @@ export default function ProductDetailPage() {
               </Link>
             </div>
             
-            {/* Reviews Section */}
-            {reviews.length > 0 && (
-              <div className="mt-16 border-t border-gray-100 pt-10">
-                <h2 className="text-2xl font-black mb-8 uppercase tracking-tight">Customer Reviews</h2>
-                <div className="space-y-8">
-                  {reviews.map((rev) => (
-                    <div key={rev.id} className="border-b border-gray-50 pb-8">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#eafaea] flex items-center justify-center text-[#3da85b] font-black text-xs">
-                            {rev.customer_name?.[0]?.toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-black text-sm">{rev.customer_name}</p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Verified Purchase</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-0.5">
-                          {[1, 2, 3, 4, 5].map(i => (
-                            <Star key={i} size={12} className={i <= rev.customer_rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-gray-600 text-sm font-medium leading-relaxed italic">
-                        "{rev.customer_feedback || "No comment provided."}"
-                      </p>
-                      <p className="text-[10px] text-gray-300 font-bold mt-2 uppercase">
-                        {new Date(rev.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Reviews moved to bottom */}
 
           </div>
         </div>
+
+        {/* Reviews Section at the Bottom */}
+        {reviews.length > 0 && (
+          <div className="mt-24 border-t border-gray-100 pt-16">
+            <h2 className="text-3xl font-black mb-12 uppercase tracking-tight text-center">Customer Experiences</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[#eafaea] flex items-center justify-center text-[#3da85b] font-black text-sm">
+                        {rev.customer_name?.[0]?.toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-black text-sm">{rev.customer_name}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Verified Buyer</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <Star key={i} size={12} className={i <= rev.customer_rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm font-medium leading-relaxed italic mb-6">
+                    "{rev.customer_feedback || "No comment provided."}"
+                  </p>
+                  <p className="text-[10px] text-gray-300 font-bold uppercase tracking-wider">
+                    {new Date(rev.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
