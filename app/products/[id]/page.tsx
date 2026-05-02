@@ -101,14 +101,24 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-[#fafbfa] text-[#1c211f] font-sans pb-24">
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-10">
         
-        {/* Back Button */}
-        <button 
-          onClick={() => router.back()} 
-          className="flex items-center gap-2 text-gray-400 hover:text-[#1c211f] transition-colors font-bold text-sm mb-8"
-        >
-          <ArrowLeft size={16} />
-          Back to products
-        </button>
+        {/* Header Navigation */}
+        <div className="flex items-center justify-between mb-8">
+          <button 
+            onClick={() => router.back()} 
+            className="flex items-center gap-2 text-gray-400 hover:text-[#1c211f] transition-colors font-bold text-sm"
+          >
+            <ArrowLeft size={16} />
+            Back to products
+          </button>
+
+          <Link 
+            href="/orders" 
+            className="px-5 py-2 flex items-center justify-center bg-white border border-gray-200 text-[#1c211f] rounded-full hover:bg-gray-50 transition-all shadow-sm font-black text-xs uppercase tracking-widest"
+          >
+            <Star size={14} className="mr-2 text-[#3da85b] fill-[#3da85b]" />
+            My Orders
+          </Link>
+        </div>
 
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
           

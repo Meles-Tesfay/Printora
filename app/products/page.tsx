@@ -175,6 +175,15 @@ function ProductsPageContent() {
           <ChevronLeft size={20} />
         </Link>
 
+        {/* My Orders Button */}
+        <Link 
+          href="/orders" 
+          className="absolute top-6 right-6 z-40 px-5 h-10 flex items-center justify-center bg-white border border-gray-200 text-[#1c211f] rounded-full hover:bg-gray-50 transition-all shadow-lg font-black text-xs uppercase tracking-widest group-hover:scale-105"
+        >
+          <ShoppingBag size={16} className="mr-2 text-[#3da85b]" />
+          My Orders
+        </Link>
+
         <div 
           className="flex h-[350px] md:h-[450px] transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
