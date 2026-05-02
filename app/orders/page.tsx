@@ -630,7 +630,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                             console.error("Feedback error:", error);
                                             alert("Error: " + error.message);
                                         } else {
-                                            alert("Thank you! Your feedback has been submitted.");
+                                            // Successfully submitted, refresh to hide container
                                             onRefresh();
                                         }
                                     }}

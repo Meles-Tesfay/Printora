@@ -43,11 +43,9 @@ export default function ProductDetailPage() {
           .eq("supplier_product_id", id)
           .order("created_at", { ascending: false });
 
-        console.log("Fetching reviews for product ID:", id);
         if (reviewsError) {
           console.error("Reviews query error:", reviewsError);
         }
-        console.log("Reviews data received:", reviewsData);
 
         if (!reviewsError && reviewsData) {
           // Enrich with customer names
@@ -60,11 +58,11 @@ export default function ProductDetailPage() {
             
             const profileMap = Object.fromEntries((customerProfiles || []).map(p => [p.id, p]));
             setReviews((reviewsData || [])
-              .filter(r => r.variants && Number(r.variants.customer_rating) > 0)
+              .filter(r => r.variants && (r.variants.customer_rating || r.variants.rating))
               .map(r => ({
                 ...r,
-                customer_rating: Number(r.variants.customer_rating),
-                customer_feedback: r.variants.customer_feedback,
+                customer_rating: Number(r.variants.customer_rating || r.variants.rating),
+                customer_feedback: r.variants.customer_feedback || r.variants.feedback || "",
                 customer_name: profileMap[r.customer_id]?.full_name || "Verified Customer"
               })));
           } else {
@@ -270,9 +268,10 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Reviews Section at the Bottom */}
-        {reviews.length > 0 && (
-          <div className="mt-24 border-t border-gray-100 pt-16">
-            <h2 className="text-3xl font-black mb-12 uppercase tracking-tight text-center">Customer Experiences</h2>
+        <div className="mt-24 border-t border-gray-100 pt-16">
+          <h2 className="text-3xl font-black mb-12 uppercase tracking-tight text-center">Customer Experiences</h2>
+          
+          {reviews.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {reviews.map((rev) => (
                 <div key={rev.id} className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm hover:shadow-md transition-all">
@@ -301,8 +300,16 @@ export default function ProductDetailPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[3rem] border border-dashed border-gray-200">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
+                <Star size={32} />
+              </div>
+              <p className="text-gray-500 font-bold">No reviews for this product yet.</p>
+              <p className="text-gray-400 text-sm mt-1">Be the first to customize and share your experience!</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
