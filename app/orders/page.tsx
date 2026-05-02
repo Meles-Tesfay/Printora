@@ -117,6 +117,7 @@ function OrdersContent() {
         // Update selectedOrder if it exists to reflect latest changes
         if (selectedOrder) {
             const updated = (ordersData || []).find(o => o.id === selectedOrder.id);
+            console.log("Updated selected order found:", updated);
             if (updated) setSelectedOrder(updated);
         }
 
@@ -644,25 +645,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                 </div>
             </div>
 
-            {/* Timeline */}
-            <div className="px-6 pb-6">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Activity Timeline</p>
-                <div className="space-y-2">
-                    {[
-                        { date: order.created_at, label: "Design submitted for review", active: true },
-                        { date: order.status !== "PENDING_ADMIN" ? order.updated_at : null, label: "Admin reviewed & approved", active: ["ASSIGNED_TO_SUPPLIER", "COMPLETED_BY_SUPPLIER"].includes(order.status) },
-                        { date: order.status === "COMPLETED_BY_SUPPLIER" ? order.updated_at : null, label: "Production complete", active: order.status === "COMPLETED_BY_SUPPLIER" },
-                    ].map((item, i) => (
-                        <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${item.active ? "bg-[#A1FF4D]/10" : "opacity-30"}`}>
-                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${item.active ? "bg-[#A1FF4D]" : "bg-gray-300"}`} />
-                            <div>
-                                <p className={`text-[11px] font-bold ${item.active ? "text-[#2B3220]" : "text-gray-400"}`}>{item.label}</p>
-                                {item.date && <p className="text-[10px] text-gray-400">{new Date(item.date).toLocaleString()}</p>}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {/* Removed Timeline as requested */}
         </div>
     );
 }

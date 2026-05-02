@@ -43,9 +43,11 @@ export default function ProductDetailPage() {
           .eq("supplier_product_id", id)
           .order("created_at", { ascending: false });
 
+        console.log("Fetching reviews for product ID:", id);
         if (reviewsError) {
           console.error("Reviews query error:", reviewsError);
         }
+        console.log("Reviews data received:", reviewsData);
 
         if (!reviewsError && reviewsData) {
           // Enrich with customer names
