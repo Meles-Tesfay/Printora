@@ -82,7 +82,7 @@ export default function SignupPage() {
         {/* Content */}
         <div className="relative z-10 flex flex-col pt-16 px-12 xl:px-16 text-white h-full">
           {/* Headline */}
-          <h1 className="text-[52px] xl:text-[62px] font-black leading-none uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+          <h1 className="text-[52px] xl:text-[62px] font-black leading-none uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
             <span className="block mb-1 drop-shadow-md">SMALL PRODUCT,</span>
             <span className="bg-[#2DC1DB] text-white px-3 py-1 -ml-3 inline-block shadow-md">BIG PROFIT</span>
             <span className="block mt-1 drop-shadow-md">POTENTIAL</span>

@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import {
     Clock, CheckCircle, Truck, XCircle, PenTool,
     Package, ArrowRight, Loader2, LogOut, Home,
-    Sparkles, ShieldCheck, User
+    Sparkles, ShieldCheck, User, Star, ShoppingBag
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, {
@@ -45,6 +45,15 @@ const STATUS_CONFIG: Record<string, {
         border: "border-green-200",
         description: "Your order has been completed by the supplier and is on its way!",
         step: 3,
+    },
+    DELIVERED: {
+        label: "Delivered",
+        icon: Truck,
+        color: "text-teal-600",
+        bg: "bg-teal-50",
+        border: "border-teal-200",
+        description: "Your order has been delivered! Please share your feedback and rate the supplier.",
+        step: 4,
     },
     REJECTED: {
         label: "Rejected",
@@ -130,7 +139,9 @@ function OrdersContent() {
             <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
                 <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
+                        <Link href="/">
+                            <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+                        </Link>
                         <div className="hidden sm:block w-px h-5 bg-gray-200" />
                         <span className="hidden sm:block text-[11px] font-black text-gray-400 uppercase tracking-widest">My Orders</span>
                     </div>
@@ -199,10 +210,10 @@ function OrdersContent() {
                             Design your first custom product and it will appear here for you to track.
                         </p>
                         <Link
-                            href="/editor"
+                            href="/products"
                             className="bg-[#A1FF4D] text-[#1B2412] px-8 py-4 rounded-2xl font-black text-base hover:bg-[#8ee53f] hover:shadow-xl hover:shadow-[#A1FF4D]/20 transition-all flex items-center gap-2"
                         >
-                            <PenTool size={18} /> Start Designing
+                            <ShoppingBag size={18} /> Explore Products
                         </Link>
                     </div>
                 ) : (
@@ -279,6 +290,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeclining, setIsDeclining] = useState(false);
     const [declineMessage, setDeclineMessage] = useState("");
+    const [rating, setRating] = useState(order.customer_rating || 0);
+    const [feedback, setFeedback] = useState(order.customer_feedback || "");
+    const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING_ADMIN;
     const Icon = cfg.icon;
@@ -553,6 +567,61 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                         >
                             <PenTool size={14} /> Redesign &amp; Resubmit
                         </Link>
+                    )}
+
+                    {/* Feedback Section for Delivered Orders */}
+                    {order.status === "DELIVERED" && (
+                        <div className="bg-white border border-gray-100 rounded-2xl p-5 mt-4 shadow-sm">
+                            <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-3">Rate your Experience</p>
+                            
+                            <div className="flex gap-2 mb-4">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button 
+                                        key={star} 
+                                        onClick={() => setRating(star)}
+                                        disabled={order.customer_rating > 0}
+                                        className="transition-transform active:scale-90"
+                                    >
+                                        <Star 
+                                            size={24} 
+                                            className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} 
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+
+                            <textarea 
+                                value={feedback}
+                                onChange={(e) => setFeedback(e.target.value)}
+                                disabled={order.customer_rating > 0}
+                                placeholder="Write your feedback here..."
+                                className="w-full text-sm p-3 rounded-xl border border-gray-100 bg-gray-50 outline-none focus:ring-2 focus:ring-teal-400 min-h-[100px] resize-none mb-3"
+                            />
+
+                            {order.customer_rating > 0 ? (
+                                <div className="bg-teal-50 text-teal-700 p-3 rounded-xl text-xs font-bold text-center border border-teal-100">
+                                    Thank you for your feedback! ✨
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={async () => {
+                                        if (rating === 0) return alert("Please select a rating");
+                                        setSubmittingFeedback(true);
+                                        const { error } = await supabase
+                                            .from("custom_orders")
+                                            .update({ customer_rating: rating, customer_feedback: feedback })
+                                            .eq("id", order.id);
+                                        setSubmittingFeedback(false);
+                                        if (error) alert("Error: " + error.message);
+                                        else onRefresh();
+                                    }}
+                                    disabled={submittingFeedback || rating === 0}
+                                    className="w-full bg-teal-500 text-white py-3 rounded-xl font-black text-sm hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
+                                >
+                                    {submittingFeedback ? "Submitting..." : "Submit Feedback"}
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>

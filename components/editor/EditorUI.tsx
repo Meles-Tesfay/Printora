@@ -25,6 +25,14 @@ import {
     Wand2,
     Search,
     ChevronRight,
+    ChevronDown,
+    ShoppingBag,
+    CreditCard,
+    Check,
+    Smartphone,
+    Building2,
+    ArrowRight,
+    AlertCircle
 } from 'lucide-react';
 import { ProductTemplate, ProductView, CanvasDesignState } from '@/types/editor';
 import { supabase } from '@/lib/supabase';
@@ -158,7 +166,7 @@ function TextPanel({ onClose, onAddText, onAddCurvedText }: { onClose: () => voi
 
                 {/* Add a heading CTA */}
                 <div className="px-4 pt-4 pb-2">
-                    <button 
+                    <button
                         onClick={() => onAddText()}
                         className="w-full bg-gray-900 text-white rounded-xl py-3.5 text-[14px] font-bold shadow-sm hover:bg-gray-800 hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                     >
@@ -357,11 +365,10 @@ function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage
 
             {/* Upload CTA bar */}
             <div className="px-4 pt-4 pb-2">
-                <label className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-3 text-[13px] font-semibold cursor-pointer transition-all ${
-                    uploading
+                <label className={`w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-xl py-3 text-[13px] font-semibold cursor-pointer transition-all ${uploading
                         ? 'border-gray-200 text-gray-400 cursor-not-allowed'
                         : 'border-gray-300 text-gray-600 hover:border-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                }`}>
+                    }`}>
                     {uploading ? (
                         <><svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> Uploading…</>
                     ) : (
@@ -628,14 +635,14 @@ function TemplatesPanel({ onClose, onLoadTemplate }: { onClose: () => void; onLo
                     </div>
                 ) : (
                     templates.map((t, i) => (
-                        <div 
+                        <div
                             key={i}
                             className="group relative flex flex-col p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all bg-gray-50 cursor-pointer"
                             onClick={() => onLoadTemplate(t)}
                         >
                             <div className="flex justify-between items-start mb-2">
                                 <h4 className="font-bold text-[14px] text-gray-800 truncate pr-6">{t.name || `Template ${i + 1}`}</h4>
-                                <button 
+                                <button
                                     onClick={(e) => handleDelete(i, e)}
                                     className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white text-gray-400 hover:text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all"
                                 >
@@ -659,8 +666,8 @@ function TemplatesPanel({ onClose, onLoadTemplate }: { onClose: () => void; onLo
 export default function EditorUI() {
     const searchParams = useSearchParams();
     const requestedTemplate = searchParams.get('template');
-    const supplierProductId   = searchParams.get('supplier_product_id');
-    const editOrderId         = searchParams.get('edit_order'); // null for new designs
+    const supplierProductId = searchParams.get('supplier_product_id');
+    const editOrderId = searchParams.get('edit_order'); // null for new designs
     const initialTemplate = PRODUCT_TEMPLATES.find((p) => p.id === requestedTemplate) || PRODUCT_TEMPLATES[0];
 
     const [selectedProduct, setSelectedProduct] = useState<ProductTemplate>(() => {
@@ -677,7 +684,7 @@ export default function EditorUI() {
                     const data = JSON.parse(saved);
                     const p = PRODUCT_TEMPLATES.find(t => t.id === data.productTemplateId);
                     if (p) return p;
-                } catch {}
+                } catch { }
             }
         }
         return initialTemplate;
@@ -693,7 +700,7 @@ export default function EditorUI() {
                     if (data.productTemplateId === selectedProduct?.id && data.color) {
                         return data.color;
                     }
-                } catch {}
+                } catch { }
             }
         }
         return initialTemplate.defaultColorHex;
@@ -710,7 +717,7 @@ export default function EditorUI() {
                         const v = selectedProduct.views.find(view => view.id === data.viewId);
                         if (v) return v;
                     }
-                } catch {}
+                } catch { }
             }
         }
         return selectedProduct.views.find(v => v.id === selectedProduct.defaultViewId) || selectedProduct.views[0];
@@ -724,7 +731,7 @@ export default function EditorUI() {
         // Only restore canvas objects on refresh; fresh navigation always starts blank
         if (typeof window !== 'undefined' && isReload && !requestedTemplate && !editOrderId) {
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { try { return JSON.parse(sess).viewStates || {}; } catch {} }
+            if (sess) { try { return JSON.parse(sess).viewStates || {}; } catch { } }
         }
         return {};
     });
@@ -739,7 +746,7 @@ export default function EditorUI() {
     const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(() => {
         if (typeof window !== 'undefined' && isReload) {
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { try { return JSON.parse(sess).loadedTemplateId || null; } catch {} }
+            if (sess) { try { return JSON.parse(sess).loadedTemplateId || null; } catch { } }
         }
         return null;
     });
@@ -753,25 +760,39 @@ export default function EditorUI() {
     const [orderQuantity, setOrderQuantity] = useState(1);
     const [orderQuality, setOrderQuality] = useState("Standard");
     const [receiptDataUrl, setReceiptDataUrl] = useState("");
-    const [supplierColors, setSupplierColors] = useState<{name: string, hex: string}[] | null>(null);
+    const [supplierColors, setSupplierColors] = useState<{ name: string, hex: string }[] | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('telebirr');
+    const [basePrice, setBasePrice] = useState(25);
 
-    // Fetch supplier product colors if customizing a specific supplier product
+    const PAYMENT_METHODS = [
+        { id: 'telebirr', name: 'Telebirr', type: 'mobile', shortcode: '123456', icon: Smartphone },
+        { id: 'cbe-birr', name: 'CBE Birr', type: 'mobile', shortcode: '654321', icon: Smartphone },
+        { id: 'm-pesa', name: 'M-Pesa', type: 'mobile', shortcode: '987654', icon: Smartphone },
+        { id: 'cbe', name: 'Commercial Bank of Ethiopia', type: 'bank', account: '100021312323', icon: Building2 },
+        { id: 'abyssinia', name: 'Bank of Abyssinia', type: 'bank', account: '888999000', icon: Building2 },
+        { id: 'dashen', name: 'Dashen Bank', type: 'bank', account: '111222333', icon: Building2 },
+    ];
+
+    // Fetch supplier product details if customizing a specific supplier product
     useEffect(() => {
         if (!supplierProductId) return;
         (async () => {
-            const { data, error } = await supabase.from('supplier_products').select('available_colors').eq('id', supplierProductId).single();
-            if (!error && data?.available_colors?.length > 0) {
-                setSupplierColors(data.available_colors);
-                // Switch to the first available color if current is not in the list
-                const hasColor = data.available_colors.find((c: any) => c.hex === selectedColor);
-                if (!hasColor) setSelectedColor(data.available_colors[0].hex);
+            const { data, error } = await supabase.from('supplier_products').select('available_colors, price').eq('id', supplierProductId).single();
+            if (!error && data) {
+                if (data.available_colors?.length > 0) {
+                    setSupplierColors(data.available_colors);
+                    // Switch to the first available color if current is not in the list
+                    const hasColor = data.available_colors.find((c: any) => c.hex === selectedColor);
+                    if (!hasColor) setSelectedColor(data.available_colors[0].hex);
+                }
+                if (data.price) setBasePrice(data.price);
             }
         })();
     }, [supplierProductId]);
 
     const printArea = selectedView.printAreas[0];
 
-    const { 
+    const {
         canvasRef, canvas, addText, addCurvedText, addShape, addImage, updateActiveObject, canvasRevision, liveProps,
         undo, redo, canUndo, canRedo
     } = useEditorCanvas({
@@ -851,7 +872,7 @@ export default function EditorUI() {
                 setViewStates({ [selectedView.id]: { objects: order.design_data.objects } });
             }
         })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editOrderId]);
 
     // Ref always holds the current view ID — updated each render before effects run.
@@ -870,7 +891,7 @@ export default function EditorUI() {
                 [selectedViewIdRef.current]: { objects: canvas.toJSON().objects },
             }));
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canvasRevision]);
 
     // Persistence: Save canvas state to sessionStorage on every change
@@ -922,7 +943,7 @@ export default function EditorUI() {
             const W = Math.round(refRect.width);
             const H = Math.round(refRect.height);
             const offscreen = document.createElement('canvas');
-            offscreen.width  = W;
+            offscreen.width = W;
             offscreen.height = H;
             const ctx = offscreen.getContext('2d')!;
             ctx.fillStyle = '#ffffff';
@@ -932,17 +953,17 @@ export default function EditorUI() {
             for (const svgEl of svgEls) {
                 const r = svgEl.getBoundingClientRect();
                 const x = r.left - refRect.left;
-                const y = r.top  - refRect.top;
+                const y = r.top - refRect.top;
                 const w = r.width; const h = r.height;
                 if (w < 1 || h < 1) continue;
                 const clone = svgEl.cloneNode(true) as SVGSVGElement;
                 clone.setAttribute('width', String(w));
                 clone.setAttribute('height', String(h));
                 const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
-                const url  = URL.createObjectURL(blob);
+                const url = URL.createObjectURL(blob);
                 await new Promise<void>(resolve => {
                     const img = new Image();
-                    img.onload  = () => { ctx.drawImage(img, x, y, w, h); URL.revokeObjectURL(url); resolve(); };
+                    img.onload = () => { ctx.drawImage(img, x, y, w, h); URL.revokeObjectURL(url); resolve(); };
                     img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
                     img.src = url;
                 });
@@ -1041,16 +1062,16 @@ export default function EditorUI() {
                             for (const svgEl of mockupContainer.querySelectorAll<SVGSVGElement>('svg')) {
                                 const r = svgEl.getBoundingClientRect();
                                 const x = r.left - refRect.left;
-                                const y = r.top  - refRect.top;
+                                const y = r.top - refRect.top;
                                 if (r.width < 1 || r.height < 1) continue;
                                 const clone = svgEl.cloneNode(true) as SVGSVGElement;
-                                clone.setAttribute('width',  String(r.width));
+                                clone.setAttribute('width', String(r.width));
                                 clone.setAttribute('height', String(r.height));
                                 const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
-                                const url  = URL.createObjectURL(blob);
+                                const url = URL.createObjectURL(blob);
                                 await new Promise<void>(res => {
                                     const img = new Image();
-                                    img.onload  = () => { ctx.drawImage(img, x, y, r.width, r.height); URL.revokeObjectURL(url); res(); };
+                                    img.onload = () => { ctx.drawImage(img, x, y, r.width, r.height); URL.revokeObjectURL(url); res(); };
                                     img.onerror = () => { URL.revokeObjectURL(url); res(); };
                                     img.src = url;
                                 });
@@ -1066,9 +1087,9 @@ export default function EditorUI() {
                 }
 
                 design_views.push({
-                    viewId:    view.id,
-                    viewName:  view.name,
-                    design:    { version: '5.3.0', objects: state.objects },
+                    viewId: view.id,
+                    viewName: view.name,
+                    design: { version: '5.3.0', objects: state.objects },
                     mockup_url: viewMockupUrl,
                     print_file: viewPrintFile,
                 });
@@ -1259,7 +1280,7 @@ export default function EditorUI() {
             {/* Top Navigation Bar */}
             <div className="h-14 bg-white flex items-center justify-between px-4 border-b border-gray-200 flex-shrink-0">
                 <div className="flex items-center gap-4">
-                    <button 
+                    <button
                         className="text-gray-600 hover:text-gray-900"
                         onClick={() => {
                             if (canvasRevision > 0) {
@@ -1274,14 +1295,14 @@ export default function EditorUI() {
                     <div className="h-5 w-[1px] bg-gray-300" />
                     <div className="flex items-center gap-3">
                         <HelpCircle className="w-5 h-5 text-gray-500" />
-                        <button 
+                        <button
                             onClick={undo}
                             disabled={!canUndo}
                             className={`${canUndo ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 cursor-not-allowed'}`}
                         >
                             <Undo2 className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                             onClick={redo}
                             disabled={!canRedo}
                             className={`${canRedo ? 'text-gray-600 hover:text-gray-900' : 'text-gray-300 cursor-not-allowed'}`}
@@ -1547,16 +1568,16 @@ export default function EditorUI() {
                                 const hex = c.hex || c.colorHex;
                                 const name = c.name || c.colorName;
                                 return (
-                                <button
-                                    key={hex}
-                                    title={name}
-                                    className={`w-7 h-7 rounded-full border-2 transition-all ${selectedColor === hex
-                                        ? 'border-gray-400 shadow-sm'
-                                        : 'border-gray-200 hover:border-gray-300'
-                                        }`}
-                                    style={{ backgroundColor: hex }}
-                                    onClick={() => setSelectedColor(hex)}
-                                />
+                                    <button
+                                        key={hex}
+                                        title={name}
+                                        className={`w-7 h-7 rounded-full border-2 transition-all ${selectedColor === hex
+                                            ? 'border-gray-400 shadow-sm'
+                                            : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                        style={{ backgroundColor: hex }}
+                                        onClick={() => setSelectedColor(hex)}
+                                    />
                                 );
                             })}
                         </div>
@@ -1576,7 +1597,7 @@ export default function EditorUI() {
                             </p>
                         </div>
                         <div className="bg-gray-50 px-6 py-4 flex flex-col gap-2">
-                            <button 
+                            <button
                                 onClick={() => {
                                     handleOrderClick();
                                     setShowExitDialog(false);
@@ -1585,7 +1606,7 @@ export default function EditorUI() {
                             >
                                 Continue to Order
                             </button>
-                            <button 
+                            <button
                                 onClick={() => {
                                     window.history.back();
                                 }}
@@ -1593,7 +1614,7 @@ export default function EditorUI() {
                             >
                                 Leave without saving
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setShowExitDialog(false)}
                                 className="w-full text-gray-500 rounded-lg py-2 font-medium text-sm hover:bg-gray-100 transition-colors mt-1"
                             >
@@ -1606,108 +1627,256 @@ export default function EditorUI() {
 
             {/* Payment / Order Modal */}
             {showPaymentModal && (
-                <div className="fixed inset-0 bg-black/40 z-[999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-xl flex flex-col gap-4 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Complete Your Order</h2>
-                            <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-900 transition-colors">
-                                <X className="w-5 h-5" />
+                <div className="fixed inset-0 bg-black/40 z-[999] flex items-center justify-center p-4 lg:p-10 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2rem] w-full max-w-5xl shadow-2xl flex flex-col lg:flex-row animate-in zoom-in-95 duration-300 overflow-hidden max-h-[95vh]">
+                        
+                        {/* Left Column: Selections & Payment (Scrollable) */}
+                        <div className="flex-[1.4] flex flex-col p-8 lg:p-12 overflow-y-auto custom-scrollbar border-r border-gray-100">
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>Order Details</h2>
+                                <button onClick={() => setShowPaymentModal(false)} className="lg:hidden text-gray-400 hover:text-gray-900 transition-colors">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Section 1: Customization */}
+                            <div className="space-y-8 mb-12">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center text-[13px] font-black">1</div>
+                                    <h3 className="text-lg font-bold text-gray-900">Choose Size & Quality</h3>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Size</label>
+                                        <div className="relative group">
+                                            <select 
+                                                value={orderSize} 
+                                                onChange={(e) => setOrderSize(e.target.value)}
+                                                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent transition-all cursor-pointer"
+                                            >
+                                                <option value="S">Small (S)</option>
+                                                <option value="M">Medium (M)</option>
+                                                <option value="L">Large (L)</option>
+                                                <option value="XL">Extra Large (XL)</option>
+                                                <option value="XXL">Double Extra Large (XXL)</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-gray-900 transition-colors" size={18} />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Garment Quality</label>
+                                        <div className="relative group">
+                                            <select 
+                                                value={orderQuality} 
+                                                onChange={(e) => setOrderQuality(e.target.value)}
+                                                className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] focus:border-transparent transition-all cursor-pointer"
+                                            >
+                                                <option value="Standard">Standard Cotton</option>
+                                                <option value="Premium">Premium Ring-Spun (+$5.00)</option>
+                                            </select>
+                                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-hover:text-gray-900 transition-colors" size={18} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 max-w-[200px]">
+                                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantity</label>
+                                    <input 
+                                        type="number" 
+                                        min="1"
+                                        value={orderQuantity} 
+                                        onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Section 2: Payment Gateway */}
+                            <div className="space-y-8 mb-12">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center text-[13px] font-black">2</div>
+                                    <h3 className="text-lg font-bold text-gray-900">Select Payment Method</h3>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {PAYMENT_METHODS.map((method) => (
+                                        <button
+                                            key={method.id}
+                                            onClick={() => setSelectedPaymentMethod(method.id)}
+                                            className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${
+                                                selectedPaymentMethod === method.id 
+                                                ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]' 
+                                                : 'border-gray-100 hover:border-gray-200 bg-white'
+                                            }`}
+                                        >
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedPaymentMethod === method.id ? 'bg-[#ccff00] text-[#1B2412]' : 'bg-gray-50 text-gray-400'}`}>
+                                                <method.icon size={24} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-black text-gray-900">{method.name}</p>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{method.type}</p>
+                                            </div>
+                                            {selectedPaymentMethod === method.id && (
+                                                <div className="w-6 h-6 rounded-full bg-[#ccff00] flex items-center justify-center">
+                                                    <Check size={14} className="text-[#1B2412] font-black" />
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Dynamic Payment Instructions */}
+                                {selectedPaymentMethod && (
+                                    <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-[#ccff00]">
+                                            <CreditCard size={28} />
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-500 mb-2">Transfer to the following {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.type === 'mobile' ? 'shortcode' : 'account'}:</p>
+                                        <div className="flex flex-col gap-1">
+                                            <p className="text-2xl font-black text-gray-900 tracking-widest">
+                                                {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.shortcode || PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.account}
+                                            </p>
+                                            <p className="text-[10px] font-black text-[#ccff00] uppercase tracking-widest bg-[#1B2412] px-3 py-1 rounded-full inline-block mx-auto">
+                                                {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.name}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Section 3: Receipt Upload */}
+                            <div className="space-y-8">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-8 h-8 rounded-full bg-[#ccff00] flex items-center justify-center text-[13px] font-black">3</div>
+                                    <h3 className="text-lg font-bold text-gray-900">Upload Transfer Receipt</h3>
+                                </div>
+
+                                <div 
+                                    onClick={() => document.getElementById('checkout-receipt-upload')?.click()}
+                                    className="relative border-2 border-dashed border-gray-200 rounded-[2rem] p-12 flex flex-col items-center justify-center gap-4 group cursor-pointer hover:border-[#ccff00] hover:bg-[#ccff00]/5 transition-all bg-white shadow-sm"
+                                >
+                                    <input 
+                                        id="checkout-receipt-upload"
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onload = (event) => setReceiptDataUrl(event.target?.result as string);
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                        className="hidden"
+                                    />
+                                    
+                                    {receiptDataUrl ? (
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#ccff00] shadow-xl">
+                                                <img src={receiptDataUrl} className="w-full h-full object-cover" alt="Receipt Preview" />
+                                            </div>
+                                            <div className="bg-[#ccff00] text-[#1B2412] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                                                <Check size={12} /> Receipt Attached
+                                            </div>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setReceiptDataUrl(""); }}
+                                                className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline"
+                                            >
+                                                Remove and Change
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="w-16 h-16 rounded-2xl bg-gray-50 text-gray-300 flex items-center justify-center group-hover:bg-white group-hover:text-[#ccff00] transition-all group-hover:scale-110">
+                                                <UploadCloud size={32} />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-black text-gray-900 mb-1">Click to browse or drag receipt here</p>
+                                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Supports JPG, PNG, PDF (Max 5MB)</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Column: Order Summary */}
+                        <div className="flex-1 bg-gray-50/80 p-8 lg:p-12 flex flex-col relative overflow-hidden">
+                            <button onClick={() => setShowPaymentModal(false)} className="hidden lg:flex absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition-colors p-2 hover:bg-white rounded-full border border-transparent hover:border-gray-200 shadow-sm z-20">
+                                <X size={24} />
                             </button>
-                        </div>
 
-                        <div className="bg-gray-50 rounded-2xl p-4 flex flex-col gap-2">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium text-gray-600">Product:</span>
-                                <span className="text-sm font-bold text-gray-900">{selectedProduct.name}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium text-gray-600">Price per unit:</span>
-                                <span className="text-sm font-bold text-gray-900">$25.00</span>
-                            </div>
-                            <div className="flex justify-between items-center border-t border-gray-200 pt-2 mt-1">
-                                <span className="text-sm font-medium text-gray-600">Total Price:</span>
-                                <span className="text-sm font-bold text-emerald-600">${((orderQuality === "Premium" ? 30 : 25) * orderQuantity).toFixed(2)}</span>
-                            </div>
-                        </div>
+                            <div className="relative z-10 flex flex-col h-full">
+                                <h3 className="text-[11px] font-black text-[#ccff00] uppercase tracking-[0.2em] bg-[#1B2412] px-3 py-1.5 rounded-lg inline-block self-start mb-10">Order Summary</h3>
+                                
+                                <div className="space-y-10 flex-1">
+                                    {/* Pricing Breakdown */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-sm font-bold text-gray-500">
+                                            <span>Base Price</span>
+                                            <span className="text-gray-900">ETB {basePrice.toFixed(2)}</span>
+                                        </div>
+                                        {orderQuality === "Premium" && (
+                                            <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
+                                                <span>Premium Upgrade</span>
+                                                <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">+ETB 5.00</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-center text-sm font-bold text-gray-500">
+                                            <span>Quantity</span>
+                                            <span className="text-gray-900">x {orderQuantity}</span>
+                                        </div>
+                                        <div className="h-px bg-gray-200 my-6" />
+                                        
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-end">
+                                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
+                                                <p className="text-3xl font-black text-gray-900">ETB {((basePrice + (orderQuality === "Premium" ? 5 : 0)) * orderQuantity).toFixed(2)}</p>
+                                            </div>
+                                            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex justify-between items-center mt-6">
+                                                <div>
+                                                    <p className="text-[10px] font-black text-[#3da85b] uppercase tracking-widest">Pay Now (50%)</p>
+                                                    <p className="text-xl font-black text-gray-900">ETB {(((basePrice + (orderQuality === "Premium" ? 5 : 0)) * orderQuantity) / 2).toFixed(2)}</p>
+                                                </div>
+                                                <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                                    <ShoppingBag size={20} />
+                                                </div>
+                                            </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-bold text-gray-900">Select Size</label>
-                                <select 
-                                    value={orderSize} 
-                                    onChange={(e) => setOrderSize(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                                            {/* Production Guarantee Note */}
+                                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-500 shadow-sm">
+                                                <div className="text-amber-600 mt-0.5 flex-shrink-0">
+                                                    <AlertCircle size={18} />
+                                                </div>
+                                                <p className="text-[13px] font-medium text-amber-900 leading-normal">
+                                                    <span className="font-black block mb-0.5 uppercase tracking-widest text-[11px] text-amber-700">Production Requirement</span>
+                                                    A <span className="font-black underline">50% deposit</span> is required to secure raw materials and initiate your custom production immediately.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        if (!receiptDataUrl) {
+                                            alert("Please upload your payment receipt before submitting.");
+                                            return;
+                                        }
+                                        setShowPaymentModal(false);
+                                        handleSaveProduct();
+                                    }}
+                                    className="w-full bg-[#1B2412] text-white py-6 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-[0.98] flex items-center justify-center gap-3 mt-10 group"
                                 >
-                                    <option value="S">Small (S)</option>
-                                    <option value="M">Medium (M)</option>
-                                    <option value="L">Large (L)</option>
-                                    <option value="XL">Extra Large (XL)</option>
-                                    <option value="XXL">Double Extra Large (XXL)</option>
-                                </select>
+                                    Confirm & Submit Order <ArrowRight className="group-hover:translate-x-1 transition-transform" size={16} />
+                                </button>
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-bold text-gray-900">Quality</label>
-                                <select 
-                                    value={orderQuality} 
-                                    onChange={(e) => setOrderQuality(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-                                >
-                                    <option value="Standard">Standard</option>
-                                    <option value="Premium">Premium (+ $5)</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold text-gray-900">Quantity</label>
-                            <input 
-                                type="number" 
-                                min="1"
-                                max="999"
-                                value={orderQuantity} 
-                                onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-                            />
+                            {/* Decorative background element */}
+                            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-[#ccff00]/10 rounded-full blur-3xl pointer-events-none" />
                         </div>
-
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col gap-3">
-                            <div>
-                                <p className="text-[11px] font-black text-emerald-600 uppercase tracking-wider mb-1">Payment Instructions</p>
-                                <p className="text-sm font-medium text-gray-800">Please pay half the total amount (<span className="font-bold">${(( (orderQuality === "Premium" ? 30 : 25) * orderQuantity) / 2).toFixed(2)}</span>) to the following account to start production:</p>
-                            </div>
-                            <div className="bg-white rounded-xl p-3 border border-emerald-100 flex flex-col items-center">
-                                <span className="text-xs text-gray-500 font-medium">Bank Account (CBE)</span>
-                                <span className="text-lg font-black text-gray-900 tracking-wider">100021312323</span>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-bold text-gray-900">Upload Receipt Screenshot</label>
-                            <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        const reader = new FileReader();
-                                        reader.onload = (event) => setReceiptDataUrl(event.target?.result as string);
-                                        reader.readAsDataURL(file);
-                                    }
-                                }}
-                                className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 transition-all"
-                            />
-                            {receiptDataUrl && <div className="mt-2 rounded-lg border border-gray-200 overflow-hidden w-24 h-24 relative"><img src={receiptDataUrl} className="object-cover w-full h-full" alt="Receipt" /></div>}
-                        </div>
-
-                        <button
-                            onClick={() => {
-                                setShowPaymentModal(false);
-                                handleSaveProduct();
-                            }}
-                            className="w-full bg-[#1B2412] text-white py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-[0.98] mt-2 shadow-sm"
-                        >
-                            Confirm & Order
-                        </button>
                     </div>
                 </div>
             )}

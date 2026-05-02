@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import {
   ShoppingBag, Plus, LogOut, CheckCircle, Clock, XCircle,
   BarChart3, Box, Image as ImageIcon, User, Palette, Tag,
-  Package, Upload, Loader2, ChevronDown
+  Package, Upload, Loader2, ChevronDown, UploadCloud, X, Trash2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -35,6 +35,7 @@ export default function SupplierDashboard() {
   const [formLoading, setFormLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [activeViewIdx, setActiveViewIdx] = useState(0);
+
   const [proofUrl, setProofUrl] = useState('');
   const [proofPreview, setProofPreview] = useState('');
   const [fulfillLoading, setFulfillLoading] = useState(false);
@@ -45,11 +46,18 @@ export default function SupplierDashboard() {
   const [form, setForm] = useState({
     name: "",
     description: "",
+    long_description: "",
     product_type: "T-Shirt",
     price: "",
+    bulk_pricing: "",
     image_url: "",
+    hover_image_url: "",
+    detail_images: "",
+    turnaround_time: "2-4 Business Days",
+    quality: "Premium",
     tags: [] as string[],
     available_colors: [] as { name: string; hex: string }[],
+    available_sizes: [] as string[],
   });
 
   useEffect(() => {
@@ -132,16 +140,169 @@ export default function SupplierDashboard() {
     }));
   };
 
+  const handleSizeToggle = (size: string) => {
+    setForm(f => ({
+      ...f,
+      available_sizes: f.available_sizes.includes(size) ? f.available_sizes.filter(s => s !== size) : [...f.available_sizes, size]
+    }));
+  };
+
+  const handleFileUpload = async (file: File, field: 'image_url' | 'hover_image_url' | 'detail_images') => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${user.id}/${Date.now()}_${fileName}`;
+
+    const { error: uploadError, data } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      alert('Error uploading image. Please try again.');
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filePath);
+
+    if (field === 'detail_images') {
+      setForm(f => {
+        const current = f.detail_images ? f.detail_images.split(',').map(s => s.trim()).filter(Boolean) : [];
+        return { ...f, detail_images: [...current, publicUrl].join(', ') };
+      });
+    } else {
+      setForm(f => ({ ...f, [field]: publicUrl }));
+    }
+    
+    return publicUrl;
+  };
+
+  const removeImage = (field: 'image_url' | 'hover_image_url' | 'detail_images', urlToRemove?: string) => {
+    if (field === 'detail_images' && urlToRemove) {
+      setForm(f => ({
+        ...f,
+        detail_images: f.detail_images.split(',')
+          .map(s => s.trim())
+          .filter(s => s !== urlToRemove)
+          .join(', ')
+      }));
+    } else {
+      setForm(f => ({ ...f, [field]: "" }));
+    }
+  };
+
+  const FileDropzone = ({ label, field, value, multiple = false }: any) => {
+    const [dragging, setDragging] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false);
+
+    const onDrop = async (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        setLocalLoading(true);
+        for (const file of files) {
+          await handleFileUpload(file, field);
+          if (!multiple) break;
+        }
+        setLocalLoading(false);
+      }
+    };
+
+    const onFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        setLocalLoading(true);
+        for (const file of files) {
+          await handleFileUpload(file, field);
+          if (!multiple) break;
+        }
+        setLocalLoading(false);
+      }
+    };
+
+    const images = multiple 
+      ? (value ? value.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
+      : (value ? [value] : []);
+
+    return (
+      <div className="flex flex-col gap-2">
+        <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest block">{label}</label>
+        
+        <div 
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          className={`relative border-2 border-dashed rounded-2xl p-6 transition-all flex flex-col items-center justify-center gap-2 group cursor-pointer ${
+            dragging ? 'border-[#A1FF4D] bg-[#A1FF4D]/5' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+          }`}
+          onClick={() => document.getElementById(`file-input-${field}`)?.click()}
+        >
+          <input 
+            id={`file-input-${field}`}
+            type="file" 
+            multiple={multiple} 
+            accept="image/*" 
+            className="hidden" 
+            onChange={onFileSelect}
+          />
+          
+          {localLoading ? (
+            <Loader2 className="animate-spin text-gray-400" size={24} />
+          ) : (
+            <UploadCloud className={`transition-transform group-hover:-translate-y-1 ${dragging ? 'text-[#A1FF4D]' : 'text-gray-400'}`} size={28} />
+          )}
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            {localLoading ? "Uploading..." : dragging ? "Drop files here" : "Click or drag images"}
+          </p>
+        </div>
+
+        {/* Previews */}
+        {images.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {images.map((img: string, i: number) => (
+              <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200 bg-white group">
+                <img src={img} className="w-full h-full object-cover" alt="Preview" />
+                <button 
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeImage(field, img); }}
+                  className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleEditProduct = (p: any) => {
+    if (p.status === "APPROVED") {
+      alert("⚠️ This product is already APPROVED and Live. \n\nTo ensure consistency for active customer orders, approved products cannot be edited directly. \n\nIf you need to update information or images, please contact the admin team.");
+      return;
+    }
     setEditingProductId(p.id);
     setForm({
       name: p.name,
       description: p.description || "",
+      long_description: p.long_description || "",
       product_type: p.product_type,
       price: p.price?.toString() || "",
-      image_url: p.image_url,
+      bulk_pricing: p.bulk_pricing || "",
+      image_url: p.image_url || "",
+      hover_image_url: p.hover_image_url || "",
+      detail_images: (p.detail_images || []).join(', '),
+      turnaround_time: p.turnaround_time || "2-4 Business Days",
+      quality: p.quality || "Premium",
       tags: p.tags || [],
       available_colors: p.available_colors || [],
+      available_sizes: p.available_sizes || [],
     });
     setActiveTab("add-product");
   };
@@ -168,11 +329,18 @@ export default function SupplierDashboard() {
       supplier_id: user.id,
       name: form.name,
       description: form.description,
+      long_description: form.long_description,
       product_type: form.product_type,
       price: parseFloat(form.price) || 0,
+      bulk_pricing: form.bulk_pricing,
       image_url: form.image_url,
+      hover_image_url: form.hover_image_url,
+      detail_images: form.detail_images ? form.detail_images.split(',').map(s => s.trim()).filter(Boolean) : [],
+      turnaround_time: form.turnaround_time,
+      quality: form.quality,
       tags: form.tags,
       available_colors: form.available_colors,
+      available_sizes: form.available_sizes,
       status: "PENDING",
     };
 
@@ -190,7 +358,7 @@ export default function SupplierDashboard() {
     } else {
       setEditingProductId(null);
       setActiveTab('my-products');
-      setForm({ name: "", description: "", product_type: "T-Shirt", price: "", image_url: "", tags: [], available_colors: [] });
+      setForm({ name: "", description: "", long_description: "", product_type: "T-Shirt", price: "", bulk_pricing: "", image_url: "", hover_image_url: "", detail_images: "", turnaround_time: "2-4 Business Days", quality: "Premium", tags: [], available_colors: [], available_sizes: [] });
       fetchProducts(user.id);
     }
     setFormLoading(false);
@@ -333,7 +501,9 @@ export default function SupplierDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen shadow-sm">
         <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+          <Link href="/">
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+          </Link>
         </div>
 
         {/* User Info */}
@@ -403,7 +573,7 @@ export default function SupplierDashboard() {
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-3xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+            <h1 className="text-3xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
               Supplier Dashboard
             </h1>
             <p className="text-gray-500 font-medium text-sm">Manage your products and fulfill orders.</p>
@@ -455,6 +625,7 @@ export default function SupplierDashboard() {
                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</th>
                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Colors</th>
                     <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -495,6 +666,28 @@ export default function SupplierDashboard() {
                           {p.status}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={() => handleEditProduct(p)}
+                            className={`p-2 rounded-lg transition-all ${p.status === 'APPROVED' ? 'text-gray-300 cursor-not-allowed hover:bg-gray-100' : 'text-gray-400 hover:text-[#3da85b] hover:bg-[#3da85b]/10'}`}
+                            title={p.status === 'APPROVED' ? "Product is Live (Locked)" : "Edit Product"}
+                          >
+                            {p.status === 'APPROVED' ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            )}
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            title="Delete Product"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -504,7 +697,6 @@ export default function SupplierDashboard() {
         </div>
 
         {/* End of My Products Tab */}
-        {activeTab === "my-products" && <></>}
         </>
         )}
 
@@ -512,8 +704,8 @@ export default function SupplierDashboard() {
         {activeTab === "add-product" && (
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 max-w-4xl">
             <div className="mb-8">
-              <h2 className="text-2xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>
-                Add New Product
+              <h2 className="text-2xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+                {editingProductId ? "Edit Product" : "Add New Product"}
               </h2>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Fill in all details for your product listing</p>
             </div>
@@ -527,14 +719,20 @@ export default function SupplierDashboard() {
                 <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium Black Mug" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Description</label>
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe your product..." rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all" />
+              {/* Descriptions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Short Description (Catalog)</label>
+                  <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief summary for the landing page..." rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Long Description (Detail Page)</label>
+                  <textarea value={form.long_description} onChange={e => setForm(f => ({ ...f, long_description: e.target.value }))} placeholder="Detailed product specifications, features, etc..." rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all" />
+                </div>
               </div>
 
-              {/* Type & Price */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Type, Price, Bulk Pricing */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Product Type *</label>
                   <div className="relative">
@@ -545,20 +743,68 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Price (USD) *</label>
-                  <input required type="number" min="0" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="24.99" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Price (ብር) *</label>
+                  <input required type="number" min="0" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="150" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Bulk Pricing details</label>
+                  <input type="text" value={form.bulk_pricing} onChange={e => setForm(f => ({ ...f, bulk_pricing: e.target.value }))} placeholder="e.g. 10% off for 50+" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
                 </div>
               </div>
 
-              {/* Image URL */}
+              {/* Delivery info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Turnaround Time</label>
+                  <input type="text" value={form.turnaround_time} onChange={e => setForm(f => ({ ...f, turnaround_time: e.target.value }))} placeholder="e.g. 2-4 Days" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Quality</label>
+                  <input type="text" value={form.quality} onChange={e => setForm(f => ({ ...f, quality: e.target.value }))} placeholder="e.g. Premium, 100% Cotton" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+                </div>
+              </div>
+
+              {/* Images */}
+              <div className="space-y-6 border-2 border-dashed border-gray-100 p-8 rounded-[2.5rem] bg-gray-50/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-400"><ImageIcon size={20} /></div>
+                  <h3 className="text-sm font-black text-[#2B3220] uppercase tracking-tight">Product Visuals</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FileDropzone 
+                    label="Primary Catalog Image *" 
+                    field="image_url" 
+                    value={form.image_url} 
+                  />
+                  <FileDropzone 
+                    label="Secondary Hover Image" 
+                    field="hover_image_url" 
+                    value={form.hover_image_url} 
+                  />
+                </div>
+                
+                <FileDropzone 
+                  label="Additional Detail Images" 
+                  field="detail_images" 
+                  value={form.detail_images} 
+                  multiple={true}
+                />
+              </div>
+
+              {/* Available Sizes */}
               <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2"><Upload size={12} className="inline mr-1" /> Product Showcase Image URL *</label>
-                <input required type="url" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="https://..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm transition-all" />
-                {form.image_url && (
-                  <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden border border-gray-200">
-                    <img src={form.image_url} className="w-full h-full object-cover" alt="Preview" onError={e => (e.currentTarget.style.display = 'none')} />
-                  </div>
-                )}
+                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3">Available Sizes *</label>
+                <div className="flex flex-wrap gap-2">
+                  {['S', 'M', 'L', 'XL', '2XL', '3XL', 'One Size'].map(size => {
+                    const selected = form.available_sizes.includes(size);
+                    return (
+                      <button key={size} type="button" onClick={() => handleSizeToggle(size)} className={`px-4 py-2 rounded-xl border-2 text-[11px] font-bold transition-all ${selected ? 'border-[#A1FF4C] bg-[#A1FF4C]/10 text-[#1B2412]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}>
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Available Colors */}
@@ -578,21 +824,6 @@ export default function SupplierDashboard() {
                 {form.available_colors.length === 0 && <p className="text-[10px] text-red-400 font-bold mt-2 uppercase tracking-widest">Please select at least one color</p>}
               </div>
 
-              {/* Product Tags */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3"><Tag size={12} className="inline mr-1" /> Tags (optional)</label>
-                <div className="flex flex-wrap gap-2">
-                  {["Bestseller", "Trending", "New", "Premium", "Eco-Friendly", "Limited"].map(tag => {
-                    const selected = form.tags.includes(tag);
-                    return (
-                      <button key={tag} type="button" onClick={() => handleTagToggle(tag)} className={`px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all ${selected ? 'bg-[#2B3220] text-white border-[#2B3220]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}>
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Submit */}
               <div className="flex gap-3 pt-4">
                 <button type="submit" disabled={formLoading || form.available_colors.length === 0} className="w-full bg-[#A1FF4D] text-[#1B2412] py-4 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
@@ -609,7 +840,7 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-[#1B2412] text-white p-2 rounded-xl"><ShoppingBag size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Pending Fulfillments
               </h2>
             </div>
@@ -658,7 +889,7 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Clock size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Pending Approvals
               </h2>
             </div>
@@ -707,7 +938,7 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-[#1B2412] text-white p-2 rounded-xl"><CheckCircle size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Completed Productions
               </h2>
             </div>

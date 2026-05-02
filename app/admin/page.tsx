@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ShoppingBag, CheckCircle, Clock, XCircle, BarChart3, Users,
   User, Box, Truck, ArrowRight, ShieldCheck, AlertCircle,
-  Package, Palette, Loader2, LogOut, Eye, Download
+  Package, Palette, Loader2, LogOut, Eye, Download, Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [adminProfile, setAdminProfile] = useState<any>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [adminTags, setAdminTags] = useState<string[]>([]);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -52,12 +53,12 @@ export default function AdminDashboard() {
   };
 
   const fetchAll = async () => {
-    const [ordersRes, productsRes, suppliersRes, customersRes, allOrdersRes] = await Promise.all([
-      // Active customer orders (Pending, Assigned, In Production, etc.)
+    const [ordersRes, productsRes, profilesRes, allOrdersRes] = await Promise.all([
+      // Active customer orders
       supabase
         .from("custom_orders")
         .select("*, supplier_product:supplier_products(supplier_id)")
-        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"])
+        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"])
         .order("created_at", { ascending: false }),
 
       // Products submitted by suppliers awaiting approval
@@ -67,20 +68,31 @@ export default function AdminDashboard() {
         .eq("status", "PENDING")
         .order("created_at", { ascending: false }),
 
-      // All suppliers
-      supabase.from("profiles").select("id, full_name, email, phone, location").eq("role", "SUPPLIER"),
-
-      // All customers
-      supabase.from("profiles").select("id, full_name, email, created_at, phone, location").eq("role", "CUSTOMER"),
+      // ALL profiles to categorize locally (more robust)
+      supabase.from("profiles").select("*"),
 
       // History orders overview
       supabase
         .from("custom_orders")
         .select("id, status, created_at, product_type, customer_id")
-        .in("status", ["COMPLETED_BY_SUPPLIER", "REJECTED"])
+        .in("status", ["DELIVERED", "REJECTED"])
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
+
+    if (profilesRes.data) {
+      console.log("Total profiles fetched:", profilesRes.data.length);
+      const allProfs = profilesRes.data;
+      
+      const supplierList = allProfs.filter(p => p.role?.toUpperCase() === "SUPPLIER");
+      const customerList = allProfs.filter(p => p.role?.toUpperCase() === "CUSTOMER");
+      
+      console.log("Categorized Suppliers:", supplierList.length);
+      console.log("Categorized Customers:", customerList.length);
+      
+      setSuppliers(supplierList);
+      setCustomers(customerList);
+    }
 
     let enrichedOrders = ordersRes.data || [];
 
@@ -103,12 +115,11 @@ export default function AdminDashboard() {
 
     if (!ordersRes.error) setPendingOrders(enrichedOrders);
     if (!productsRes.error) setPendingProducts(productsRes.data || []);
-    if (!suppliersRes.error) setSuppliers(suppliersRes.data || []);
-    if (!customersRes.error) setCustomers(customersRes.data || []);
     if (!allOrdersRes.error) setAllOrders(allOrdersRes.data || []);
 
     // Log errors to console for debugging
     if (ordersRes.error) console.error("Orders fetch error:", ordersRes.error);
+    if (profilesRes.error) console.error("Profiles fetch error:", profilesRes.error);
   };
 
   // Approve a customer order: auto-assign to the supplier of the chosen product
@@ -167,14 +178,36 @@ export default function AdminDashboard() {
     }
   };
 
-  // Approve a supplier product → it appears on landing page
-  const handleApproveProduct = async (id: string) => {
+  const handleMarkAsDelivered = async (id: string) => {
+    if (!confirm("Mark this order as delivered? This will allow the customer to provide feedback.")) return;
     const { error } = await supabase
-      .from("supplier_products")
-      .update({ status: "APPROVED" })
+      .from("custom_orders")
+      .update({ status: "DELIVERED" })
       .eq("id", id);
     if (error) alert("Error: " + error.message);
-    else { setSelectedProduct(null); fetchAll(); }
+    else fetchAll();
+  };
+
+  // Approve a supplier product → it appears on landing page
+  const handleApproveProduct = async (id: string) => {
+    const product = pendingProducts.find(p => p.id === id);
+    const existingTags = Array.isArray(product?.tags) ? product.tags : [];
+    const finalTags = [...new Set([...existingTags, ...adminTags])];
+
+    const { error } = await supabase
+      .from("supplier_products")
+      .update({ 
+        status: "APPROVED",
+        tags: finalTags
+      })
+      .eq("id", id);
+      
+    if (error) alert("Error: " + error.message);
+    else { 
+      setSelectedProduct(null); 
+      setAdminTags([]);
+      fetchAll(); 
+    }
   };
 
   // Reject supplier product
@@ -207,6 +240,7 @@ export default function AdminDashboard() {
     ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
     REJECTED: "bg-red-100 text-red-700",
     COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+    DELIVERED: "bg-teal-100 text-teal-700",
   };
 
   if (loading) {
@@ -222,7 +256,9 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white text-gray-800 border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-gray-100">
-          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+          <Link href="/">
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+          </Link>
           <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">Admin Panel</span>
         </div>
 
@@ -292,7 +328,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
           <div className="flex items-start justify-between w-full">
             <div>
-              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
+              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 System Control
               </h1>
               <p className="text-gray-400 font-bold tracking-widest uppercase text-[10px] mt-1">Platform Overview & Administrative Actions</p>
@@ -365,6 +401,15 @@ export default function AdminDashboard() {
                         <Eye size={16} />
                       </button>
                       
+                      {order.status === "COMPLETED_BY_SUPPLIER" && (
+                        <button
+                          onClick={() => handleMarkAsDelivered(order.id)}
+                          className="bg-teal-500 text-white px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
+                        >
+                          <Truck size={16} /> DELIVERED
+                        </button>
+                      )}
+                      
                       {order.status === "PENDING_ADMIN" ? (
                         <>
                           <button
@@ -424,6 +469,13 @@ export default function AdminDashboard() {
                         ? <img src={product.image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={product.name} />
                         : <div className="w-full h-full flex items-center justify-center text-gray-200"><Box size={48} /></div>
                       }
+                      {/* View Eye Button */}
+                      <button 
+                        onClick={() => setSelectedProduct(product)}
+                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-700 shadow-lg hover:scale-110 active:scale-95 transition-all z-20"
+                      >
+                        <Eye size={16} />
+                      </button>
                       <div className="absolute top-3 left-3 flex gap-1 flex-wrap">
                         {(product.tags || []).slice(0, 2).map((tag: string) => (
                           <span key={tag} className="bg-white/90 backdrop-blur text-[#111] text-[9px] font-black px-2 py-1 rounded-full">{tag}</span>
@@ -534,7 +586,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xl font-black text-[#111] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>
+              <h3 className="text-xl font-black text-[#111] uppercase" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Order Details
               </h3>
               <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-900">
@@ -631,6 +683,158 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-white rounded-[3rem] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-2xl font-black text-[#111] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>Review Submission</h3>
+              <button onClick={() => setSelectedProduct(null)} className="text-gray-400 hover:text-gray-900 transition-colors">
+                <XCircle size={32} />
+              </button>
+            </div>
+            
+            <div className="p-10 overflow-y-auto max-h-[85vh]">
+              <div className="flex flex-col lg:flex-row gap-12">
+                {/* Left Column: Image Gallery */}
+                <div className="w-full lg:w-[45%] flex flex-col gap-6">
+                  <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center relative shadow-inner">
+                     <img src={selectedProduct.image_url} className="w-full h-full object-contain p-6" alt="Primary" />
+                     <div className="absolute top-6 left-6 bg-[#ccff00] text-[#111] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Primary View</div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    {selectedProduct.hover_image_url && (
+                      <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center relative group cursor-zoom-in">
+                        <img src={selectedProduct.hover_image_url} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" alt="Hover" />
+                        <div className="absolute top-2 left-2 bg-black/60 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">Hover</div>
+                      </div>
+                    )}
+                    {(() => {
+                      const imgs = Array.isArray(selectedProduct.additional_images) 
+                        ? selectedProduct.additional_images 
+                        : (selectedProduct.additional_images?.split(',').filter(Boolean) || []);
+                      
+                      return imgs.map((img: string, i: number) => (
+                        <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center relative group cursor-zoom-in">
+                          <img src={img.trim()} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" alt={`Extra ${i}`} />
+                          <div className="absolute top-2 left-2 bg-black/60 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">Extra {i+1}</div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+                
+                {/* Right Column: Detailed Info */}
+                <div className="w-full lg:w-1/2 flex flex-col gap-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                       <span className="text-[10px] font-black bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg uppercase border border-blue-100">
+                        {selectedProduct.product_type}
+                      </span>
+                      {selectedProduct.quality && (
+                        <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-lg uppercase border border-emerald-100">
+                          {selectedProduct.quality}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-3xl font-black text-[#111] leading-tight mb-1">{selectedProduct.name}</h4>
+                    <p className="text-2xl font-black text-[#3da85b]">${selectedProduct.price}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Turnaround</p>
+                      <p className="text-sm font-black text-gray-700">{selectedProduct.turnaround_time || 'N/A'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Bulk Pricing</p>
+                      <p className="text-sm font-black text-gray-700">{selectedProduct.bulk_pricing || 'None'}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Short Description</p>
+                    <p className="text-sm text-gray-600 font-bold">{selectedProduct.description}</p>
+                  </div>
+
+                  {selectedProduct.long_description && (
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Full Description</p>
+                      <p className="text-sm text-gray-500 leading-relaxed font-medium whitespace-pre-line">{selectedProduct.long_description}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Colors</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(selectedProduct.available_colors || []).map((c: any) => (
+                        <div key={c.hex} className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+                          <div className="w-3.5 h-3.5 rounded-full border border-gray-200" style={{ backgroundColor: c.hex }} />
+                          <span className="text-[10px] font-black text-gray-700">{c.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Sizes</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(selectedProduct.available_sizes || []).map((s: string) => (
+                        <span key={s} className="bg-white text-gray-800 px-4 py-1.5 rounded-xl text-[10px] font-black border-2 border-gray-100 shadow-sm">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Admin Promotion Tags */}
+                  <div className="bg-[#ccff00]/10 border border-[#ccff00]/20 p-5 rounded-2xl">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <Sparkles size={12} className="text-gray-600" /> Promotion Tags (Admin Only)
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {["Bestseller", "New Arrival", "Featured", "Limited Edition"].map(tag => {
+                        const active = adminTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() => setAdminTags(prev => active ? prev.filter(t => t !== tag) : [...prev, tag])}
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-black border transition-all ${
+                              active 
+                                ? 'bg-[#111] text-[#ccff00] border-[#111]' 
+                                : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons in Modal */}
+              <div className="flex gap-4 mt-12 pt-8 border-t border-gray-100">
+                <button
+                  onClick={() => handleRejectProduct(selectedProduct.id)}
+                  className="flex-1 bg-white border-2 border-red-100 text-red-500 py-4 rounded-[1.5rem] font-black text-xs hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-md uppercase tracking-widest"
+                >
+                  Reject Submission
+                </button>
+                <button
+                  onClick={() => handleApproveProduct(selectedProduct.id)}
+                  className="flex-1 bg-[#ccff00] text-[#111] py-4 rounded-[1.5rem] font-black text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-xl uppercase tracking-widest"
+                >
+                  Approve & Go Live
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* User Detail Modal */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
@@ -667,7 +871,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6">
           <div className="bg-[#111] rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-              <h3 className="text-xl font-black text-[#ccff00] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif' }}>
+              <h3 className="text-xl font-black text-[#ccff00] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.2em' }}>
                 All Order History
               </h3>
               <button onClick={() => setShowOrderHistory(false)} className="text-gray-500 hover:text-white transition-colors">
@@ -714,4 +918,5 @@ const STATUS_COLOR: Record<string, string> = {
   ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
   REJECTED: "bg-red-100 text-red-700",
   COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+  DELIVERED: "bg-teal-100 text-teal-700",
 };

@@ -13,7 +13,6 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
 
   useEffect(() => {
     // Get initial session
@@ -39,13 +38,6 @@ export default function Home() {
       }
     });
 
-    // Fetch approved supplier products for the landing page
-    supabase
-      .from("supplier_products")
-      .select("*, supplier:profiles(full_name)")
-      .eq("status", "APPROVED")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setSupplierProducts(data || []));
 
     return () => subscription.unsubscribe();
   }, []);
@@ -81,16 +73,18 @@ export default function Home() {
 
           <div className="flex-1 flex items-center">
             {/* Logo */}
-            <img
-              src="/logo.png"
-              alt="Stenvo Logo"
-              className="h-[56px] md:h-[68px] w-auto cursor-pointer object-contain relative z-10 -ml-1 transition-transform hover:scale-105"
-            />
+            <Link href="/">
+              <img
+                src="/logo.png"
+                alt="Stenvo Logo"
+                className="h-[56px] md:h-[68px] w-auto cursor-pointer object-contain relative z-10 -ml-1 transition-transform hover:scale-105"
+              />
+            </Link>
           </div>
 
           {/* Centered Nav */}
           <nav className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <Link href="#catalog" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Catalog</Link>
+            <Link href="/products" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Catalog</Link>
             <Link href="#pricing" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Pricing</Link>
             <Link href="#how-it-works" className="flex items-center gap-1.5 text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">
               How it works
@@ -131,25 +125,23 @@ export default function Home() {
                       <p className="text-sm font-bold text-[#1B2412] truncate mt-0.5">{user.email}</p>
                     </div>
                     <div className="p-2">
-                      <Link href="/editor" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-[#A1FF4D]/20 hover:text-[#1B2412] transition-colors">
-                        <PenTool size={15} /> Start Designing
-                      </Link>
-                      
-                      {userRole !== "SUPPLIER" && (
-                        <Link href="/orders" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-[#A1FF4D]/20 hover:text-[#1B2412] transition-colors">
-                          <CheckCircle size={15} /> My Orders
-                        </Link>
-                      )}
+
 
                       {userRole === "ADMIN" && (
                         <Link href="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
                           <ShoppingBag size={15} /> Admin Panel
                         </Link>
                       )}
-                      
-                      {(userRole === "SUPPLIER" || userRole === "ADMIN") && (
+
+                      {userRole === "SUPPLIER" && (
                         <Link href="/supplier" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
-                          <CheckCircle size={15} /> Supplier Panel
+                          <ShoppingBag size={15} /> Supplier Panel
+                        </Link>
+                      )}
+
+                      {userRole === "CUSTOMER" && (
+                        <Link href="/orders" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-bold text-gray-700 hover:bg-gray-100 transition-colors">
+                          <ShoppingBag size={15} /> Orders
                         </Link>
                       )}
                     </div>
@@ -281,12 +273,13 @@ export default function Home() {
                     }
                   `}} />
                   <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                    <button
-                      className="hover-vibrate-trigger rounded-md px-10 h-14 text-[17px] font-extrabold font-sans w-full sm:w-auto"
+                    <Link
+                      href="/products"
+                      className="hover-vibrate-trigger rounded-md px-10 h-14 text-[17px] font-extrabold font-sans w-full sm:w-auto flex items-center justify-center"
                       style={{ backgroundColor: '#9DF542', color: '#1B2412' }}
                     >
                       Get started for free
-                    </button>
+                    </Link>
                     <button
                       className="rounded-md px-10 h-14 text-[17px] font-extrabold font-sans border-[3px] border-[#2B3220] text-[#2B3220] transition-colors hover:bg-[#2B3220] hover:text-[#9DF542] w-full sm:w-auto flex items-center justify-center"
                     >
@@ -475,14 +468,15 @@ export default function Home() {
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
 
-                    {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
-                      <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
-                      <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                      </div>
-                    </div>
                   </div>
+                  {/* Specific Product Button Overlay - Moved outside scaling container for better interaction */}
+                  <Link 
+                    href="/products?category=T-shirts" 
+                    className="absolute bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group/btn hover:bg-[#ccff00]"
+                    title="View All T-shirts"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#111] transition-transform group-hover/btn:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </Link>
                 </div>
               </div>
 
@@ -518,14 +512,15 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
-                    {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
-                      <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
-                      <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                      </div>
-                    </div>
                   </div>
+                  {/* Specific Product Button Overlay - Moved outside scaling container for better interaction */}
+                  <Link 
+                    href="/products?category=Accessories" 
+                    className="absolute bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group/btn hover:bg-[#f0eae1]"
+                    title="View All Accessories"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#111] transition-transform group-hover/btn:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </Link>
                 </div>
               </div>
 
@@ -561,14 +556,15 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
-                    {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
-                      <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
-                      <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                      </div>
-                    </div>
                   </div>
+                  {/* Specific Product Button Overlay - Moved outside scaling container for better interaction */}
+                  <Link 
+                    href="/products?category=Mugs" 
+                    className="absolute bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group/btn hover:bg-[#d8d4f0]"
+                    title="View All Mugs"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#111] transition-transform group-hover/btn:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </Link>
                 </div>
               </div>
 
@@ -603,14 +599,15 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
-                    {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
-                      <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
-                      <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                      </div>
-                    </div>
                   </div>
+                  {/* Specific Product Button Overlay - Moved outside scaling container for better interaction */}
+                  <Link 
+                    href="/products?category=Stationery" 
+                    className="absolute bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group/btn hover:bg-[#5bc2e7]"
+                    title="View All Stationery"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#111] transition-transform group-hover/btn:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </Link>
                 </div>
               </div>
 
@@ -646,14 +643,15 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 z-10 pointer-events-none"></div>
-                    {/* Read More button overlay */}
-                    <div className="absolute bottom-6 left-6 flex items-center gap-3 z-20">
-                      <span className="text-white text-[15px] font-medium tracking-wide drop-shadow-md">Design Now</span>
-                      <div className="w-7 h-7 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-[#111] shadow-lg group-hover:bg-white transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                      </div>
-                    </div>
                   </div>
+                  {/* Specific Product Button Overlay - Moved outside scaling container for better interaction */}
+                  <Link 
+                    href="/products?category=Phone Cases" 
+                    className="absolute bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group/btn hover:bg-[#e6e0f8]"
+                    title="View All Phone Cases"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-[#111] transition-transform group-hover/btn:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  </Link>
                 </div>
               </div>
 
@@ -742,12 +740,6 @@ export default function Home() {
               <p className="text-[#64716e] text-[14px] md:text-[15px] font-medium leading-[1.6] mb-8 pr-4">
                 Follow this simple guide: choose your material, select a print house, design your product, and place your order.
               </p>
-              <div>
-                <button className="bg-white text-[#111] px-10 py-4 rounded-full font-bold text-[17px] hover-vibrate-trigger flex items-center justify-center gap-2 shadow-sm transition-all border border-gray-200/50">
-                  Start designing
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-[1px]"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </button>
-              </div>
             </div>
 
             {/* Step 1 Card */}
@@ -762,7 +754,7 @@ export default function Home() {
                 </p>
               </div>
               <div>
-                <Link href="#" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity underline decoration-1 underline-offset-4">Browse catalog</Link>
+                <Link href="/products" className="text-[#111] text-[13px] md:text-[14px] font-semibold hover:opacity-75 transition-opacity underline decoration-1 underline-offset-4">Browse catalog</Link>
               </div>
             </div>
 
@@ -833,96 +825,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ====== SUPPLIER PRODUCTS CATALOG SECTION ====== */}
-        {supplierProducts.length > 0 && (
-          <section className="bg-[#fafafa] py-16 px-6 lg:px-16" id="catalog">
-            <div className="max-w-[1400px] mx-auto">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-                <div>
-                  <p className="text-[12px] font-black uppercase tracking-[0.15em] text-[#A1FF4D] mb-2">Verified Suppliers</p>
-                  <h2 className="text-[36px] md:text-[48px] font-black text-[#111] leading-tight tracking-tight">
-                    Browse &amp; Customize Products
-                  </h2>
-                  <p className="text-gray-500 font-medium text-sm mt-2">Pick a product, design it in our editor — your order goes straight to the supplier.</p>
-                </div>
-              </div>
-
-              {/* Product Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {supplierProducts.map((product) => {
-                  // Map supplier product_type → editor template id (Printify-style routing)
-                  const templateId =
-                    product.product_type === 'Hoodie'  ? 'premium-hoodie'   :
-                    product.product_type === 'Sweater' ? 'crewneck-sweater' :
-                    product.product_type === 'Hat'     ? 'classic-cap'      :
-                    'classic-tshirt'; // T-Shirt + all others
-                  const editorUrl = `/editor?template=${templateId}&supplier_product_id=${product.id}`;
-                  return (
-                  <div key={product.id} className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                    {/* Image */}
-                    <div className="h-52 bg-gray-50 overflow-hidden relative">
-                      {product.image_url ? (
-                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-200">
-                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
-                        </div>
-                      )}
-                      {/* Product type + tags */}
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-[#111]/80 backdrop-blur-sm text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">{product.product_type}</span>
-                      </div>
-                      <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-                        {(product.tags || []).slice(0, 1).map((tag: string) => (
-                          <span key={tag} className="bg-white/90 backdrop-blur-sm text-[#111] text-[9px] font-black px-2 py-1 rounded-full shadow-sm uppercase tracking-wide">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="p-5">
-                      {/* Supplier badge */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-5 h-5 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[9px] font-black text-[#1B2412]">
-                          {product.supplier?.full_name?.[0]?.toUpperCase() || 'S'}
-                        </div>
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate">{product.supplier?.full_name}</span>
-                      </div>
-
-                      <h3 className="font-black text-[#111] text-base mb-1 leading-tight">{product.name}</h3>
-                      <p className="text-xs text-gray-400 mb-3 line-clamp-2 font-medium">{product.description}</p>
-
-                      {/* Colors */}
-                      {product.available_colors?.length > 0 && (
-                        <div className="flex gap-1.5 mb-4 flex-wrap">
-                          {product.available_colors.slice(0, 8).map((c: any) => (
-                            <div key={c.hex} title={c.name} className="w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
-                          ))}
-                          {product.available_colors.length > 8 && (
-                            <span className="text-[9px] font-bold text-gray-400">+{product.available_colors.length - 8}</span>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-black text-[#111]">${product.price}</p>
-                        <Link
-                          href={editorUrl}
-                          className="bg-[#111] text-white px-4 py-2.5 rounded-xl font-black text-xs hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all active:scale-95 flex items-center gap-1"
-                        >
-                          Customize
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
+        {/* Supplier Products moved to /products */}
 
         {/* Modern Bento Box Section */}
         <section className="bg-[#1e1e1e] w-full py-16 md:py-24 px-4 md:px-8 flex justify-center font-sans tracking-tight">
