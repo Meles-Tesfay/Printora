@@ -583,39 +583,52 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                     )}
 
                     {/* Feedback Section for Delivered Orders */}
-                    {order.status === "DELIVERED" && !(Number(order.variants?.customer_rating) > 0) && (
-                        <div className="bg-white border border-gray-100 rounded-2xl p-5 mt-4 shadow-sm">
-                            <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-3">Rate your Experience</p>
-                            
-                            <div className="flex gap-2 mb-4">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <button 
-                                        key={star} 
-                                        onClick={() => setRating(star)}
-                                        disabled={(order.variants?.customer_rating || 0) > 0}
-                                        className="transition-transform active:scale-90"
-                                    >
-                                        <Star 
-                                            size={24} 
-                                            className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} 
-                                        />
-                                    </button>
-                                ))}
-                            </div>
-
-                            <textarea 
-                                value={feedback}
-                                onChange={(e) => setFeedback(e.target.value)}
-                                disabled={(order.variants?.customer_rating || 0) > 0}
-                                placeholder="Write your feedback here..."
-                                className="w-full text-sm p-3 rounded-xl border border-gray-100 bg-gray-50 outline-none focus:ring-2 focus:ring-teal-400 min-h-[100px] resize-none mb-3"
-                            />
-
-                            {(order.variants?.customer_rating || 0) > 0 ? (
-                                <div className="bg-teal-50 text-teal-700 p-3 rounded-xl text-xs font-bold text-center border border-teal-100">
-                                    Thank you for your feedback! ✨
+                    {order.status === "DELIVERED" && (
+                        Number(order.variants?.customer_rating) > 0 ? (
+                            /* Already submitted — show compact thank-you card only */
+                            <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 mt-4 flex items-center gap-3">
+                                <div className="w-9 h-9 bg-teal-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <Star size={16} className="fill-white text-white" />
                                 </div>
-                            ) : (
+                                <div className="flex-1">
+                                    <p className="text-[10px] font-black text-teal-700 uppercase tracking-widest">Review Submitted</p>
+                                    <div className="flex gap-0.5 mt-1">
+                                        {[1,2,3,4,5].map(s => (
+                                            <Star key={s} size={12} className={s <= (order.variants?.customer_rating || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"} />
+                                        ))}
+                                    </div>
+                                    {order.variants?.customer_feedback && (
+                                        <p className="text-xs text-teal-600 font-medium mt-1 italic">"{order.variants.customer_feedback}"</p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            /* Not yet submitted — show the feedback form */
+                            <div className="bg-white border border-gray-100 rounded-2xl p-5 mt-4 shadow-sm">
+                                <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-3">Rate your Experience</p>
+                                
+                                <div className="flex gap-2 mb-4">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button 
+                                            key={star} 
+                                            onClick={() => setRating(star)}
+                                            className="transition-transform active:scale-90 hover:scale-110"
+                                        >
+                                            <Star 
+                                                size={28} 
+                                                className={star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200 hover:text-yellow-300"} 
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <textarea 
+                                    value={feedback}
+                                    onChange={(e) => setFeedback(e.target.value)}
+                                    placeholder="Write your feedback here..."
+                                    className="w-full text-sm p-3 rounded-xl border border-gray-100 bg-gray-50 outline-none focus:ring-2 focus:ring-teal-400 min-h-[100px] resize-none mb-3"
+                                />
+
                                 <button 
                                     onClick={async () => {
                                         if (rating === 0) return alert("Please select a rating");
@@ -630,7 +643,6 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                             console.error("Feedback error:", error);
                                             alert("Error: " + error.message);
                                         } else {
-                                            // Successfully submitted, refresh to hide container
                                             onRefresh();
                                         }
                                     }}
@@ -639,8 +651,8 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                 >
                                     {submittingFeedback ? "Submitting..." : "Submit Feedback"}
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )
                     )}
                 </div>
             </div>

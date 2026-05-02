@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { Loader2, ArrowLeft, Shirt, Star } from "lucide-react";
 import Link from "next/link";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -36,38 +32,77 @@ export default function ProductDetailPage() {
         setProduct(prodData);
         setActiveImage(prodData?.image_url);
 
-        // Fetch Reviews from custom_orders linked to this product
-        const { data: reviewsData, error: reviewsError } = await supabase
-          .from("custom_orders")
-          .select("id, variants, created_at, customer_id")
-          .eq("supplier_product_id", id)
-          .order("created_at", { ascending: false });
+        // Fetch Reviews: two strategies to handle both order flows:
+        // Strategy A: direct link via supplier_product_id (requires DB migration)
+        // Strategy B: fuzzy keyword match on product_type (handles old orders + naming mismatch)
+        //             supplier_products.product_type = "t-shirt"
+        //             custom_orders.product_type     = "Classic Unisex T-Shirt"
+        //             → extract keywords from supplier product name & type, match client-side
 
-        if (reviewsError) {
-          console.error("Reviews query error:", reviewsError);
+        // Build keyword list from supplier product name + product_type
+        const rawKeywords = [
+          ...(prodData.name || "").toLowerCase().split(/\s+/),
+          ...(prodData.product_type || "").toLowerCase().split(/[\s-]+/),
+        ].filter(k => k.length > 2);
+        const keywords = [...new Set(rawKeywords)];
+        console.log("🔑 Keywords for matching:", keywords);
+
+        // Strategy A: exact match by supplier_product_id (primary — fast)
+        const { data: byProductId, error: errA } = await supabase
+          .from("custom_orders")
+          .select("id, variants, created_at, customer_id, status, product_type")
+          .eq("supplier_product_id", id)
+          .eq("status", "DELIVERED");
+
+        // Strategy B: ALL delivered orders, filter by keyword client-side
+        const { data: allDelivered, error: errB } = await supabase
+          .from("custom_orders")
+          .select("id, variants, created_at, customer_id, status, product_type")
+          .eq("status", "DELIVERED");
+
+        console.log("📦 Strategy A (by supplier_product_id):", byProductId, "Error:", errA);
+        console.log("📦 Strategy B (all delivered):", allDelivered?.length, "rows. Error:", errB);
+
+        if (errB) {
+          console.error("❌ RLS is blocking the query! Run the SQL migration in Supabase dashboard.", errB.message);
         }
 
-        if (!reviewsError && reviewsData) {
-          // Enrich with customer names
-          const customerIds = [...new Set(reviewsData.map(r => r.customer_id))];
-          if (customerIds.length > 0) {
-            const { data: customerProfiles } = await supabase
-              .from("profiles")
-              .select("id, full_name")
-              .in("id", customerIds);
-            
-            const profileMap = Object.fromEntries((customerProfiles || []).map(p => [p.id, p]));
-            setReviews((reviewsData || [])
-              .filter(r => r.variants && (r.variants.customer_rating || r.variants.rating))
-              .map(r => ({
-                ...r,
-                customer_rating: Number(r.variants.customer_rating || r.variants.rating),
-                customer_feedback: r.variants.customer_feedback || r.variants.feedback || "",
-                customer_name: profileMap[r.customer_id]?.full_name || "Verified Customer"
-              })));
-          } else {
-            setReviews([]);
-          }
+        const byKeyword = (allDelivered || []).filter(r => {
+          if (!r.product_type) return false;
+          const orderType = r.product_type.toLowerCase();
+          const match = keywords.some(kw => orderType.includes(kw));
+          console.log(`   checking "${r.product_type}" against keywords [${keywords}] → ${match}`);
+          return match;
+        });
+
+        console.log("✅ byKeyword matches:", byKeyword.length);
+
+        // Merge + dedupe, keep only rated ones
+        const merged = new Map();
+        [...(byProductId || []), ...byKeyword].forEach(r => {
+          if (!merged.has(r.id)) merged.set(r.id, r);
+        });
+        const allRated = [...merged.values()].filter(
+          r => r.variants && Number(r.variants.customer_rating) > 0
+        );
+
+        console.log("⭐ Total rated reviews found:", allRated.length);
+
+        if (allRated.length > 0) {
+          const customerIds = [...new Set(allRated.map(r => r.customer_id))];
+          const { data: customerProfiles } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", customerIds);
+          const profileMap = Object.fromEntries((customerProfiles || []).map(p => [p.id, p]));
+          setReviews(allRated.map(r => ({
+            ...r,
+            customer_rating: Number(r.variants.customer_rating),
+            customer_feedback: r.variants.customer_feedback,
+            customer_name: profileMap[r.customer_id]?.full_name || "Verified Customer",
+          })));
+        } else {
+          setReviews([]);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -268,10 +303,9 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Reviews Section at the Bottom */}
-        <div className="mt-24 border-t border-gray-100 pt-16">
-          <h2 className="text-3xl font-black mb-12 uppercase tracking-tight text-center">Customer Experiences</h2>
-          
-          {reviews.length > 0 ? (
+        {reviews.length > 0 && (
+          <div className="mt-24 border-t border-gray-100 pt-16">
+            <h2 className="text-3xl font-black mb-12 uppercase tracking-tight text-center">Customer Experiences</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {reviews.map((rev) => (
                 <div key={rev.id} className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm hover:shadow-md transition-all">
@@ -300,16 +334,8 @@ export default function ProductDetailPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[3rem] border border-dashed border-gray-200">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
-                <Star size={32} />
-              </div>
-              <p className="text-gray-500 font-bold">No reviews for this product yet.</p>
-              <p className="text-gray-400 text-sm mt-1">Be the first to customize and share your experience!</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
