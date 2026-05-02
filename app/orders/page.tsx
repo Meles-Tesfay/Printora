@@ -114,6 +114,12 @@ function OrdersContent() {
         setOrders(ordersData || []);
         setLoading(false);
 
+        // Update selectedOrder if it exists to reflect latest changes
+        if (selectedOrder) {
+            const updated = (ordersData || []).find(o => o.id === selectedOrder.id);
+            if (updated) setSelectedOrder(updated);
+        }
+
         // Auto-select the most recent order if just submitted
         if (justSubmitted && ordersData && ordersData.length > 0) {
             setSelectedOrder(ordersData[0]);
@@ -293,6 +299,12 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
     const [rating, setRating] = useState(order.variants?.customer_rating || 0);
     const [feedback, setFeedback] = useState(order.variants?.customer_feedback || "");
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+    // Sync local state when the order prop changes (e.g. after refresh)
+    useEffect(() => {
+        setRating(order.variants?.customer_rating || 0);
+        setFeedback(order.variants?.customer_feedback || "");
+    }, [order.id, order.variants]);
 
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING_ADMIN;
     const Icon = cfg.icon;
@@ -613,8 +625,13 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                             .update({ variants: newVariants })
                                             .eq("id", order.id);
                                         setSubmittingFeedback(false);
-                                        if (error) alert("Error: " + error.message);
-                                        else onRefresh();
+                                        if (error) {
+                                            console.error("Feedback error:", error);
+                                            alert("Error: " + error.message);
+                                        } else {
+                                            alert("Thank you! Your feedback has been submitted.");
+                                            onRefresh();
+                                        }
                                     }}
                                     disabled={submittingFeedback || rating === 0}
                                     className="w-full bg-teal-500 text-white py-3 rounded-xl font-black text-sm hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
