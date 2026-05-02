@@ -634,15 +634,17 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                         if (rating === 0) return alert("Please select a rating");
                                         setSubmittingFeedback(true);
                                         const newVariants = { ...order.variants, customer_rating: rating, customer_feedback: feedback };
-                                        const { error } = await supabase
+                                        const { error, count } = await supabase
                                             .from("custom_orders")
                                             .update({ variants: newVariants })
-                                            .eq("id", order.id);
+                                            .eq("id", order.id)
+                                            .select();
                                         setSubmittingFeedback(false);
                                         if (error) {
                                             console.error("Feedback error:", error);
-                                            alert("Error: " + error.message);
+                                            alert("Error saving feedback: " + error.message);
                                         } else {
+                                            console.log("Feedback update result — rows affected:", count);
                                             onRefresh();
                                         }
                                     }}
