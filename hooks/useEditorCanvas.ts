@@ -126,7 +126,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
             offsetY: -16,
             offsetX: 16,
             cursorStyle: 'pointer',
-            mouseUpHandler: (eventData, transform) => {
+            mouseUpHandler: (eventData: any, transform: any) => {
                 const target = transform.target;
                 const canvas = target.canvas;
                 if (canvas) {
@@ -136,7 +136,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
                 }
                 return true;
             },
-            render: (ctx, left, top, styleOverride, fabricObject) => {
+            render: (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) => {
                 const size = 20;
                 ctx.save();
                 ctx.translate(left, top);
@@ -144,7 +144,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
                 ctx.restore();
             },
             cornerSize: 20
-        });
+        } as any);
 
         // Sync liveProps from a fabric object
         const syncLive = (obj: fabric.Object | null) => {
@@ -212,7 +212,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
 
     const isInitialLoad = useRef(false);
     // Track which viewId we last loaded, so we don't re-run restore on every viewStates sync
-    const lastRestoredViewId = useRef<string>('__none__');
+    const lastRestoredViewId = useRef<string | undefined>('__none__');
 
     const doRestore = (objects: any[]) => {
         if (!canvas) return;
@@ -378,7 +378,7 @@ export function useEditorCanvas({ printArea, canvasSize, onSelectionChange, init
             fontWeight: 'bold',
             textAlign: 'center',
             path: path
-        });
+        } as any);
 
         canvas.add(text);
         canvas.setActiveObject(text);

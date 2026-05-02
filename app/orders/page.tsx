@@ -290,8 +290,8 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isDeclining, setIsDeclining] = useState(false);
     const [declineMessage, setDeclineMessage] = useState("");
-    const [rating, setRating] = useState(order.customer_rating || 0);
-    const [feedback, setFeedback] = useState(order.customer_feedback || "");
+    const [rating, setRating] = useState(order.variants?.customer_rating || 0);
+    const [feedback, setFeedback] = useState(order.variants?.customer_feedback || "");
     const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING_ADMIN;
@@ -579,7 +579,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                     <button 
                                         key={star} 
                                         onClick={() => setRating(star)}
-                                        disabled={order.customer_rating > 0}
+                                        disabled={(order.variants?.customer_rating || 0) > 0}
                                         className="transition-transform active:scale-90"
                                     >
                                         <Star 
@@ -593,12 +593,12 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                             <textarea 
                                 value={feedback}
                                 onChange={(e) => setFeedback(e.target.value)}
-                                disabled={order.customer_rating > 0}
+                                disabled={(order.variants?.customer_rating || 0) > 0}
                                 placeholder="Write your feedback here..."
                                 className="w-full text-sm p-3 rounded-xl border border-gray-100 bg-gray-50 outline-none focus:ring-2 focus:ring-teal-400 min-h-[100px] resize-none mb-3"
                             />
 
-                            {order.customer_rating > 0 ? (
+                            {(order.variants?.customer_rating || 0) > 0 ? (
                                 <div className="bg-teal-50 text-teal-700 p-3 rounded-xl text-xs font-bold text-center border border-teal-100">
                                     Thank you for your feedback! ✨
                                 </div>
@@ -607,9 +607,10 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                     onClick={async () => {
                                         if (rating === 0) return alert("Please select a rating");
                                         setSubmittingFeedback(true);
+                                        const newVariants = { ...order.variants, customer_rating: rating, customer_feedback: feedback };
                                         const { error } = await supabase
                                             .from("custom_orders")
-                                            .update({ customer_rating: rating, customer_feedback: feedback })
+                                            .update({ variants: newVariants })
                                             .eq("id", order.id);
                                         setSubmittingFeedback(false);
                                         if (error) alert("Error: " + error.message);

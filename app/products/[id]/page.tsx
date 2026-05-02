@@ -39,9 +39,9 @@ export default function ProductDetailPage() {
         // Fetch Reviews from custom_orders linked to this product
         const { data: reviewsData, error: reviewsError } = await supabase
           .from("custom_orders")
-          .select("id, customer_rating, customer_feedback, created_at, customer_id")
+          .select("id, variants, created_at, customer_id")
           .eq("supplier_product_id", id)
-          .not("customer_rating", "is", null)
+          .not("variants", "is", null)
           .order("created_at", { ascending: false });
 
         if (!reviewsError && reviewsData) {
@@ -54,10 +54,14 @@ export default function ProductDetailPage() {
               .in("id", customerIds);
             
             const profileMap = Object.fromEntries((customerProfiles || []).map(p => [p.id, p]));
-            setReviews(reviewsData.map(r => ({
-              ...r,
-              customer_name: profileMap[r.customer_id]?.full_name || "Verified Customer"
-            })));
+            setReviews((reviewsData || [])
+              .filter(r => r.variants?.customer_rating)
+              .map(r => ({
+                ...r,
+                customer_rating: r.variants.customer_rating,
+                customer_feedback: r.variants.customer_feedback,
+                customer_name: profileMap[r.customer_id]?.full_name || "Verified Customer"
+              })));
           } else {
             setReviews(reviewsData);
           }

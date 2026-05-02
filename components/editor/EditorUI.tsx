@@ -1,5 +1,7 @@
 "use client";
 
+import { fabric } from 'fabric';
+
 import React, { useState, useEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { PRODUCT_TEMPLATES } from '@/lib/editor-constants';
@@ -845,8 +847,7 @@ export default function EditorUI() {
             const view = product.views.find(v => v.id === product.defaultViewId) || product.views[0];
             setSelectedView(view);
             setLoadedTemplateId(template.id || null);
-            // If the template has an associated DB order, track it for update-on-save
-            if (template.dbOrderId) setDbOrderId(template.dbOrderId);
+            // We NO LONGER track dbOrderId from templates. Templates should be order-agnostic.
             // Close panel after loading
             setShowTemplatesPanel(false);
             setActiveLeftTool(null);
@@ -886,10 +887,17 @@ export default function EditorUI() {
         (async () => {
             const { data: order } = await supabase
                 .from('custom_orders')
-                .select('design_data, design_views, variants, product_type')
+                .select('design_data, design_views, variants, product_type, status')
                 .eq('id', editOrderId)
                 .single();
             if (!order) return;
+
+            // Lock order if it's already approved/processed
+            if (order.status !== 'PENDING_ADMIN' && order.status !== 'REJECTED') {
+                alert("This order is already approved or in production and cannot be edited.");
+                window.location.href = '/orders';
+                return;
+            }
 
             // Restore color
             if (order.variants?.color) setSelectedColor(order.variants.color);
@@ -1373,7 +1381,6 @@ export default function EditorUI() {
                                 viewStates: freshViewStates,
                                 // Keep original creation name; only set on first save
                                 name: existing?.name || `Template ${new Date().toLocaleTimeString()}`,
-                                dbOrderId: dbOrderId || undefined,
                             };
                             const templates = JSON.parse(localStorage.getItem('printora_templates') || '[]');
                             const existingIndex = templates.findIndex((t: any) => t.id === state.id);
