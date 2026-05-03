@@ -156,7 +156,7 @@ export default function SupplierDashboard() {
     const filePath = `${user.id}/${Date.now()}_${fileName}`;
 
     const { error: uploadError, data } = await supabase.storage
-      .from('product-images')
+      .from('user_assets')
       .upload(filePath, file);
 
     if (uploadError) {
@@ -166,7 +166,7 @@ export default function SupplierDashboard() {
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
+      .from('user_assets')
       .getPublicUrl(filePath);
 
     if (field === 'detail_images') {
