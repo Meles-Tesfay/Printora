@@ -7,7 +7,9 @@ import {
   ChevronDown, ArrowRight, ShoppingBag, LogOut, 
   ShieldCheck, AlertCircle, Clock, CreditCard, 
   Package, RefreshCcw, Image as ImageIcon, CheckCircle2,
-  Banknote, Upload, Smartphone
+  Banknote, Upload, Smartphone,
+  Truck, ShieldAlert, Palette, AlertTriangle, SearchCheck, CheckSquare, Info,
+  PenTool, FileText, Printer
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -195,11 +197,11 @@ export default function BeforeYouStartPage() {
 
             <div className="flex flex-col md:flex-row justify-between relative z-10 gap-10 md:gap-4">
               {[
-                { step: "1", title: "Choose Product", icon: Package },
-                { step: "2", title: "Customize", icon: ImageIcon },
-                { step: "3", title: "Submit Order", icon: CheckCircle2 },
-                { step: "4", title: "Verify Payment", icon: CreditCard },
-                { step: "5", title: "Production & Delivery", icon: Clock },
+                { step: "1", title: "Choose Product", icon: Package, iconAnim: "group-hover:-rotate-12 group-hover:scale-125" },
+                { step: "2", title: "Customize", icon: ImageIcon, iconAnim: "group-hover:rotate-[360deg] group-hover:scale-110" },
+                { step: "3", title: "Submit Order", icon: CheckCircle2, iconAnim: "group-hover:scale-125" },
+                { step: "4", title: "Verify Payment", icon: CreditCard, iconAnim: "group-hover:-translate-y-1 group-hover:rotate-[-10deg] group-hover:scale-110" },
+                { step: "5", title: "Production & Delivery", icon: Clock, iconAnim: "group-hover:rotate-90 group-hover:scale-125" },
               ].map((item, idx) => (
                 <motion.div
                   key={idx}
@@ -207,16 +209,23 @@ export default function BeforeYouStartPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.2 }}
-                  className="flex md:flex-col items-center md:text-center gap-6 md:gap-4 flex-1"
+                  className="flex md:flex-col items-center md:text-center gap-6 md:gap-5 flex-1 group cursor-default"
                 >
-                  <div className="w-[90px] h-[90px] shrink-0 bg-white border-[3px] border-gray-100 rounded-full flex items-center justify-center relative shadow-sm group-hover:border-[#9DF542] transition-colors">
-                    <item.icon size={32} className="text-[#111]" />
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#111] text-white rounded-full flex items-center justify-center font-bold text-sm border-4 border-white">
+                  {/* The Main Circle Node */}
+                  <div className="w-[90px] h-[90px] shrink-0 bg-white border-[3px] border-gray-100 rounded-full flex items-center justify-center relative shadow-sm transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:bg-[#9DF542] group-hover:border-[#9DF542] group-hover:scale-110 group-hover:-translate-y-2 group-hover:shadow-[0_10px_30px_rgba(157,245,66,0.4)]">
+                    
+                    {/* The Icon */}
+                    <item.icon size={32} className={`text-[#111] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${item.iconAnim}`} />
+                    
+                    {/* The Floating Step Number Badge */}
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#111] text-white rounded-full flex items-center justify-center font-bold text-sm border-4 border-white transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-125 group-hover:rotate-12 group-hover:bg-white group-hover:text-[#111] group-hover:border-[#9DF542] group-hover:shadow-md">
                       {item.step}
                     </div>
                   </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-[#111]">{item.title}</h4>
+                  
+                  {/* The Title */}
+                  <div className="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-1">
+                    <h4 className="text-lg font-bold text-[#111] transition-colors duration-300">{item.title}</h4>
                   </div>
                 </motion.div>
               ))}
@@ -385,73 +394,170 @@ export default function BeforeYouStartPage() {
         </div>
       </section>
 
-      {/* Production & Rules (Split Layout) */}
-      <section className="py-24 px-6 bg-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-16">
+      {/* 1. Fulfillment Journey (Timeline) */}
+      <section className="py-24 px-6 bg-[#fafafa] relative overflow-hidden border-t border-gray-100">
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111] mb-5" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+              The Fulfillment Journey
+            </h2>
+            <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
+              From the moment your payment is verified to the day your custom order arrives at your doorstep.
+            </p>
+          </div>
+
+          <div className="relative pt-12 pb-10">
+            {/* Connection Line Desktop */}
+            <div className="hidden lg:block absolute top-[110px] left-[10%] right-[10%] h-1.5 bg-gray-200 rounded-full">
+              <motion.div 
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className="h-full bg-[#9DF542] origin-left rounded-full shadow-[0_0_15px_rgba(157,245,66,0.6)]"
+              />
+            </div>
             
-            {/* Production & Delivery */}
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-[#fafafa] p-10 rounded-[3rem] border border-gray-100 relative overflow-hidden group hover:shadow-xl transition-shadow"
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                <Package size={120} />
-              </div>
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 relative z-10">
-                <Clock size={28} className="text-[#111]" />
-              </div>
-              <h3 className="text-3xl font-bold text-[#111] mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Production & Delivery</h3>
-              <ul className="space-y-4 relative z-10">
-                <li className="flex items-start gap-3 text-gray-600">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-[#9DF542] shrink-0" />
-                  <strong>Production Time:</strong> Typically 2-5 business days after payment verification.
-                </li>
-                <li className="flex items-start gap-3 text-gray-600">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-[#9DF542] shrink-0" />
-                  <strong>Delivery Time:</strong> Varies completely based on your location and the selected courier.
-                </li>
-                <li className="flex items-start gap-3 text-gray-600">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-[#9DF542] shrink-0" />
-                  <strong>High Demand:</strong> Delays may occasionally occur during peak seasons or high demand periods.
-                </li>
-              </ul>
-            </motion.div>
+            {/* Connection Line Mobile */}
+            <div className="block lg:hidden absolute top-10 bottom-10 left-12 w-1.5 bg-gray-200 rounded-full">
+               <motion.div 
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className="w-full bg-[#9DF542] origin-top rounded-full shadow-[0_0_15px_rgba(157,245,66,0.6)]"
+              />
+            </div>
 
-            {/* Rules & Limitations */}
-            <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-red-50/50 p-10 rounded-[3rem] border border-red-100 relative overflow-hidden group hover:shadow-xl transition-shadow"
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-5 text-red-500 group-hover:scale-110 transition-transform duration-500">
-                <AlertCircle size={120} />
-              </div>
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 relative z-10">
-                <AlertCircle size={28} className="text-red-500" />
-              </div>
-              <h3 className="text-3xl font-bold text-[#111] mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>Important Rules</h3>
-              <ul className="space-y-4 relative z-10">
-                <li className="flex items-start gap-3 text-gray-600">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                  <strong>No Copyrighted Content:</strong> You must own the rights to the designs you upload.
-                </li>
-                <li className="flex items-start gap-3 text-gray-600">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                  <strong>Content Guidelines:</strong> Strictly no offensive, hateful, or illegal designs.
-                </li>
-                <li className="flex items-start gap-3 text-gray-600">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                  <strong>Color Variance:</strong> Final printed colors may slightly vary from your digital screen due to CMYK printing processes.
-                </li>
-              </ul>
-            </motion.div>
+            <div className="flex flex-col lg:flex-row justify-between relative z-10 gap-12 lg:gap-6">
+              {[
+                { title: "Payment Verified", desc: "Order enters the queue", icon: CheckCircle2, time: "Instant", delay: "Subject to manual review" },
+                { title: "Production", desc: "Printing & manufacturing", icon: Package, time: "2–5 Days", delay: "Delays may occur during high demand" },
+                { title: "Quality Check", desc: "Inspecting final product", icon: SearchCheck, time: "1 Day", delay: "" },
+                { title: "Shipping", desc: "Handed to courier", icon: Truck, time: "1–2 Days", delay: "Depends on local courier" },
+                { title: "Delivery", desc: "Arrives at your door", icon: CheckSquare, time: "Location Based", delay: "" }
+              ].map((step, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: idx * 0.15 }}
+                  className="relative group lg:w-1/5 flex lg:flex-col items-center lg:items-center gap-6 lg:gap-5 pl-4 lg:pl-0 cursor-default"
+                >
+                  {/* Tooltip on Hover */}
+                  {step.delay && (
+                    <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[#111] text-white text-xs py-2 px-3 rounded-lg whitespace-nowrap pointer-events-none z-50 shadow-xl flex items-center gap-2">
+                      <Info size={14} className="text-[#9DF542]" /> {step.delay}
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#111] rotate-45" />
+                    </div>
+                  )}
 
+                  {/* Icon Node */}
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-white border-[3px] border-gray-100 rounded-[1.5rem] rotate-3 flex items-center justify-center relative z-20 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:rotate-0 group-hover:scale-110 group-hover:border-[#9DF542] group-hover:shadow-[0_0_30px_rgba(157,245,66,0.4)] group-hover:bg-[#9DF542]/10 backdrop-blur-xl">
+                    <step.icon size={30} className="text-[#111] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 group-hover:rotate-12" />
+                  </div>
+
+                  {/* Content Card */}
+                  <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] group-hover:-translate-y-2 w-full text-left lg:text-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#9DF542] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    
+                    <span className="inline-block px-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-4 group-hover:bg-[#9DF542]/20 group-hover:border-[#9DF542]/30 group-hover:text-[#111] transition-colors">
+                      {step.time}
+                    </span>
+                    <h4 className="text-[19px] font-bold text-[#111] mb-1.5 leading-tight">{step.title}</h4>
+                    <p className="text-[14px] text-gray-500 leading-relaxed">{step.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bonus Attention Strip */}
+      <div className="w-full bg-gradient-to-r from-[#111] via-[#222] to-[#111] py-4 md:py-5 relative overflow-hidden">
+        <motion.div 
+          animate={{ x: ["-100%", "200%"] }} 
+          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-[#9DF542]/20 to-transparent skew-x-12"
+        />
+        <div className="container mx-auto px-6 flex items-center justify-center gap-3 relative z-10">
+          <AlertCircle size={20} className="text-[#9DF542]" />
+          <span className="font-bold text-white text-[13px] md:text-[15px] tracking-[0.1em] uppercase">Please review these guidelines before placing your order</span>
+        </div>
+      </div>
+
+      {/* 2. Important Rules (Redesigned Grid) */}
+      <section className="py-24 px-6 bg-[#fafafa] relative z-20 border-t border-gray-100">
+        <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-white to-transparent pointer-events-none" />
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111] mb-5" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+              Important Rules
+            </h2>
+            <p className="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
+              Please review our community policies and printing guidelines carefully to ensure a smooth, successful order.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { 
+                title: "Design Ownership", 
+                bullets: ["Must fully own the design rights.", "No copyrighted characters or logos.", "Violations result in order rejection."],
+                icon: PenTool
+              },
+              { 
+                title: "Content Guidelines", 
+                bullets: ["Strictly no offensive material.", "No illegal designs or promotions.", "All uploads subject to review."],
+                icon: FileText
+              },
+              { 
+                title: "Print Accuracy", 
+                bullets: ["Colors vary due to CMYK printing.", "Complex gradients may lose detail.", "Previews are approximate placement."],
+                icon: Printer
+              }
+            ].map((rule, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.15 }}
+                className="group relative bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-sm transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(157,245,66,0.3)] overflow-hidden"
+              >
+                {/* Gradient Background Wash */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-700 pointer-events-none bg-[#9DF542]" />
+                
+                {/* Decorative Top Accent */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 rounded-b-full bg-gray-200 transition-all duration-500 group-hover:w-32 group-hover:bg-[#111]" />
+
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110 group-hover:-rotate-6 bg-gray-50 border border-gray-100 group-hover:bg-[#9DF542] group-hover:border-[#9DF542]">
+                    <rule.icon size={32} className="text-[#111] transition-transform duration-500" />
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold text-[#111] mb-6">{rule.title}</h3>
+                  
+                  <ul className="space-y-4 flex-1">
+                    {rule.bullets.map((bullet, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <div className="mt-2 w-1.5 h-1.5 rounded-full shrink-0 transition-colors duration-300 bg-gray-300 group-hover:bg-[#9DF542]" />
+                        <span className="text-gray-600 text-[15px] leading-relaxed font-medium">{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Read More Indicator */}
+                  <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between text-[14px] font-bold text-gray-400 group-hover:text-[#111] transition-colors">
+                    <span className="uppercase tracking-wider">Understood</span>
+                    <CheckCircle2 size={18} className="opacity-0 -translate-x-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-x-0 text-[#111]" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -513,7 +619,7 @@ export default function BeforeYouStartPage() {
       </section>
 
       {/* Final CTA Strip */}
-      <section className="py-24 relative overflow-hidden bg-[#111] rounded-t-[3rem] mt-12 mx-4 lg:mx-8 shadow-2xl">
+      <section className="py-24 relative overflow-hidden bg-[#111] rounded-[3rem] mt-12 mb-12 mx-4 lg:mx-8 shadow-2xl">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center opacity-[0.05] mix-blend-overlay"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-full bg-[#9DF542]/20 blur-[100px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
 
@@ -525,7 +631,7 @@ export default function BeforeYouStartPage() {
               </h2>
               <p className="text-gray-400 text-lg max-w-md">You're all caught up on the rules. Now it's time to bring your ideas to life instantly.</p>
             </div>
-            <Link href="/shop" className="shrink-0 flex items-center gap-3 bg-[#9DF542] text-[#111] font-bold text-lg py-5 px-10 rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_40px_rgba(157,245,66,0.3)] group">
+            <Link href="/products" className="shrink-0 flex items-center gap-3 bg-[#9DF542] text-[#111] font-bold text-lg py-5 px-10 rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_40px_rgba(157,245,66,0.3)] group">
               Start Designing <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
