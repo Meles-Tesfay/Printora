@@ -55,13 +55,22 @@ const STATUS_CONFIG: Record<string, {
         description: "You've requested changes to the sample. The supplier is updating it.",
         step: 2,
     },
+    FINAL_PAYMENT_PENDING: {
+        label: "Verifying Payment",
+        icon: Clock,
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+        description: "Your receipt has been submitted. Waiting for admin to verify the final payment.",
+        step: 3,
+    },
     PRODUCTION_APPROVED_AND_PAID: {
         label: "In Production",
         icon: Package,
         color: "text-blue-600",
         bg: "bg-blue-50",
         border: "border-blue-200",
-        description: "Payment received! Your order is now in full production.",
+        description: "Payment verified! The supplier has been notified to start full-scale production.",
         step: 3,
     },
     COMPLETED_BY_SUPPLIER: {
@@ -465,7 +474,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                         <div className="space-y-4">
                             <div className="h-px bg-white/5" />
                             <div className="flex justify-between items-center text-[11px] font-bold">
-                                <span className="text-gray-400 uppercase tracking-widest">Deposit Paid</span>
+                                <span className="text-[#A1FF4D] uppercase tracking-widest flex items-center gap-1">✓ 50% Deposit Paid</span>
                                 <span className="text-emerald-400">
                                     {(() => {
                                         const basePrice = order.supplier_product?.price || 600;
@@ -533,7 +542,19 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
 
                                     {!order.variants?.finalReceiptUrl ? (
                                         <div className="space-y-6">
-                                            {order.status === 'SAMPLE_AWAITING_APPROVAL' ? (
+                                            {order.variants?.finalReceiptRejected && (
+                                                <div className="bg-red-50 border-2 border-red-100 rounded-3xl p-6 mb-4 animate-in fade-in slide-in-from-top-4">
+                                                    <div className="flex items-center gap-3 mb-2 text-red-600">
+                                                        <AlertCircle size={20} />
+                                                        <p className="text-sm font-black uppercase tracking-widest">Payment Receipt Rejected</p>
+                                                    </div>
+                                                    <p className="text-xs font-bold text-red-500 leading-relaxed italic">
+                                                        "{order.variants.finalReceiptRejectionReason}"
+                                                    </p>
+                                                    <p className="text-[10px] font-black text-red-400 mt-3 uppercase tracking-tighter">Please re-upload a valid receipt below to proceed.</p>
+                                                </div>
+                                            )}
+                                            {order.status === 'SAMPLE_AWAITING_APPROVAL' && (
                                                 <div className="flex flex-col gap-6">
                                                     {activeAction === 'none' && (
                                                         <div className="flex flex-col sm:flex-row gap-4">
@@ -620,7 +641,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                                     onClick={async () => {
                                                                         setIsSubmitting(true);
                                                                         const newVariants = { ...order.variants, finalReceiptUrl: finalReceipt };
-                                                                        await supabase.from('custom_orders').update({ variants: newVariants, status: 'PRODUCTION_APPROVED_AND_PAID' }).eq('id', order.id);
+                                                                        await supabase.from('custom_orders').update({ variants: newVariants, status: 'FINAL_PAYMENT_PENDING' }).eq('id', order.id);
                                                                         setIsSubmitting(false);
                                                                         onRefresh();
                                                                     }}
@@ -633,10 +654,66 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                         </div>
                                                     )}
                                                 </div>
-                                            ) : (
-                                                <div className="bg-emerald-500/10 rounded-3xl p-6 border border-emerald-500/20">
-                                                    <p className="text-sm font-black text-emerald-800 mb-2 italic">Sample Approved! ✅</p>
-                                                    <p className="text-[11px] text-emerald-700 font-bold">The supplier is now processing the full production batch of {order.variants?.quantity || 1} units.</p>
+                                            )}
+
+                                            {order.status === 'SAMPLE_REJECTED' && (
+                                                <div className="bg-red-50 rounded-3xl p-8 border border-red-100 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                                                            <XCircle className="text-red-500" size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[11px] font-black text-red-600 uppercase tracking-widest leading-none mb-1">Correction Requested</p>
+                                                            <p className="text-sm font-black text-red-900 uppercase">Supplier is reviewing your feedback</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-white/60 p-5 rounded-2xl border border-red-50">
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Your Feedback:</p>
+                                                        <p className="text-sm font-bold text-red-800 leading-relaxed italic">&ldquo;{order.variants?.sample_rejection_message}&rdquo;</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {order.status === 'FINAL_PAYMENT_PENDING' && (
+                                                <div className="bg-amber-500/10 rounded-3xl p-8 border border-amber-500/20 animate-in fade-in slide-in-from-bottom-4">
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <div className="w-12 h-12 rounded-2xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/20">
+                                                            <Clock className="text-[#1B2412]" size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-lg font-black text-amber-900 uppercase leading-tight">Verifying Payment</h5>
+                                                            <p className="text-[11px] text-amber-700 font-bold uppercase tracking-widest">Admin Review in Progress</p>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-sm text-amber-800/80 font-medium leading-relaxed mb-6">
+                                                        Your final payment receipt has been received. Our team is verifying the transaction. 
+                                                        Full-scale production will commence immediately after approval.
+                                                    </p>
+                                                    <a 
+                                                        href={order.variants?.finalReceiptUrl} 
+                                                        target="_blank"
+                                                        className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-amber-700 border border-amber-200 hover:bg-amber-50 transition-all"
+                                                    >
+                                                        <ImageIcon size={14} /> View Submitted Receipt
+                                                    </a>
+                                                </div>
+                                            )}
+
+                                            {['PRODUCTION_APPROVED_AND_PAID', 'COMPLETED_BY_SUPPLIER', 'DELIVERED'].includes(order.status) && (
+                                                <div className="bg-emerald-500/10 rounded-3xl p-8 border border-emerald-500/20 animate-in fade-in slide-in-from-bottom-4">
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <div className="w-12 h-12 rounded-2xl bg-[#A1FF4D] flex items-center justify-center shadow-lg shadow-[#A1FF4D]/20">
+                                                            <CheckCircle className="text-[#1B2412]" size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <h5 className="text-lg font-black text-emerald-900 uppercase leading-tight">Sample Approved! ✅</h5>
+                                                            <p className="text-[11px] text-emerald-700 font-bold uppercase tracking-widest">Production Batch Initiated</p>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-sm text-emerald-800/80 font-medium leading-relaxed">
+                                                        The supplier is now processing the full production batch of {order.variants?.quantity || 1} units. 
+                                                        You will be notified once the batch is ready for shipment.
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>

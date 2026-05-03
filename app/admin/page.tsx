@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "products" | "suppliers" | "customers">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "products" | "suppliers" | "customers" | "receipts">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       supabase
         .from("custom_orders")
         .select("*, customer:profiles(*), supplier_product:supplier_products(*, supplier:profiles(*))")
-        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"])
+        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"])
         .order("created_at", { ascending: false }),
 
       // Products submitted by suppliers awaiting approval
@@ -153,6 +153,46 @@ export default function AdminDashboard() {
         supplier_id: supplierId,
       })
       .eq("id", order.id);
+
+    if (error) alert("Error: " + error.message);
+    else {
+      setSelectedOrder(null);
+      fetchAll();
+    }
+  };
+
+  const handleApproveFinalPayment = async (orderId: string) => {
+    if (!confirm("Confirm that final payment receipt is valid? This will move the order to PRODUCTION.")) return;
+    const { error } = await supabase
+      .from("custom_orders")
+      .update({ status: "PRODUCTION_APPROVED_AND_PAID" })
+      .eq("id", orderId);
+
+    if (error) alert("Error: " + error.message);
+    else {
+      setSelectedOrder(null);
+      fetchAll();
+    }
+  };
+
+  const handleRejectFinalPayment = async (orderId: string, currentVariants: any) => {
+    const reason = prompt("Why are you rejecting this receipt? (Customer will see this)");
+    if (!reason) return;
+
+    const newVariants = { 
+      ...currentVariants, 
+      finalReceiptRejected: true,
+      finalReceiptRejectionReason: reason,
+      finalReceiptUrl: null // Clear the invalid receipt
+    };
+
+    const { error } = await supabase
+      .from("custom_orders")
+      .update({ 
+        status: "SAMPLE_AWAITING_APPROVAL", // Move back to awaiting approval so they can re-upload
+        variants: newVariants 
+      })
+      .eq("id", orderId);
 
     if (error) alert("Error: " + error.message);
     else {
@@ -287,9 +327,22 @@ export default function AdminDashboard() {
             onClick={() => setActiveTab("orders")}
             className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "orders" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
-            <span className="flex items-center gap-3"><ShoppingBag size={16} /> Custom Orders</span>
-            {pendingOrders.length > 0 && (
-              <span className="bg-[#A1FF4D] text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingOrders.length}</span>
+            <span className="flex items-center gap-3"><ShoppingBag size={16} /> New Orders</span>
+            {pendingOrders.filter(o => o.status === "PENDING_ADMIN").length > 0 && (
+              <span className="bg-[#A1FF4D] text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => o.status === "PENDING_ADMIN").length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("receipts")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "receipts" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <span className="flex items-center gap-3"><ShieldCheck size={16} /> Payment Approvals</span>
+            {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length > 0 && (
+              <span className="bg-amber-400 text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length}
+              </span>
             )}
           </button>
           <button
@@ -358,18 +411,17 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-
-
-        {/* === ORDERS TAB === */}
+        
+        {/* === NEW ORDERS TAB === */}
         {activeTab === "orders" && (
           <div className="space-y-6">
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Active Customer Orders</h2>
-                <Clock size={18} className="text-orange-500" />
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Orders Awaiting Review</h2>
+                <ShoppingBag size={18} className="text-[#A1FF4D]" />
               </div>
               <div className="p-4 space-y-3">
-                {pendingOrders.map((order) => (
+                {pendingOrders.filter(o => o.status === "PENDING_ADMIN").map((order) => (
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50/60 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg transition-all">
                     <div className="flex items-center gap-4 mb-3 sm:mb-0">
                       <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
@@ -381,21 +433,13 @@ export default function AdminDashboard() {
                       <div>
                         <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {/* Customer */}
                           <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
                             <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
                           </span>
-                          {/* Color/Variant */}
                           <span className="text-[10px] font-bold text-gray-500">
                             {order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}
                           </span>
                         </div>
-                        {/* Supplier product info */}
-                        {order.supplier_product && (
-                          <p className="text-[10px] font-bold text-green-600 mt-1 flex items-center gap-1">
-                            <ShieldCheck size={9} /> Will auto-assign to: {order.supplier_product.supplier?.full_name}
-                          </p>
-                        )}
                         <p className="text-[9px] text-gray-400 font-bold mt-1">
                           {new Date(order.created_at).toLocaleString()}
                         </p>
@@ -405,49 +449,90 @@ export default function AdminDashboard() {
                       <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Order Details">
                         <Eye size={16} />
                       </button>
-                      
-                      {order.status === "COMPLETED_BY_SUPPLIER" && (
-                        <button
-                          onClick={() => handleMarkAsDelivered(order.id)}
-                          className="bg-teal-500 text-white px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
-                        >
-                          <Truck size={16} /> DELIVERED
-                        </button>
-                      )}
-                      
-                      {order.status === "PENDING_ADMIN" ? (
-                        <>
-                          <button
-                            onClick={() => handleRejectOrder(order.id)}
-                            className="p-2.5 bg-white border-2 border-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
-                            title="Reject Order"
-                          >
-                            <XCircle size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleApproveOrder(order)}
-                            className="bg-[#ccff00] text-[#111] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
-                          >
-                            <CheckCircle size={16} /> APPROVE
-                          </button>
-                        </>
-                      ) : (
-                        <div className={`px-4 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center justify-center ${STATUS_COLOR[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                          {order.status?.replace(/_/g, ' ')}
-                        </div>
-                      )}
+                      <button
+                        onClick={() => handleRejectOrder(order.id)}
+                        className="p-2.5 bg-white border-2 border-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all"
+                        title="Reject Order"
+                      >
+                        <XCircle size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleApproveOrder(order)}
+                        className="bg-[#ccff00] text-[#111] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm"
+                      >
+                        <CheckCircle size={16} /> APPROVE
+                      </button>
                     </div>
                   </div>
                 ))}
-                {pendingOrders.length === 0 && (
+                {pendingOrders.filter(o => o.status === "PENDING_ADMIN").length === 0 && (
                   <div className="p-16 text-center text-gray-400 italic font-medium">
                     <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
-                    All clear! No pending orders.
+                    No new orders awaiting review.
                   </div>
                 )}
               </div>
             </div>
+          </div>
+        )}
 
+        {/* === PAYMENT APPROVALS TAB === */}
+        {activeTab === "receipts" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-amber-50/30">
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Final Payment Verification</h2>
+                <ShieldCheck size={18} className="text-amber-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").map((order) => (
+                  <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-amber-50/20 rounded-2xl border border-amber-100 hover:bg-white hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
+                        {order.variants?.finalReceiptUrl
+                          ? <img src={order.variants.finalReceiptUrl} className="w-full h-full object-contain p-1" alt="Receipt" />
+                          : <Box size={24} className="text-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-100">
+                            <User size={9} /> {order.customer?.full_name || order.customer?.email}
+                          </span>
+                          <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-white px-2 py-0.5 rounded-md shadow-sm border border-amber-100">
+                             Wait Receipt Approval
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleRejectFinalPayment(order.id, order.variants)}
+                        className="bg-white border-2 border-red-100 text-red-500 px-4 py-2.5 rounded-xl font-black hover:bg-red-500 hover:text-white transition-all text-xs"
+                      >
+                        REJECT RECEIPT
+                      </button>
+                      <button
+                        onClick={() => handleApproveFinalPayment(order.id)}
+                        className="bg-amber-400 text-[#1B2412] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all text-xs"
+                      >
+                        APPROVE PAYMENT
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                    All receipts verified!
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -607,21 +692,41 @@ export default function AdminDashboard() {
                      <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
                    </div>
                  )}
-                 {selectedOrder.variants?.receiptDataUrl && (
-                   <div className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative flex items-center justify-center group">
-                      <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">Payment Receipt</p>
-                      <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-4" alt="Receipt" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <a 
-                             href={selectedOrder.variants.receiptDataUrl} 
-                             download={`Receipt_${selectedOrder.id}.png`}
-                             className="bg-[#ccff00] text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-all hover:bg-[#b3e600]"
-                          >
-                             <Download size={14} /> Download
-                          </a>
+                  <div className="flex flex-col gap-4">
+                    {/* Initial Receipt (Deposit) */}
+                    {selectedOrder.variants?.receiptDataUrl && (
+                      <div className="w-full bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group min-h-[160px] flex items-center justify-center">
+                          <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">1st Receipt: Deposit (50%)</p>
+                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-4" alt="Deposit Receipt" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <a 
+                                 href={selectedOrder.variants.receiptDataUrl} 
+                                 target="_blank"
+                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
+                              >
+                                 <Eye size={14} /> Full View
+                              </a>
+                          </div>
                       </div>
-                   </div>
-                 )}
+                    )}
+
+                    {/* Final Receipt (Remaining Balance) */}
+                    {selectedOrder.variants?.finalReceiptUrl && (
+                      <div className="w-full bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative group min-h-[160px] flex items-center justify-center">
+                          <p className="absolute top-2 left-3 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">Final Receipt: Balance (50%)</p>
+                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-4" alt="Final Receipt" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <a 
+                                 href={selectedOrder.variants.finalReceiptUrl} 
+                                 target="_blank"
+                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
+                              >
+                                 <Eye size={14} /> Full View
+                              </a>
+                          </div>
+                      </div>
+                    )}
+                  </div>
               </div>
 
               {/* Right Column: Details */}
@@ -676,12 +781,35 @@ export default function AdminDashboard() {
                  </div>
 
                  <div className="flex gap-3 mt-auto pt-2">
-                   <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
-                     Reject
-                   </button>
-                   <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg">
-                     ✓ Approve & Assign
-                   </button>
+                    {selectedOrder.status === "PENDING_ADMIN" ? (
+                      <>
+                        <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
+                          Reject
+                        </button>
+                        <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
+                          Approve & Assign
+                        </button>
+                      </>
+                    ) : selectedOrder.status === "FINAL_PAYMENT_PENDING" ? (
+                      <div className="flex gap-3 w-full">
+                        <button 
+                          onClick={() => handleRejectFinalPayment(selectedOrder.id, selectedOrder.variants)} 
+                          className="flex-1 bg-white border-2 border-red-100 text-red-500 py-4 rounded-xl font-black hover:bg-red-500 hover:text-white transition-all uppercase text-xs tracking-widest"
+                        >
+                          Reject Receipt
+                        </button>
+                        <button 
+                          onClick={() => handleApproveFinalPayment(selectedOrder.id)} 
+                          className="flex-[2] bg-amber-400 text-[#1B2412] py-4 rounded-xl font-black hover:bg-amber-500 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
+                        >
+                          <ShieldCheck size={18} /> Approve Payment
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center justify-center border-2 bg-gray-100 text-gray-600 border-gray-200">
+                        Status: {selectedOrder.status?.replace(/_/g, ' ')}
+                      </div>
+                    )}
                  </div>
               </div>
             </div>
