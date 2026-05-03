@@ -812,20 +812,35 @@ export default function SupplierDashboard() {
         {activeTab === "orders" && (
           <div>
             <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Pending Fulfillments</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {orders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(o.status)).map(order => (
-                <Card key={order.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white flex h-44">
-                  <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100">
-                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-2" />
+                <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 flex items-center gap-6 group">
+                  <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
+                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                   </div>
-                  <div className="flex-1 p-5 flex flex-col justify-between">
-                    <div>
-                      <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                      <p className="text-[11px] text-gray-400 font-bold">{order.variants?.color} • {order.variants?.size}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</span>
+                      {order.status === 'SAMPLE_REJECTED' && (
+                        <span className="bg-red-50 text-red-500 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Needs Resubmission</span>
+                      )}
                     </div>
-                    <button onClick={() => setSelectedOrder(order)} className="w-full bg-[#1B2412] text-white py-2 rounded-xl text-xs font-bold uppercase">View & Fulfill</button>
+                    <h3 className="font-black text-[#1B2412] text-lg truncate uppercase tracking-tight">Order #{order.id.slice(0, 8)}</h3>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex items-center gap-1.5"><Palette size={12} className="text-gray-400" /><span className="text-[11px] font-bold text-gray-600">{order.variants?.color}</span></div>
+                      <div className="flex items-center gap-1.5"><Box size={12} className="text-gray-400" /><span className="text-[11px] font-bold text-gray-600">{order.variants?.size}</span></div>
+                    </div>
                   </div>
-                </Card>
+                  <div className="hidden md:flex flex-col items-end px-10 border-l border-gray-100">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
+                    <p className="text-2xl font-black text-[#1B2412]">{order.variants?.quantity || 1} <span className="text-xs text-gray-400 uppercase">Units</span></p>
+                  </div>
+                  <div className="pr-4">
+                    <button onClick={() => setSelectedOrder(order)} className="bg-[#1B2412] text-white px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-lg active:scale-95 flex items-center gap-2 group/btn">
+                      View & Fulfill <Plus size={14} className="group-hover/btn:rotate-90 transition-transform" />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -834,20 +849,31 @@ export default function SupplierDashboard() {
         {activeTab === "pending-approvals" && (
           <div>
             <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Pending Approvals</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {orders.filter(o => ["SAMPLE_AWAITING_APPROVAL", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).map(order => (
-                <Card key={order.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white flex h-44 opacity-80">
-                  <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100">
-                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-2" />
+                <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 flex items-center gap-6 opacity-90 group hover:opacity-100 transition-all">
+                  <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
+                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain" />
                   </div>
-                  <div className="flex-1 p-5 flex flex-col justify-between">
-                    <div>
-                      <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                      <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</span>
+                      <span className="bg-amber-50 text-amber-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                        {order.status === 'SAMPLE_AWAITING_APPROVAL' ? 'Awaiting Customer' : 'Ready for Production'}
+                      </span>
                     </div>
-                    <button onClick={() => setSelectedOrder(order)} className="w-full bg-[#1B2412] text-white py-2 rounded-xl text-xs font-bold uppercase">View Status</button>
+                    <h3 className="font-black text-[#1B2412] text-lg truncate uppercase tracking-tight">Order #{order.id.slice(0, 8)}</h3>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="text-[11px] font-bold text-gray-400">Qty: {order.variants?.quantity || 1}</span>
+                      <span className="text-[11px] font-bold text-gray-400">{order.variants?.color} • {order.variants?.size}</span>
+                    </div>
                   </div>
-                </Card>
+                  <div className="pr-4">
+                    <button onClick={() => setSelectedOrder(order)} className="bg-gray-100 text-gray-600 px-8 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#1B2412] hover:text-white transition-all active:scale-95">
+                      Check Status
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -856,17 +882,21 @@ export default function SupplierDashboard() {
         {activeTab === "completed" && (
           <div>
             <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Completed</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").map(order => (
-                <Card key={order.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white flex h-44 opacity-60">
-                   <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100">
-                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-2" />
+                <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 flex items-center gap-6 opacity-75 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+                  <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
+                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain" />
                   </div>
-                  <div className="flex-1 p-5 flex flex-col justify-between">
-                    <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                    <div className="w-full bg-green-50 text-green-600 py-2 rounded-xl font-black text-xs text-center">DELIVERED</div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</p>
+                    <h3 className="font-black text-[#1B2412] text-lg uppercase tracking-tight">Order #{order.id.slice(0, 8)}</h3>
+                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mt-1">✓ Fulfullment Complete</p>
                   </div>
-                </Card>
+                  <div className="pr-4">
+                    <div className="px-6 py-2 rounded-full border border-emerald-100 text-emerald-600 font-black text-[10px] uppercase tracking-widest bg-emerald-50">Delivered</div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
