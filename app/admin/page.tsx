@@ -62,7 +62,7 @@ export default function AdminDashboard() {
       // Active customer orders
       supabase
         .from("custom_orders")
-        .select("*, supplier_product:supplier_products(supplier_id)")
+        .select("*, customer:profiles(*), supplier_product:supplier_products(*, supplier:profiles(*))")
         .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"])
         .order("created_at", { ascending: false }),
 
@@ -627,18 +627,19 @@ export default function AdminDashboard() {
               {/* Right Column: Details */}
               <div className="w-full md:w-1/2 flex flex-col gap-4">
                  <div className="grid grid-cols-2 gap-4">
-                   <div className="bg-gray-50 rounded-2xl p-4">
-                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer</p>
-                     <p className="font-black text-[#111] text-sm">{selectedOrder.customer?.full_name || 'N/A'}</p>
-                     <p className="text-xs text-gray-500">{selectedOrder.customer?.email}</p>
-                   </div>
-                   <div className="bg-gray-50 rounded-2xl p-4">
-                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Amount & Status</p>
-                     <p className="font-black text-emerald-600 text-sm">
-                       ${((selectedOrder.variants?.quality === "Premium" ? 30 : 25) * (selectedOrder.variants?.quantity || 1)).toFixed(2)} Total
-                     </p>
-                     <p className="text-xs text-gray-500 font-medium mt-0.5">Paid: ${(((selectedOrder.variants?.quality === "Premium" ? 30 : 25) * (selectedOrder.variants?.quantity || 1)) / 2).toFixed(2)} (Advance)</p>
-                   </div>
+                    <div className="bg-gray-50 rounded-2xl p-4">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer</p>
+                      <p className="font-black text-[#111] text-sm">{selectedOrder.customer?.full_name || 'N/A'}</p>
+                      <p className="text-xs text-gray-500">{selectedOrder.customer?.email}</p>
+                      {selectedOrder.customer?.phone && <p className="text-[10px] text-gray-400 font-bold mt-1">📞 {selectedOrder.customer.phone}</p>}
+                    </div>
+                    <div className="bg-gray-50 rounded-2xl p-4">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Amount & Status</p>
+                      <p className="font-black text-emerald-600 text-sm">
+                        {((selectedOrder.supplier_product?.price || (selectedOrder.variants?.quality === "Premium" ? 30 : 25)) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ETB Total
+                      </p>
+                      <p className="text-xs text-gray-500 font-medium mt-0.5">Paid: {(((selectedOrder.supplier_product?.price || (selectedOrder.variants?.quality === "Premium" ? 30 : 25)) * (selectedOrder.variants?.quantity || 1)) / 2).toLocaleString()} ETB (Advance)</p>
+                    </div>
                  </div>
 
                  <div className="bg-gray-50 rounded-2xl p-4">
