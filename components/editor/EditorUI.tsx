@@ -1723,7 +1723,8 @@ export default function EditorUI() {
                                         type="number"
                                         min="1"
                                         value={orderQuantity}
-                                        onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                        onChange={(e) => setOrderQuantity(e.target.value === '' ? ('' as any) : parseInt(e.target.value))}
+                                        onBlur={() => setOrderQuantity(Math.max(1, parseInt(orderQuantity as any) || 1))}
                                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#ccff00] transition-all"
                                     />
                                 </div>

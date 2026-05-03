@@ -133,7 +133,10 @@ export default function ProductDetailPage() {
   }
 
   // Gather all available images into an array for the gallery
-  const galleryImages = [product.image_url, product.hover_image_url].filter(Boolean);
+  const detailImages = Array.isArray(product.detail_images) 
+    ? product.detail_images 
+    : (product.detail_images?.split(',').filter(Boolean).map((s: string) => s.trim()) || []);
+  const galleryImages = [product.image_url, product.hover_image_url, ...detailImages].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-[#fafbfa] text-[#1c211f] font-sans pb-24">
@@ -222,11 +225,17 @@ export default function ProductDetailPage() {
               <p>
                 {product.description || "No detailed description provided by the supplier yet. This premium product is fully customizable. Add your own designs, logos, and artwork to create something truly unique."}
               </p>
-              <ul className="mt-4 space-y-1 list-disc pl-5">
-                <li>100% Premium Material</li>
-                <li>Retail fit, tear-away label</li>
-                <li>Eco-friendly and ethically manufactured</li>
-              </ul>
+              {product.long_description ? (
+                <div className="mt-4 space-y-2 whitespace-pre-wrap text-sm">
+                  {product.long_description}
+                </div>
+              ) : (
+                <ul className="mt-4 space-y-1 list-disc pl-5">
+                  <li>100% Premium Material</li>
+                  <li>Retail fit, tear-away label</li>
+                  <li>Eco-friendly and ethically manufactured</li>
+                </ul>
+              )}
             </div>
 
             <hr className="border-gray-200 mb-8" />
@@ -237,10 +246,14 @@ export default function ProductDetailPage() {
                 <h3 className="text-xs font-black text-[#1c211f] uppercase tracking-wider">Available Colors</h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button className="w-8 h-8 rounded-full bg-[#1c211f] border-2 border-white shadow-sm ring-2 ring-transparent hover:ring-gray-300 transition-all"></button>
-                <button className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 shadow-sm ring-2 ring-transparent hover:ring-gray-300 transition-all"></button>
-                <button className="w-8 h-8 rounded-full bg-[#c0392b] border-2 border-white shadow-sm ring-2 ring-transparent hover:ring-gray-300 transition-all"></button>
-                <button className="w-8 h-8 rounded-full bg-[#2980b9] border-2 border-white shadow-sm ring-2 ring-transparent hover:ring-gray-300 transition-all"></button>
+                {(product.available_colors?.length > 0 ? product.available_colors : [
+                  { name: 'Black', hex: '#1c211f' },
+                  { name: 'White', hex: '#ffffff' },
+                  { name: 'Red', hex: '#c0392b' },
+                  { name: 'Blue', hex: '#2980b9' }
+                ]).map((color: any, idx: number) => (
+                  <button key={idx} title={color.name} className={`w-8 h-8 rounded-full border-2 ${color.hex === '#ffffff' ? 'border-gray-200' : 'border-white'} shadow-sm ring-2 ring-transparent hover:ring-gray-300 transition-all`} style={{ backgroundColor: color.hex }}></button>
+                ))}
               </div>
             </div>
 
@@ -250,7 +263,7 @@ export default function ProductDetailPage() {
                 <h3 className="text-xs font-black text-[#1c211f] uppercase tracking-wider">Sizes</h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                {['S', 'M', 'L', 'XL', '2XL'].map(size => (
+                {(product.available_sizes?.length > 0 ? product.available_sizes : ['S', 'M', 'L', 'XL', '2XL']).map((size: string) => (
                   <button key={size} className="w-12 h-10 rounded-lg border border-gray-200 font-bold text-sm text-gray-600 hover:border-[#3da85b] hover:text-[#3da85b] transition-all bg-white">
                     {size}
                   </button>
