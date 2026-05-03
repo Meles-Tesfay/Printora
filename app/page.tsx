@@ -84,7 +84,7 @@ export default function Home() {
 
           {/* Centered Nav */}
           <nav className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <Link href="/products" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Catalog</Link>
+            <Link href="/before-you-start" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Before You Start</Link>
             <Link href="#pricing" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Pricing</Link>
             <Link href="/how-it-works" className="flex items-center gap-1.5 text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">
               How it works

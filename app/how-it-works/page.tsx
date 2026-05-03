@@ -60,12 +60,12 @@ export default function HowItWorks() {
   ];
 
   const features = [
-    { icon: <Zap className="text-[#9DF542]" size={28} />, title: "Fast Production", desc: "Orders are printed and shipped within 2-3 business days." },
-    { icon: <Star className="text-[#9DF542]" size={28} />, title: "Premium Quality", desc: "We use only top-tier materials and cutting-edge print tech." },
-    { icon: <PenTool className="text-[#9DF542]" size={28} />, title: "Easy Customization", desc: "Our 3D design studio makes bringing ideas to life effortless." },
-    { icon: <ShieldCheck className="text-[#9DF542]" size={28} />, title: "Secure Payment", desc: "Enterprise-grade security for all your transactions." },
-    { icon: <Truck className="text-[#9DF542]" size={28} />, title: "Real-Time Tracking", desc: "Know exactly where your order is from print to delivery." },
-    { icon: <Globe className="text-[#9DF542]" size={28} />, title: "Global Delivery", desc: "We ship worldwide with reliable logistics partners." },
+    { icon: <Zap size={28} />, title: "Fast Production", desc: "Orders are printed and shipped within 2-3 business days." },
+    { icon: <Star size={28} />, title: "Premium Quality", desc: "We use only top-tier materials and cutting-edge print tech." },
+    { icon: <PenTool size={28} />, title: "Easy Customization", desc: "Our 3D design studio makes bringing ideas to life effortless." },
+    { icon: <ShieldCheck size={28} />, title: "Secure Payment", desc: "Enterprise-grade security for all your transactions." },
+    { icon: <Truck size={28} />, title: "Real-Time Tracking", desc: "Know exactly where your order is from print to delivery." },
+    { icon: <Globe size={28} />, title: "Reliable Shipping", desc: "We ensure safe and timely delivery across our supported regions." },
   ];
 
   const faqs = [
@@ -86,11 +86,13 @@ export default function HowItWorks() {
             </Link>
           </div>
           <nav className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <Link href="/products" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Catalog</Link>
+            <Link href="/before-you-start" className="text-[17px] font-medium text-[#2d3227] hover:text-[#525f48] transition-colors">
+              Before You Start
+            </Link>
             <Link href="/#pricing" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Pricing</Link>
-            <Link href="/how-it-works" className="flex items-center gap-1.5 text-[17px] font-medium text-[#525f48] transition-colors">
+            <Link href="/how-it-works" className="text-[17px] font-medium text-[#525f48] transition-colors relative">
               How it works
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-[2px]"><path d="M6 9l6 6 6-6" /></svg>
+              <motion.div layoutId="nav-indicator" className="absolute -bottom-2 left-0 right-0 h-1 bg-[#9DF542] rounded-full" />
             </Link>
           </nav>
           <div className="flex-1 flex items-center justify-end gap-3">
@@ -275,19 +277,34 @@ export default function HowItWorks() {
             {features.map((feature, idx) => (
               <motion.div 
                 key={idx}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="bg-white p-8 rounded-[2rem] border border-white hover:border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.7, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="group relative bg-white p-8 md:p-10 rounded-[2rem] border border-gray-100 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_30px_60px_-15px_rgba(157,245,66,0.3)] overflow-hidden cursor-pointer flex flex-col h-full"
               >
-                <div className="w-14 h-14 rounded-2xl bg-[#fafafa] border border-gray-100 flex items-center justify-center mb-6 group-hover:bg-[#111] transition-colors duration-300">
-                  <div className="group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300">
-                    {feature.icon}
+                {/* Colorful Expanding Background */}
+                <div className="absolute top-12 left-12 w-2 h-2 bg-[#9DF542] rounded-full opacity-0 scale-0 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100 group-hover:scale-[150] pointer-events-none origin-center z-0" />
+
+                <div className="relative z-10 flex-1">
+                  {/* Icon Container */}
+                  <div className="relative overflow-hidden w-16 h-16 rounded-[1.25rem] bg-[#f4f4f5] flex items-center justify-center mb-8 text-[#9DF542] transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:bg-white group-hover:text-[#111] group-hover:rounded-full group-hover:shadow-2xl group-hover:rotate-[360deg] z-10">
+                    <div className="absolute inset-0 flex items-center justify-center transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-[150%]">
+                      {feature.icon}
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center translate-y-[150%] transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0">
+                      {feature.icon}
+                    </div>
                   </div>
+                  
+                  {/* Text Content */}
+                  <h3 className="text-2xl font-bold text-[#111] mb-4 tracking-tight transition-colors duration-300">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-500 leading-relaxed font-medium transition-colors duration-300 group-hover:text-[#222]">
+                    {feature.desc}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-[#111] mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -377,14 +394,20 @@ export default function HowItWorks() {
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm"
+                transition={{ delay: idx * 0.1 }}
+                className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden transition-all duration-500 hover:border-[#9DF542]/50 hover:shadow-[0_20px_40px_-15px_rgba(157,245,66,0.15)] hover:bg-gradient-to-r hover:from-white hover:to-[#9DF542]/5"
               >
+                {/* Left Indicator Pill */}
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#9DF542] scale-y-0 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-y-100" />
+                
                 <button 
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none relative z-10 transition-transform duration-500 group-hover:translate-x-2"
                 >
-                  <span className="text-lg font-bold text-[#111]">{faq.q}</span>
-                  <ChevronDown className={`transform transition-transform duration-300 text-gray-400 ${openFaq === idx ? "rotate-180" : ""}`} />
+                  <span className="text-lg font-bold text-[#111] transition-colors duration-300 group-hover:text-[#000]">{faq.q}</span>
+                  <div className={`p-2 rounded-full transition-all duration-500 ${openFaq === idx ? "bg-[#111] text-white rotate-180" : "bg-gray-50 text-gray-400 group-hover:bg-[#9DF542] group-hover:text-[#111]"}`}>
+                    <ChevronDown size={20} />
+                  </div>
                 </button>
                 <AnimatePresence>
                   {openFaq === idx && (
@@ -406,8 +429,149 @@ export default function HowItWorks() {
 
 
       
-      {/* Footer Area - minimal spacing */}
-      <div className="h-12 bg-[#fafafa]"></div>
+      {/* Footer */}
+      <footer className="bg-[#111] text-white overflow-hidden">
+        {/* Main footer grid */}
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-16 pt-20 pb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
+
+            {/* Column 1: Logo + About + Contact */}
+            <div className="lg:col-span-4">
+              <div className="mb-8">
+                <img src="/logo-white.png" alt="Stenvo" className="h-[44px] md:h-[52px] w-auto mb-2 object-contain" />
+              </div>
+
+              <h4 className="text-[#9DF542] font-bold text-[20px] mb-4">About Us</h4>
+              <p className="text-white text-[16px] leading-[1.8] mb-8 font-medium">
+                We want to help bring talented students and unique startups together.
+              </p>
+
+              <h4 className="text-[#9DF542] font-bold text-[20px] mb-4">Contact Us</h4>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 text-white text-[16px] font-medium">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9DF542" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.74a16 16 0 006.29 6.29l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg>
+                  +91 9999 999 999
+                </div>
+                <div className="flex items-center gap-3 text-white text-[16px] font-medium">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9DF542" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                  youremail@id.com
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Information */}
+            <div className="lg:col-span-2 lg:ml-10">
+              <h4 className="text-[#9DF542] font-bold text-[20px] mb-6">Information</h4>
+              <ul className="flex flex-col gap-5">
+                {['About Us', 'More Search', 'Blog', 'Testimonials', 'Events'].map(link => (
+                  <li key={link}>
+                    <Link href="#" className="text-white text-[17px] font-medium hover:text-[#9DF542] transition-colors">{link}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 3: Helpful Links */}
+            <div className="lg:col-span-2">
+              <h4 className="text-[#9DF542] font-bold text-[20px] mb-6">Helpful Links</h4>
+              <ul className="flex flex-col gap-5">
+                {['Services', 'Supports', 'Terms & Conditions', 'Privacy Policy'].map(link => (
+                  <li key={link}>
+                    <Link href="#" className="text-white text-[17px] font-medium hover:text-[#9DF542] transition-colors">{link}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 4: Subscribe */}
+            <div className="lg:col-span-4">
+              <h4 className="text-white font-bold text-[20px] mb-6">Subscribe More Info</h4>
+              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 mb-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                <input
+                  type="email"
+                  placeholder="Enter your Email"
+                  className="bg-transparent text-[16px] text-[#111] placeholder-gray-500 outline-none flex-1 font-medium"
+                />
+              </div>
+              <button className="bg-[#9DF542] text-[#111] font-bold text-[17px] py-3 px-8 rounded-lg hover:bg-[#88DC2E] transition-colors w-max">
+                Subscribe
+              </button>
+
+              {/* Amazing Design - Trust Badge */}
+              <div className="mt-12 pt-8 border-t border-white/10 flex items-center gap-5">
+                {/* Rotating Stamp */}
+                <div className="relative flex items-center justify-center w-[90px] h-[90px]">
+                  <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '10s' }} viewBox="0 0 100 100">
+                    <path
+                      id="textPath"
+                      d="M 50, 50 m -35, 0 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0"
+                      fill="none"
+                    />
+                    <text className="text-[12.5px] font-bold font-mono tracking-[0.16em]" fill="rgba(255,255,255,0.4)">
+                      <textPath href="#textPath" startOffset="0%">
+                        • PREMIUM QUALITY • 100% SECURE
+                      </textPath>
+                    </text>
+                  </svg>
+                  {/* Center Star */}
+                  <div className="text-[#9DF542]">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Info Text */}
+                <div className="flex flex-col gap-[2px]">
+                  <div className="flex gap-[3px] text-[#9DF542]">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    ))}
+                  </div>
+                  <h5 className="text-white font-bold text-[18px] mt-1 tracking-wide">Top Rated Platform</h5>
+                  <p className="text-white/50 text-[15px] font-medium">Trusted by 10k+ creators</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-white/20">
+          <div className="max-w-[1400px] mx-auto px-6 lg:px-16 py-6 flex flex-col md:flex-row items-center justify-between gap-6">
+
+            <div className="md:w-1/3"></div>
+
+            {/* Social Icons (Centered) */}
+            <div className="md:w-1/3 flex items-center justify-center gap-4">
+              {/* Facebook */}
+              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#111"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>
+              </a>
+              {/* Twitter/X (Replaces Google+) */}
+              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#111"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /></svg>
+              </a>
+              {/* Instagram */}
+              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+              </a>
+            </div>
+
+            {/* Copyright */}
+            <div className="md:w-1/3 flex justify-end">
+              <p className="text-white/70 text-[15px] font-medium">
+                2024 © company Ltd. All Right reserved
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
