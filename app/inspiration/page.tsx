@@ -228,7 +228,7 @@ export default function InspirationPage() {
               <motion.div 
                 animate={{ y: [0, -15, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-[5%] left-0 w-[45%] h-[40%] rounded-[2rem] overflow-hidden shadow-2xl z-10 border-[8px] border-white"
+                className="absolute top-[5%] left-0 w-[45%] h-[40%] rounded-[2rem] overflow-hidden shadow-2xl z-40 border-[8px] border-white"
               >
                 <img 
                   src={PHOTOS.hero_top_left}
