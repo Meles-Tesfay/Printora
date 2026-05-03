@@ -256,9 +256,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white text-gray-800 border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-gray-100">
-          <Link href="/">
-            <img src="/logo.png" alt="Logo" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
-          </Link>
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
           <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">Admin Panel</span>
         </div>
 

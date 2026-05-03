@@ -501,9 +501,7 @@ export default function SupplierDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen shadow-sm">
         <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-          <Link href="/">
-            <img src="/logo.png" alt="Logo" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
-          </Link>
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
         </div>
 
         {/* User Info */}
