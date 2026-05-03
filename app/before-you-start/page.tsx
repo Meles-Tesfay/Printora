@@ -274,10 +274,10 @@ export default function BeforeYouStartPage() {
             {/* Payment Method Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { name: "CBE", color: "bg-purple-50", text: "text-purple-600", border: "hover:border-purple-200" },
-                { name: "Telebirr", color: "bg-blue-50", text: "text-blue-600", border: "hover:border-blue-200" },
-                { name: "BOA", color: "bg-yellow-50", text: "text-yellow-600", border: "hover:border-yellow-200" },
-                { name: "Upload Receipt", color: "bg-gray-50", text: "text-gray-600", border: "hover:border-gray-200", icon: Upload },
+                { name: "CBE", border: "hover:border-purple-200", image: "/cbe-logo.png" },
+                { name: "Telebirr", border: "hover:border-blue-200", image: "/telebirr-logo.png" },
+                { name: "BOA", border: "hover:border-yellow-200", image: "/boa-logo.png" },
+                { name: "Upload Receipt", border: "hover:border-gray-200", icon: Upload },
               ].map((method, idx) => (
                 <motion.div
                   key={idx}
@@ -285,10 +285,22 @@ export default function BeforeYouStartPage() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.1 }}
-                  className={`bg-white p-8 rounded-[2rem] border border-gray-100 ${method.border} hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center text-center aspect-square`}
+                  className={`bg-white p-8 rounded-[2rem] border border-gray-100 ${method.border} hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center text-center aspect-square group`}
                 >
-                  <div className={`w-20 h-20 ${method.color} rounded-full flex items-center justify-center mb-4`}>
-                    {method.icon ? <method.icon size={32} className={method.text} /> : <Smartphone size={32} className={method.text} />}
+                  <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-5 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden transition-transform duration-500 group-hover:scale-110 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${method.image ? 'p-2' : 'p-0'}`}>
+                    {method.image ? (
+                      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                        <img src={method.image} alt={method.name} className="w-full h-full object-contain" />
+                      </div>
+                    ) : method.icon ? (
+                      <div className="w-full h-full bg-gray-50 flex items-center justify-center rounded-full">
+                        <method.icon size={32} className="text-gray-600" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-gray-50 flex items-center justify-center rounded-full">
+                        <Smartphone size={32} className="text-gray-600" />
+                      </div>
+                    )}
                   </div>
                   <h4 className="text-xl font-bold text-[#111]">{method.name}</h4>
                   {method.name === "Upload Receipt" && <p className="text-xs text-gray-400 mt-2">Required for processing</p>}
