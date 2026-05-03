@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, CheckCircle, ChevronDown, Package, PenTool, ShoppingCart, Truck, Zap, ShieldCheck, Globe, Star, ArrowRight, ShoppingBag, LogOut, Printer } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import MobileNav from "@/components/MobileNav";
+import Footer from "@/components/Footer";
 
 export default function HowItWorks() {
   // Auth state
@@ -432,148 +433,7 @@ export default function HowItWorks() {
 
       
       {/* Footer */}
-      <footer className="bg-[#111] text-white overflow-hidden">
-        {/* Main footer grid */}
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-16 pt-20 pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
-
-            {/* Column 1: Logo + About + Contact */}
-            <div className="lg:col-span-4">
-              <div className="mb-8">
-                <img src="/logo-white.png" alt="Stenvo" className="h-[44px] md:h-[52px] w-auto mb-2 object-contain" />
-              </div>
-
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-4">About Us</h4>
-              <p className="text-white text-[16px] leading-[1.8] mb-8 font-medium">
-                We want to help bring talented students and unique startups together.
-              </p>
-
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-4">Contact Us</h4>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 text-white text-[16px] font-medium">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9DF542" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.74a16 16 0 006.29 6.29l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg>
-                  +91 9999 999 999
-                </div>
-                <div className="flex items-center gap-3 text-white text-[16px] font-medium">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9DF542" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                  youremail@id.com
-                </div>
-              </div>
-            </div>
-
-            {/* Column 2: Information */}
-            <div className="lg:col-span-2 lg:ml-10">
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-6">Information</h4>
-              <ul className="flex flex-col gap-5">
-                {['About Us', 'More Search', 'Blog', 'Testimonials', 'Events'].map(link => (
-                  <li key={link}>
-                    <Link href="#" className="text-white text-[17px] font-medium hover:text-[#9DF542] transition-colors">{link}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 3: Helpful Links */}
-            <div className="lg:col-span-2">
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-6">Helpful Links</h4>
-              <ul className="flex flex-col gap-5">
-                {['Services', 'Supports', 'Terms & Conditions', 'Privacy Policy'].map(link => (
-                  <li key={link}>
-                    <Link href="#" className="text-white text-[17px] font-medium hover:text-[#9DF542] transition-colors">{link}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 4: Subscribe */}
-            <div className="lg:col-span-4">
-              <h4 className="text-white font-bold text-[20px] mb-6">Subscribe More Info</h4>
-              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 mb-4">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                <input
-                  type="email"
-                  placeholder="Enter your Email"
-                  className="bg-transparent text-[16px] text-[#111] placeholder-gray-500 outline-none flex-1 font-medium"
-                />
-              </div>
-              <button className="bg-[#9DF542] text-[#111] font-bold text-[17px] py-3 px-8 rounded-lg hover:bg-[#88DC2E] transition-colors w-max">
-                Subscribe
-              </button>
-
-              {/* Amazing Design - Trust Badge */}
-              <div className="mt-12 pt-8 border-t border-white/10 flex items-center gap-5">
-                {/* Rotating Stamp */}
-                <div className="relative flex items-center justify-center w-[90px] h-[90px]">
-                  <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '10s' }} viewBox="0 0 100 100">
-                    <path
-                      id="textPath"
-                      d="M 50, 50 m -35, 0 a 35,35 0 1,1 70,0 a 35,35 0 1,1 -70,0"
-                      fill="none"
-                    />
-                    <text className="text-[12.5px] font-bold font-mono tracking-[0.16em]" fill="rgba(255,255,255,0.4)">
-                      <textPath href="#textPath" startOffset="0%">
-                        • PREMIUM QUALITY • 100% SECURE
-                      </textPath>
-                    </text>
-                  </svg>
-                  {/* Center Star */}
-                  <div className="text-[#9DF542]">
-                    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Info Text */}
-                <div className="flex flex-col gap-[2px]">
-                  <div className="flex gap-[3px] text-[#9DF542]">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                    ))}
-                  </div>
-                  <h5 className="text-white font-bold text-[18px] mt-1 tracking-wide">Top Rated Platform</h5>
-                  <p className="text-white/50 text-[15px] font-medium">Trusted by 10k+ creators</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="border-t border-white/20">
-          <div className="max-w-[1400px] mx-auto px-6 lg:px-16 py-6 flex flex-col md:flex-row items-center justify-between gap-6">
-
-            <div className="md:w-1/3"></div>
-
-            {/* Social Icons (Centered) */}
-            <div className="md:w-1/3 flex items-center justify-center gap-4">
-              {/* Facebook */}
-              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#111"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg>
-              </a>
-              {/* Twitter/X (Replaces Google+) */}
-              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#111"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /></svg>
-              </a>
-              {/* Instagram */}
-              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-              </a>
-            </div>
-
-            {/* Copyright */}
-            <div className="md:w-1/3 flex justify-end">
-              <p className="text-white/70 text-[15px] font-medium">
-                2024 © company Ltd. All Right reserved
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

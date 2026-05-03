@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import PHOTOS from "./photos";
 import MobileNav from "@/components/MobileNav";
+import Footer from "@/components/Footer";
 
 export default function InspirationPage() {
   const [user, setUser] = useState<any>(null);
@@ -589,67 +590,7 @@ export default function InspirationPage() {
 
 
       {/* Footer */}
-      <footer className="bg-[#111] text-white overflow-hidden mt-0 border-t border-gray-800">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-16 pt-20 pb-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
-            <div className="lg:col-span-4">
-              <div className="mb-8">
-                <img src="/logo-white.png" alt="Stenvo" className="h-[44px] md:h-[52px] w-auto mb-2 object-contain" />
-              </div>
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-4">About Us</h4>
-              <p className="text-white text-[16px] leading-[1.8] mb-8 font-medium">
-                We want to help bring talented students and unique startups together.
-              </p>
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-4">Contact Us</h4>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 text-white text-[16px] font-medium">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9DF542" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .84h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.74a16 16 0 006.29 6.29l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" /></svg>
-                  +91 9999 999 999
-                </div>
-              </div>
-            </div>
-            <div className="lg:col-span-2 lg:ml-10">
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-6">Information</h4>
-              <ul className="flex flex-col gap-5">
-                {['About Us', 'More Search', 'Blog', 'Testimonials', 'Events'].map(link => (
-                  <li key={link}><Link href="#" className="text-white text-[17px] font-medium hover:text-[#9DF542] transition-colors">{link}</Link></li>
-                ))}
-              </ul>
-            </div>
-            <div className="lg:col-span-2">
-              <h4 className="text-[#9DF542] font-bold text-[20px] mb-6">Helpful Links</h4>
-              <ul className="flex flex-col gap-5">
-                {['Services', 'Supports', 'Terms & Conditions', 'Privacy Policy'].map(link => (
-                  <li key={link}><Link href="#" className="text-white text-[17px] font-medium hover:text-[#9DF542] transition-colors">{link}</Link></li>
-                ))}
-              </ul>
-            </div>
-            <div className="lg:col-span-4">
-              <h4 className="text-white font-bold text-[20px] mb-6">Subscribe More Info</h4>
-              <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 mb-4">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
-                <input type="email" placeholder="Enter your Email" className="bg-transparent text-[16px] text-[#111] placeholder-gray-500 outline-none flex-1 font-medium" />
-              </div>
-              <button className="bg-[#9DF542] text-[#111] font-bold text-[17px] py-3 px-8 rounded-lg hover:bg-[#b8e600] transition-colors w-max">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="border-t border-white/20">
-          <div className="max-w-[1400px] mx-auto px-6 lg:px-16 py-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="md:w-1/3"></div>
-            <div className="md:w-1/3 flex items-center justify-center gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform"><svg width="18" height="18" viewBox="0 0 24 24" fill="#111"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" /></svg></a>
-              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform"><svg width="18" height="18" viewBox="0 0 24 24" fill="#111"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" /></svg></a>
-              <a href="#" className="w-10 h-10 rounded-full bg-[#9DF542] flex items-center justify-center hover:scale-110 transition-transform"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg></a>
-            </div>
-            <div className="md:w-1/3 flex justify-end">
-              <p className="text-white/70 text-[15px] font-medium">2024 © company Ltd. All Right reserved</p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
