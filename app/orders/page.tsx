@@ -292,7 +292,22 @@ function OrdersContent() {
     );
 }
 
+function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }) {
+    const [finalReceipt, setFinalReceipt] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeclining, setIsDeclining] = useState(false);
+    const [declineMessage, setDeclineMessage] = useState("");
+    const [rating, setRating] = useState(order.variants?.customer_rating || 0);
+    const [feedback, setFeedback] = useState(order.variants?.customer_feedback || "");
+    const [submittingFeedback, setSubmittingFeedback] = useState(false);
     const [activeAction, setActiveAction] = useState<'none' | 'approve' | 'decline'>('none');
+
+    // Sync local state when the order prop changes (e.g. after refresh)
+    useEffect(() => {
+        setRating(order.variants?.customer_rating || 0);
+        setFeedback(order.variants?.customer_feedback || "");
+        setActiveAction('none');
+    }, [order.id, order.variants]);
 
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING_ADMIN;
     const Icon = cfg.icon;
