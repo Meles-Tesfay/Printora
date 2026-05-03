@@ -29,21 +29,48 @@ const STATUS_CONFIG: Record<string, {
         step: 1,
     },
     ASSIGNED_TO_SUPPLIER: {
+        label: "Admin Approved",
+        icon: ShieldCheck,
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+        description: "Admin has approved your design. A supplier is now preparing your order.",
+        step: 2,
+    },
+    SAMPLE_AWAITING_APPROVAL: {
+        label: "Sample Ready",
+        icon: Package,
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+        description: "The supplier has finished the sample. Please review it below.",
+        step: 2,
+    },
+    SAMPLE_REJECTED: {
+        label: "Sample Rejected",
+        icon: XCircle,
+        color: "text-red-600",
+        bg: "bg-red-50",
+        border: "border-red-200",
+        description: "You've requested changes to the sample. The supplier is updating it.",
+        step: 2,
+    },
+    PRODUCTION_APPROVED_AND_PAID: {
         label: "In Production",
         icon: Package,
         color: "text-blue-600",
         bg: "bg-blue-50",
         border: "border-blue-200",
-        description: "Your order has been approved and assigned to a supplier for production.",
-        step: 2,
+        description: "Payment received! Your order is now in full production.",
+        step: 3,
     },
     COMPLETED_BY_SUPPLIER: {
-        label: "Ready / Shipped",
+        label: "Production Done",
         icon: Truck,
-        color: "text-green-600",
-        bg: "bg-green-50",
-        border: "border-green-200",
-        description: "Your order has been completed by the supplier and is on its way!",
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+        description: "The batch is ready and being prepared for delivery.",
         step: 3,
     },
     DELIVERED: {
@@ -52,7 +79,7 @@ const STATUS_CONFIG: Record<string, {
         color: "text-teal-600",
         bg: "bg-teal-50",
         border: "border-teal-200",
-        description: "Your order has been delivered! Please share your feedback and rate the supplier.",
+        description: "Your order has been delivered! Please share your feedback.",
         step: 4,
     },
     REJECTED: {
@@ -61,7 +88,7 @@ const STATUS_CONFIG: Record<string, {
         color: "text-red-600",
         bg: "bg-red-50",
         border: "border-red-200",
-        description: "Unfortunately, this design could not be approved. Please redesign and resubmit.",
+        description: "Unfortunately, this design could not be approved. Please redesign.",
         step: 0,
     },
 };
@@ -324,7 +351,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
     const editUrl = `/editor?edit_order=${order.id}&template=${templateId}`;
 
     return (
-        <div className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-[3.5rem] border border-gray-100/50 overflow-hidden shadow-2xl shadow-black/5 ring-1 ring-black/[0.02]">
             {/* Status Header */}
             <div className={`p-8 ${cfg.bg} border-b ${cfg.border}`}>
                 <div className="flex items-center gap-4">
@@ -376,125 +403,151 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                 </div>
             )}
 
-            <div className="p-8 space-y-8">
-                {/* 2-Column Info Section */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Mockup Column */}
-                    <div className="bg-gray-50 rounded-[2rem] overflow-hidden aspect-square flex items-center justify-center p-6 border border-gray-100 shadow-inner group">
+            <div className="p-10 space-y-12">
+                {/* 3-Column Info Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* 1. Mockup Column (4/12) */}
+                    <div className="lg:col-span-4 bg-gray-50 rounded-[2.5rem] aspect-square flex items-center justify-center p-8 border border-gray-100 shadow-inner group">
                         {order.mockup_image_url ? (
-                            <img src={order.mockup_image_url} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" alt="Your design" />
+                            <img src={order.mockup_image_url} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Your design" />
                         ) : (
-                            <div className="text-gray-200 flex flex-col items-center gap-2">
+                            <div className="text-gray-200 flex flex-col items-center gap-4">
                                 <Package size={60} />
-                                <p className="text-sm font-black uppercase tracking-widest text-gray-300">No Preview</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300">No Preview</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Details Column */}
-                    <div className="space-y-4 flex flex-col justify-center">
-                        <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Product Identity</p>
-                            <p className="font-black text-[#1B2412] text-xl uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>{order.product_type}</p>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Specs</p>
-                                <p className="font-black text-[#111] text-[13px]">{order.variants?.color} • {order.variants?.size}</p>
+                    {/* 2. Specs Column (4/12) */}
+                    <div className="lg:col-span-4 flex flex-col justify-between py-2">
+                        <div className="space-y-6">
+                            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Product Identity</p>
+                                <p className="font-black text-[#1B2412] text-2xl uppercase leading-none" style={{ fontFamily: 'Impact, sans-serif' }}>{order.product_type}</p>
                             </div>
-                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Volume</p>
-                                <p className="font-black text-[#111] text-[13px]">x{order.variants?.quantity || 1} Units</p>
+                            
+                            <div className="grid grid-cols-1 gap-4">
+                                <div className="bg-gray-50 rounded-3xl p-5 border border-gray-100 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Configuration</p>
+                                        <p className="font-black text-[#111] text-sm">{order.variants?.color} • {order.variants?.size}</p>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: order.variants?.color?.toLowerCase() }} />
+                                </div>
+                                <div className="bg-gray-50 rounded-3xl p-5 border border-gray-100">
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Batch Volume</p>
+                                    <p className="font-black text-[#111] text-sm">{order.variants?.quantity || 1} Custom Units</p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Financial Card */}
-                        <div className="bg-[#1B2412] rounded-3xl p-6 text-white shadow-xl shadow-[#1B2412]/10">
-                            <div className="flex justify-between items-center mb-3">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Valuation</p>
-                                <p className="font-black text-lg">
-                                    {(() => {
-                                        const basePrice = order.supplier_product?.price || 600;
-                                        return (basePrice * (order.variants?.quantity || 1)).toLocaleString();
-                                    })()} ብር
-                                </p>
-                            </div>
-                            <div className="h-px bg-white/10 my-3" />
-                            <div className="flex justify-between items-center mb-2">
-                                <p className="text-[9px] font-black text-[#A1FF4D] uppercase tracking-widest">Deposit Paid (50%)</p>
-                                <p className="font-black text-[#A1FF4D] text-sm italic">
+                        <div className="bg-emerald-50 rounded-2xl p-4 flex items-center gap-3 border border-emerald-100">
+                            <ShieldCheck className="text-emerald-500" size={18} />
+                            <p className="text-[10px] font-bold text-emerald-700">Quality Assured by Printora Studio</p>
+                        </div>
+                    </div>
+
+                    {/* 3. Financial Column (4/12) */}
+                    <div className="lg:col-span-4 bg-[#1B2412] rounded-[2.5rem] p-8 text-white shadow-2xl shadow-[#1B2412]/20 relative overflow-hidden flex flex-col justify-between">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#A1FF4D]/5 rounded-full blur-3xl -mr-16 -mt-16" />
+                        
+                        <div>
+                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Order Valuation</p>
+                            <p className="font-black text-4xl tracking-tighter flex items-baseline gap-1">
+                                {(() => {
+                                    const basePrice = order.supplier_product?.price || 600;
+                                    return (basePrice * (order.variants?.quantity || 1)).toLocaleString();
+                                })()}
+                                <span className="text-sm font-bold text-gray-600">ብር</span>
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="h-px bg-white/5" />
+                            <div className="flex justify-between items-center text-[11px] font-bold">
+                                <span className="text-gray-400 uppercase tracking-widest">Deposit Paid</span>
+                                <span className="text-emerald-400">
                                     {(() => {
                                         const basePrice = order.supplier_product?.price || 600;
                                         return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
                                     })()} ብር
-                                </p>
+                                </span>
                             </div>
-                            <div className="flex justify-between items-center">
-                                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Payable Balance</p>
-                                <p className="font-black text-amber-400 text-sm">
+                            <div className="bg-white/5 rounded-2xl p-4 flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Balance Due</span>
+                                    <Sparkles size={10} className="text-amber-400 animate-pulse" />
+                                </div>
+                                <span className="font-black text-xl text-amber-400">
                                     {(() => {
                                         const basePrice = order.supplier_product?.price || 600;
                                         return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
-                                    })()} ብር
-                                </p>
+                                    })()} <span className="text-[10px] ml-0.5">ብር</span>
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Full-Width Action Section */}
-                <div className="space-y-6">
+                <div className="pt-8">
                     {/* Supplier proof & Approval Logic */}
                     {order.supplier_proof_image_url && (
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-[2.5rem] p-8">
-                            <div className="flex flex-col lg:flex-row gap-8 items-start">
-                                {/* Proof Image */}
-                                <div className="w-full lg:w-2/5 group relative">
-                                    <img src={order.supplier_proof_image_url} className="w-full rounded-2xl shadow-lg border-4 border-white" alt="Proof" />
-                                    <a
-                                        href={order.supplier_proof_image_url}
-                                        download={`proof-${order.id.slice(0,8)}.jpg`}
-                                        className="absolute bottom-4 right-4 bg-[#1B2412] text-white p-3 rounded-xl shadow-xl hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    </a>
+                        <div className="bg-emerald-50/40 border border-emerald-100 rounded-[3rem] p-10 shadow-sm relative overflow-hidden">
+                            {/* Decorative Background */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/20 rounded-full blur-3xl -mr-32 -mt-32" />
+                            
+                            <div className="flex flex-col xl:flex-row gap-12 relative z-10">
+                                {/* Proof Image Container */}
+                                <div className="w-full xl:w-1/2 group">
+                                    <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white aspect-[4/3]">
+                                        <img src={order.supplier_proof_image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Proof" />
+                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <a
+                                                href={order.supplier_proof_image_url}
+                                                download={`proof-${order.id.slice(0,8)}.jpg`}
+                                                className="bg-white text-[#1B2412] px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-110 transition-all flex items-center gap-2"
+                                            >
+                                                Download Proof
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Approval Actions */}
-                                <div className="flex-1 space-y-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <p className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.2em]">Production Milestone: Sample Ready</p>
-                                        <span className="bg-emerald-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Review Required</span>
+                                {/* Content and Actions */}
+                                <div className="flex-1 flex flex-col justify-center">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="bg-emerald-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-emerald-500/20">
+                                            Sample Review
+                                        </div>
+                                        <div className="h-px flex-1 bg-emerald-100" />
                                     </div>
-                                    <h4 className="text-2xl font-black text-[#1B2412] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>Verify Your Sample Proof</h4>
-                                    <p className="text-sm text-emerald-700 font-bold leading-relaxed mb-6">
-                                        The supplier has completed the first sample. Review the quality and layout. 
-                                        If satisfied, pay the remaining <span className="underline decoration-emerald-300 decoration-2 underline-offset-4">
-                                            {(() => {
-                                                const basePrice = order.supplier_product?.price || 600;
-                                                return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
-                                            })()} ብር
-                                        </span> to CBE 100021312323 to start the full production batch.
+
+                                    <h4 className="text-4xl font-black text-[#1B2412] uppercase leading-[0.9] mb-4" style={{ fontFamily: 'Impact, sans-serif' }}>
+                                        Verify Your <br/> <span className="text-emerald-600 underline decoration-emerald-200">Production</span> Sample
+                                    </h4>
+                                    
+                                    <p className="text-base text-emerald-800/70 font-bold leading-relaxed mb-10 max-w-lg">
+                                        The first physical sample is ready. Inspect the colors, placement, and finish carefully before we start the full batch.
                                     </p>
 
                                     {!order.variants?.finalReceiptUrl ? (
-                                        <div className="pt-4">
+                                        <div className="space-y-6">
                                             {order.status === 'SAMPLE_AWAITING_APPROVAL' ? (
-                                                <div className="space-y-6">
+                                                <div className="flex flex-col gap-6">
                                                     {activeAction === 'none' && (
-                                                        <div className="grid grid-cols-2 gap-4">
+                                                        <div className="flex flex-col sm:flex-row gap-4">
                                                             <button 
                                                                 onClick={() => setActiveAction('approve')}
-                                                                className="bg-[#1B2412] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-black transition-all shadow-xl shadow-[#1B2412]/20 flex items-center justify-center gap-2"
+                                                                className="flex-1 bg-[#1B2412] text-white py-5 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black hover:shadow-2xl hover:shadow-[#A1FF4D]/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
                                                             >
-                                                                <CheckCircle size={16} /> Approve & Pay
+                                                                <CheckCircle size={18} className="text-[#A1FF4D]" /> Approve & Pay Balance
                                                             </button>
                                                             <button 
                                                                 onClick={() => setActiveAction('decline')}
-                                                                className="bg-white border-2 border-red-100 text-red-500 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                                                                className="bg-white border-2 border-red-50 text-red-500 py-5 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                                             >
-                                                                <XCircle size={16} /> Decline & Request Change
+                                                                <XCircle size={18} /> Request Correction
                                                             </button>
                                                         </div>
                                                     )}
@@ -521,7 +574,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                                     onRefresh();
                                                                 }}
                                                                 disabled={isDeclining || !declineMessage.trim()}
-                                                                className="w-full bg-red-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-600 transition-all disabled:opacity-50"
+                                                                className="w-full bg-red-500 text-white py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all disabled:opacity-50"
                                                             >
                                                                 {isDeclining ? 'Submitting...' : 'Confirm Rejection'}
                                                             </button>
@@ -529,12 +582,12 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                     )}
 
                                                     {activeAction === 'approve' && (
-                                                        <div className="bg-white/80 p-6 rounded-3xl border border-emerald-100 animate-in fade-in slide-in-from-bottom-2">
-                                                            <div className="flex justify-between items-center mb-4">
+                                                        <div className="bg-white/80 p-8 rounded-[3rem] border border-emerald-100 animate-in fade-in slide-in-from-bottom-2">
+                                                            <div className="flex justify-between items-center mb-6">
                                                                 <label className="text-[11px] font-black text-emerald-700 uppercase tracking-widest">Final Batch Payment Receipt</label>
                                                                 <button onClick={() => setActiveAction('none')} className="text-[10px] font-black text-gray-400 hover:text-gray-600">Cancel</button>
                                                             </div>
-                                                            <div className="relative border-2 border-dashed border-emerald-100 rounded-2xl p-6 bg-emerald-50/30 flex flex-col items-center">
+                                                            <div className="relative border-4 border-dashed border-emerald-100 rounded-[2rem] p-10 bg-emerald-50/30 flex flex-col items-center group/upload">
                                                                 <input 
                                                                     type="file" 
                                                                     accept="image/*"
@@ -546,19 +599,19 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                                             reader.readAsDataURL(file);
                                                                         }
                                                                     }}
-                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-20"
                                                                 />
                                                                 {finalReceipt ? (
-                                                                    <div className="flex flex-col items-center gap-3">
-                                                                        <img src={finalReceipt} className="h-32 rounded-xl object-contain shadow-md" alt="Receipt Preview" />
-                                                                        <p className="text-[10px] font-black text-emerald-600 uppercase">File Selected ✓</p>
+                                                                    <div className="flex flex-col items-center gap-4">
+                                                                        <img src={finalReceipt} className="h-40 rounded-2xl object-contain shadow-2xl" alt="Receipt Preview" />
+                                                                        <p className="text-xs font-black text-emerald-600 uppercase tracking-widest">Receipt Captured ✓</p>
                                                                     </div>
                                                                 ) : (
                                                                     <>
-                                                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm">
-                                                                            <ShieldCheck className="text-emerald-500" size={20} />
+                                                                        <div className="w-16 h-16 rounded-3xl bg-white flex items-center justify-center mb-4 shadow-lg group-hover/upload:scale-110 transition-transform">
+                                                                            <ShieldCheck className="text-emerald-500" size={32} />
                                                                         </div>
-                                                                        <p className="text-[11px] font-black text-emerald-700 uppercase">Click to upload payment screenshot</p>
+                                                                        <p className="text-xs font-black text-emerald-700 uppercase tracking-widest">Drop receipt or click to upload</p>
                                                                     </>
                                                                 )}
                                                             </div>
@@ -572,9 +625,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                                         onRefresh();
                                                                     }}
                                                                     disabled={isSubmitting}
-                                                                    className="w-full mt-4 bg-[#1B2412] text-[#A1FF4D] py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-[#A1FF4D]/10 hover:scale-[1.01] active:scale-95 transition-all"
+                                                                    className="w-full mt-8 bg-[#A1FF4D] text-[#1B2412] py-6 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-[#A1FF4D]/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
                                                                 >
-                                                                    {isSubmitting ? 'Verifying...' : 'Approve & Start Full Production'}
+                                                                    {isSubmitting ? 'Verifying...' : 'Approve & Start Production'}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -613,30 +666,33 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                     )}
                 </div>
 
-                {/* Secondary Actions Row */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 mt-6 border-t border-gray-100">
                     <div className="flex items-center gap-4">
-                        <div className="bg-gray-50 px-4 py-2 rounded-full border border-gray-100 flex items-center gap-2">
-                            <Clock size={12} className="text-gray-400" />
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(order.created_at).toLocaleDateString()}</span>
+                        <div className="bg-gray-50 px-4 py-2.5 rounded-full border border-gray-100 flex items-center gap-3">
+                            <Clock size={14} className="text-gray-400" />
+                            <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
+                        {order.status === "DELIVERED" && (
+                            <div className="flex items-center gap-2 text-emerald-600">
+                                <CheckCircle size={16} />
+                                <span className="text-xs font-black uppercase tracking-widest">Completed</span>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        {order.status === "PENDING_ADMIN" && (
-                            <Link
-                                href={editUrl}
-                                className="bg-[#1B2412] text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-lg active:scale-95 flex items-center gap-2"
-                            >
-                                <PenTool size={14} /> Edit Design
-                            </Link>
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        {["DELIVERED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(order.status) && (
+                            <button className="flex-1 sm:flex-none bg-[#1B2412] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#1B2412]/10">
+                                <ShoppingBag size={14} /> Reorder Batch
+                            </button>
                         )}
-                        {order.status === "REJECTED" && (
-                            <Link
+                        
+                        {["PENDING_ADMIN", "REJECTED"].includes(order.status) && (
+                            <Link 
                                 href={editUrl}
-                                className="bg-red-500 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center gap-2"
+                                className="flex-1 sm:flex-none bg-white border-2 border-gray-100 text-[#1B2412] px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
                             >
-                                <PenTool size={14} /> Redesign
+                                <PenTool size={14} /> {order.status === "REJECTED" ? "Fix Design" : "Edit Design"}
                             </Link>
                         )}
                     </div>
