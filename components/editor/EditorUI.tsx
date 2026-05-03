@@ -508,7 +508,7 @@ function LibraryPanel({ onClose, onAddImage }: { onClose: () => void; onAddImage
     );
 }
 
-/* ─── Graphics Panel ─────────────────────────────────────────────────────── */
+/* ─── Graphics Panel ───────────────────────────────────────────────── */
 function GraphicsPanel({ onClose, onAddShape, onAddCurvedText }: { onClose: () => void; onAddShape: (type: string) => void; onAddCurvedText: () => void }) {
     const shapes = [
         { id: 'star', svg: <polygon points="50,5 61,37 95,37 67,57 78,89 50,69 22,89 33,57 5,37 39,37" fill="#64645A" /> },
