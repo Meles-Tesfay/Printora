@@ -86,7 +86,7 @@ export default function Home() {
           <nav className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
             <Link href="/products" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Catalog</Link>
             <Link href="#pricing" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Pricing</Link>
-            <Link href="#how-it-works" className="flex items-center gap-1.5 text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">
+            <Link href="/how-it-works" className="flex items-center gap-1.5 text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">
               How it works
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-[2px]"><path d="M6 9l6 6 6-6" /></svg>
             </Link>
@@ -280,11 +280,12 @@ export default function Home() {
                     >
                       Get started for free
                     </Link>
-                    <button
+                    <Link
+                      href="/how-it-works"
                       className="rounded-md px-10 h-14 text-[17px] font-extrabold font-sans border-[3px] border-[#2B3220] text-[#2B3220] transition-colors hover:bg-[#2B3220] hover:text-[#9DF542] w-full sm:w-auto flex items-center justify-center"
                     >
                       How it works
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
