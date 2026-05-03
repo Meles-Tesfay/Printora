@@ -9,6 +9,7 @@ import {
   User, Gift, Users
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import PHOTOS from "./photos";
 
 export default function InspirationPage() {
   const [user, setUser] = useState<any>(null);
@@ -28,6 +29,7 @@ export default function InspirationPage() {
     fetchUser();
   }, []);
 
+
   const quickIdeas = [
     { title: "Personal Style", desc: "Express yourself with unique 1-of-1 pieces tailored to you.", icon: User, accent: "#9DF542", bg: "#f4fbe8" },
     { title: "Gifts", desc: "Meaningful, custom presents that leave a lasting impression.", icon: Gift, accent: "#FF8A65", bg: "#fff2ec" },
@@ -36,10 +38,10 @@ export default function InspirationPage() {
   ];
 
   const designDirections = [
-    { name: "Minimal Text", desc: "Clean, simple typography that speaks volumes.", img: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&fit=crop", accent: "#9DF542" },
-    { name: "Bold Graphic", desc: "Vibrant illustrations and eye-catching art.", img: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?q=80&w=600&fit=crop", accent: "#FF8A65" },
-    { name: "Quote-based", desc: "Your favorite sayings and daily mantras.", img: "https://images.unsplash.com/photo-1513094735237-8f2714d57c13?q=80&w=600&fit=crop", accent: "#5C6BC0" },
-    { name: "Logo Branding", desc: "Sleek placement of your company's identity.", img: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=600&fit=crop", accent: "#26A69A" }
+    { name: "Minimal Text", desc: "Clean, simple typography that speaks volumes.", img: PHOTOS.card1_minimal_text, accent: "#9DF542" },
+    { name: "Bold Graphic", desc: "Vibrant illustrations and eye-catching art.", img: PHOTOS.card2_bold_graphic, accent: "#FF8A65" },
+    { name: "Quote-based", desc: "Your favorite sayings and daily mantras.", img: PHOTOS.card3_quote_based, accent: "#5C6BC0" },
+    { name: "Logo Branding", desc: "Sleek placement of your company's identity.", img: PHOTOS.card4_logo_branding, accent: "#26A69A" }
   ];
 
   const styleCollections = [
@@ -75,17 +77,24 @@ export default function InspirationPage() {
   }
 
   const tips = [
-    { title: "Keep designs simple", desc: "Sometimes less is more. Let the message breathe.", icon: PenTool },
-    { title: "Use high-quality images", desc: "Avoid blurriness by using crisp, high-res files.", icon: ImageIcon },
-    { title: "Choose readable fonts", desc: "Ensure your text is legible from a distance.", icon: Type },
-    { title: "Consider contrast", desc: "Make sure your design pops against the product color.", icon: Contrast }
+    { title: "Keep designs simple", desc: "Sometimes less is more. Let the message breathe.", icon: PenTool, accent: "#9DF542", bg: "#f4fbe8" },
+    { title: "Use high-quality images", desc: "Avoid blurriness by using crisp, high-res files.", icon: ImageIcon, accent: "#FF8A65", bg: "#fff2ec" },
+    { title: "Choose readable fonts", desc: "Ensure your text is legible from a distance.", icon: Type, accent: "#5C6BC0", bg: "#f0f2fa" },
+    { title: "Consider contrast", desc: "Make sure your design pops against the product color.", icon: Contrast, accent: "#26A69A", bg: "#e9f6f5" }
   ];
 
   const pairs = [
-    { idea: "Minimal quote", product: "T-shirt", icon: Quote },
-    { idea: "Company Logo", product: "Hoodie", icon: Briefcase },
-    { idea: "Custom name", product: "Mug", icon: Type },
-    { idea: "Artistic Illustration", product: "Tote Bag", icon: ImageIcon }
+    { idea: "Minimal quote", product: "T-shirt", icon: Quote, accent: "#9DF542" },
+    { idea: "Company Logo", product: "Hoodie", icon: Briefcase, accent: "#5C6BC0" },
+    { idea: "Custom name", product: "Mug", icon: Type, accent: "#FF8A65" },
+    { idea: "Artistic Illustration", product: "Tote Bag", icon: ImageIcon, accent: "#26A69A" }
+  ];
+
+  const colorPalettes = [
+    { name: "Earthy Neutrals", colors: ["#5C5046", "#8F8073", "#CBBAB0", "#F4EFEA"], desc: "Warm, grounded tones perfect for organic cotton and minimalist streetwear." },
+    { name: "Electric Neon", colors: ["#0F172A", "#3B82F6", "#8B5CF6", "#F43F5E"], desc: "High-contrast, energetic vibes that make your graphics pop off the fabric." },
+    { name: "Vintage Wash", colors: ["#2E3E3D", "#4C5F5B", "#D19C76", "#E8D3C3"], desc: "Faded, nostalgic hues that pair beautifully with retro typography." },
+    { name: "Soft Pastels", colors: ["#FFD6D6", "#FFE9D6", "#D6F0FF", "#E6D6FF"], desc: "Dreamy, light shades ideal for gentle aesthetics and delicate illustrations." }
   ];
 
   const faqs = [
@@ -188,12 +197,9 @@ export default function InspirationPage() {
                 <Link href="/products" className="bg-[#111] text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-black transition-all shadow-xl hover:shadow-black/20 hover:-translate-y-1">
                   Explore Catalog
                 </Link>
-                <div className="flex items-center gap-4 text-[#525f48] font-medium group cursor-pointer">
-                  <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center group-hover:bg-[#9DF542] group-hover:border-[#9DF542] transition-all">
-                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                  </div>
-                  <span>View Trends</span>
-                </div>
+                <Link href="/products" className="bg-[#9DF542] text-[#111] px-10 py-5 rounded-full font-bold text-lg hover:opacity-90 transition-all shadow-xl hover:shadow-[#9DF542]/20 hover:-translate-y-1">
+                  Start Creating
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -212,7 +218,7 @@ export default function InspirationPage() {
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[80%] rounded-[3rem] overflow-hidden shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] z-20 border-[12px] border-white"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&fit=crop" 
+                  src={PHOTOS.hero_main}
                   className="w-full h-full object-cover" 
                   alt="Fashion Model" 
                 />
@@ -225,7 +231,7 @@ export default function InspirationPage() {
                 className="absolute top-[5%] left-0 w-[45%] h-[40%] rounded-[2rem] overflow-hidden shadow-2xl z-10 border-[8px] border-white"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1529139513477-3235a1191e21?q=80&w=600&fit=crop" 
+                  src={PHOTOS.hero_top_left}
                   className="w-full h-full object-cover" 
                   alt="Streetwear Detail" 
                 />
@@ -238,7 +244,7 @@ export default function InspirationPage() {
                 className="absolute bottom-[5%] right-0 w-[50%] h-[45%] rounded-[2.5rem] overflow-hidden shadow-2xl z-30 border-[10px] border-white"
               >
                 <img 
-                  src="https://images.unsplash.com/photo-1539109132314-347552199101?q=80&w=600&fit=crop" 
+                  src={PHOTOS.hero_bottom}
                   className="w-full h-full object-cover" 
                   alt="Custom Apparel" 
                 />
@@ -410,54 +416,73 @@ export default function InspirationPage() {
         </div>
       </section>
 
-      {/* 5. USE-CASE IDEAS */}
-      <section className="py-20 px-6 bg-white border-y border-gray-100">
+      {/* 5. TRENDING COLOR PALETTES */}
+      <section className="py-24 px-6 bg-white border-y border-gray-100">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#111] mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-              Create for Any Purpose
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111] mb-6 tracking-tight" style={{ fontFamily: 'var(--font-serif, "Cormorant Garamond", serif)' }}>
+              Trending Color Palettes
             </h2>
+            <p className="text-gray-500 text-lg max-w-2xl mx-auto">Discover the perfect color combinations to set the mood for your next collection.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#faf9f6] p-8 rounded-[2rem] border border-gray-100 flex flex-col justify-center">
-              <h3 className="text-2xl font-bold text-[#111] mb-3">Personal Use</h3>
-              <p className="text-gray-600 leading-relaxed">Refresh your wardrobe with custom pieces that reflect your exact mood and personality. No more blending in.</p>
-            </div>
-            <div className="bg-[#faf9f6] p-8 rounded-[2rem] border border-gray-100 flex flex-col justify-center">
-              <h3 className="text-2xl font-bold text-[#111] mb-3">Gifts</h3>
-              <p className="text-gray-600 leading-relaxed">Give something truly unique. Commemorate a special date, inside joke, or cherished photo on a premium product.</p>
-            </div>
-            <div className="bg-[#faf9f6] p-8 rounded-[2rem] border border-gray-100 flex flex-col justify-center">
-              <h3 className="text-2xl font-bold text-[#111] mb-3">Business / Branding</h3>
-              <p className="text-gray-600 leading-relaxed">Turn your logo into a statement. Outfit your team or create merch that your customers will actually want to wear.</p>
-            </div>
-            <div className="bg-[#faf9f6] p-8 rounded-[2rem] border border-gray-100 flex flex-col justify-center">
-              <h3 className="text-2xl font-bold text-[#111] mb-3">Campaigns / Events</h3>
-              <p className="text-gray-600 leading-relaxed">Build solidarity for your next charity run, family reunion, or corporate retreat with unified, beautiful apparel.</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {colorPalettes.map((palette, idx) => (
+              <div 
+                key={idx} 
+                className="group relative p-8 rounded-[2.5rem] bg-[#faf9f6] border border-gray-100 transition-all duration-700 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] hover:-translate-y-2 flex flex-col"
+              >
+                {/* Color Swatches */}
+                <div className="flex w-full h-32 rounded-2xl overflow-hidden mb-8 shadow-inner">
+                  {palette.colors.map((color, cIdx) => (
+                    <div 
+                      key={cIdx} 
+                      className="flex-1 h-full transition-all duration-500 group-hover:flex-[1.5]"
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                
+                <h3 className="text-2xl font-bold text-[#111] mb-3 font-serif">{palette.name}</h3>
+                <p className="text-[15px] text-gray-500 leading-relaxed mb-6 flex-grow">{palette.desc}</p>
+                
+                <div className="mt-auto flex items-center justify-between">
+                  <div className="flex -space-x-3">
+                    {palette.colors.map((color, cIdx) => (
+                      <div key={cIdx} className="w-8 h-8 rounded-full border-2 border-[#faf9f6] shadow-sm transition-transform duration-300 hover:scale-110 hover:z-10" style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-all duration-300 group-hover:bg-[#111] group-hover:border-[#111]">
+                    <ArrowRight size={16} className="text-[#111] group-hover:text-white transition-colors" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* 6. QUICK DESIGN TIPS & 7. PRODUCT + IDEA COMBINATIONS */}
-      <section className="py-24 px-6">
+      <section className="py-24 px-6 bg-[#faf9f6]">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid lg:grid-cols-2 gap-16">
+          <div className="grid lg:grid-cols-2 gap-20">
             
             {/* Design Tips */}
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#111] mb-8" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                Design Tips
-              </h2>
-              <div className="flex flex-col gap-4">
+            <div className="space-y-12">
+              <div>
+                <h2 className="text-4xl font-bold text-[#111] mb-4 tracking-tight" style={{ fontFamily: 'var(--font-serif, serif)' }}>
+                  Design Tips
+                </h2>
+                <p className="text-gray-500 text-lg">Pro-tips to ensure your custom apparel looks professional and polished.</p>
+              </div>
+              <div className="grid gap-6">
                 {tips.map((tip, idx) => (
-                  <div key={idx} className="flex items-start gap-4 p-5 bg-white rounded-[1.5rem] border border-gray-100 shadow-sm">
-                    <div className="w-12 h-12 bg-[#faf9f6] rounded-[1rem] flex items-center justify-center shrink-0">
-                      <tip.icon className="text-[#525f48]" size={20} />
+                  <div key={idx} className="group flex items-center gap-6 p-6 bg-white rounded-[2rem] border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-x-2">
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 transition-colors duration-500 group-hover:text-white" style={{ backgroundColor: tip.bg, color: tip.accent }} >
+                      <tip.icon size={28} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-[#111] mb-1">{tip.title}</h4>
-                      <p className="text-[14px] text-gray-500">{tip.desc}</p>
+                      <h4 className="text-xl font-bold text-[#111] mb-1">{tip.title}</h4>
+                      <p className="text-[15px] text-gray-500 leading-relaxed">{tip.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -465,18 +490,27 @@ export default function InspirationPage() {
             </div>
 
             {/* Product Pairs */}
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#111] mb-8" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                Pair Ideas with Products
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-12">
+              <div>
+                <h2 className="text-4xl font-bold text-[#111] mb-4 tracking-tight" style={{ fontFamily: 'var(--font-serif, serif)' }}>
+                  Perfect Pairings
+                </h2>
+                <p className="text-gray-500 text-lg">Inspiration for combining the right idea with the perfect product.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
                 {pairs.map((pair, idx) => (
-                  <div key={idx} className="bg-white rounded-[1.5rem] border border-gray-100 p-6 shadow-sm flex flex-col items-center text-center justify-center gap-3">
-                    <pair.icon className="text-[#9DF542] mb-2" size={28} />
-                    <div>
-                      <span className="block font-bold text-[#111] text-[15px]">{pair.idea}</span>
-                      <span className="block text-gray-400 text-xs uppercase tracking-widest mt-1">on</span>
-                      <span className="block font-bold text-[#525f48] mt-1">{pair.product}</span>
+                  <div 
+                    key={idx} 
+                    className="group bg-white rounded-[2.5rem] border border-gray-100 p-8 flex flex-col items-center text-center transition-all duration-500 hover:shadow-2xl hover:scale-105"
+                  >
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110" style={{ backgroundColor: `${pair.accent}15`, color: pair.accent }}>
+                      <pair.icon size={32} />
+                    </div>
+                    <div className="space-y-2">
+                      <span className="block font-bold text-gray-400 text-xs uppercase tracking-widest">Try a</span>
+                      <span className="block font-bold text-[#111] text-xl font-serif">{pair.idea}</span>
+                      <span className="block text-gray-400 text-xs uppercase tracking-widest">on a</span>
+                      <span className="block font-bold text-[#111] text-lg">{pair.product}</span>
                     </div>
                   </div>
                 ))}
@@ -542,20 +576,7 @@ export default function InspirationPage() {
         </div>
       </section>
 
-      {/* 10. FINAL CTA SECTION */}
-      <section className="py-24 px-6">
-        <div className="container mx-auto max-w-4xl text-center bg-[#111] rounded-[3rem] p-12 md:p-20 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#9DF542] rounded-full blur-[100px] opacity-10" />
-          <div className="relative z-10">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 leading-tight" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-              Start Creating Your Design
-            </h2>
-            <Link href="/products" className="inline-flex items-center justify-center gap-3 bg-[#9DF542] text-[#111] font-bold text-lg py-5 px-12 rounded-full hover:scale-105 transition-transform shadow-[0_0_30px_rgba(157,245,66,0.2)]">
-              Create Now
-            </Link>
-          </div>
-        </div>
-      </section>
+
 
       {/* Footer */}
       <footer className="bg-[#111] text-white overflow-hidden mt-0 border-t border-gray-800">
