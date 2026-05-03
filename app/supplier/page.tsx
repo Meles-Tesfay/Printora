@@ -110,17 +110,7 @@ export default function SupplierDashboard() {
 
     if (error) { console.error("Fetch orders error:", error); setOrders([]); return; }
 
-    // Enrich with customer profile separately (avoids FK join issues)
-    const rows = data || [];
-    const customerIds = [...new Set(rows.map((o: any) => o.customer_id).filter(Boolean))];
-    if (customerIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from("profiles").select("id, full_name, email").in("id", customerIds);
-      const map = Object.fromEntries((profiles || []).map((p: any) => [p.id, p]));
-      setOrders(rows.map((o: any) => ({ ...o, customer: map[o.customer_id] || null })));
-    } else {
-      setOrders(rows);
-    }
+    setOrders(data || []);
   };
 
   const handleColorToggle = (color: { name: string; hex: string }) => {
@@ -1072,18 +1062,13 @@ export default function SupplierDashboard() {
                       </div>
                     </div>
 
-                    {/* Customer & Shipping */}
+                    {/* Order Meta info - No customer contact for privacy */}
                     <div className="bg-gray-50 rounded-[2.5rem] p-6 border border-gray-100">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Customer Contact</p>
-                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-lg shadow-sm">
-                          {(selectedOrder.customer?.full_name || selectedOrder.customer?.email || 'C')[0].toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-black text-gray-900 truncate">{selectedOrder.customer?.full_name || 'Anonymous'}</p>
-                          <p className="text-[11px] text-gray-400 font-bold truncate">{selectedOrder.customer?.email}</p>
-                        </div>
-                       </div>
+                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Internal Fulfillment Note</p>
+                       <p className="text-[11px] text-gray-500 font-bold leading-relaxed">
+                         Please follow the design specifications provided in the layout view. 
+                         Ensure all high-resolution assets are correctly scaled before printing.
+                       </p>
                     </div>
 
                     {/* Fulfillment Section */}
