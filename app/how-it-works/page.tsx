@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, CheckCircle, ChevronDown, Package, PenTool, ShoppingCart, Truck, Zap, ShieldCheck, Globe, Star, ArrowRight, ShoppingBag, LogOut, Printer } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import MobileNav from "@/components/MobileNav";
 
 export default function HowItWorks() {
   // Auth state
@@ -95,7 +96,8 @@ export default function HowItWorks() {
               <motion.div layoutId="nav-indicator" className="absolute -bottom-2 left-0 right-0 h-1 bg-[#9DF542] rounded-full" />
             </Link>
           </nav>
-          <div className="flex-1 flex items-center justify-end gap-3">
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <MobileNav activePage="how-it-works" />
             {user ? (
               <div className="relative">
                 <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-full px-3 pr-4 py-1.5 hover:shadow-md transition-all group">
@@ -141,7 +143,7 @@ export default function HowItWorks() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-24 overflow-hidden">
+      <section className="relative pt-16 pb-16 md:pt-20 md:pb-24 overflow-hidden px-4 md:px-0">
         {/* Animated Background Shapes */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <motion.div 
@@ -163,12 +165,12 @@ export default function HowItWorks() {
               <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Simple & Transparent</span>
             </motion.div>
             
-            <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-medium text-[#111] mb-6 tracking-tight" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl md:text-7xl font-medium text-[#111] mb-6 tracking-tight" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
               From idea to reality in <br className="hidden md:block" />
               <span className="italic text-[#495439]">just a few clicks.</span>
             </motion.h1>
             
-            <motion.p variants={fadeUp} className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+            <motion.p variants={fadeUp} className="text-base md:text-lg lg:text-xl text-gray-600 mb-10 max-w-2xl mx-auto px-2 md:px-0">
               Creating custom merchandise shouldn't be complicated. We've streamlined the entire process so you can focus on what matters: your designs.
             </motion.p>
             
@@ -214,13 +216,13 @@ export default function HowItWorks() {
       </section>
 
       {/* Step-by-Step Process */}
-      <section className="py-24 bg-white relative">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-medium text-[#111] mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+      <section className="py-16 md:py-24 bg-white relative">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+          <div className="text-center mb-12 md:mb-20">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-[#111] mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
               How It Works
             </h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto">
               From selecting your blank canvas to unboxing your custom creation, we've made every step seamless.
             </p>
           </div>
@@ -262,13 +264,13 @@ export default function HowItWorks() {
       </section>
 
       {/* Features Grid Section */}
-      <section className="py-24 bg-[#f0eae1]">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-medium text-[#111] mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+      <section className="py-16 md:py-24 bg-[#f0eae1]">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+          <div className="text-center mb-10 md:mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-[#111] mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
               Why choose Stenvo?
             </h2>
-            <p className="text-lg text-[#444] max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-[#444] max-w-2xl mx-auto">
               We provide everything you need to build your brand and delight your customers.
             </p>
           </div>
@@ -312,16 +314,16 @@ export default function HowItWorks() {
       </section>
 
       {/* Process Timeline Section */}
-      <section className="py-24 bg-white overflow-hidden">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+      <section className="py-16 md:py-24 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
             <motion.div 
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-4xl md:text-5xl font-medium text-[#111] mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium text-[#111] mb-6" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
                 Your design, <br /> flawless execution.
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
@@ -378,8 +380,8 @@ export default function HowItWorks() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-24 bg-[#fafafa]">
-        <div className="container mx-auto px-6 max-w-3xl">
+      <section className="py-16 md:py-24 bg-[#fafafa]">
+        <div className="container mx-auto px-4 md:px-6 max-w-3xl">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-medium text-[#111] mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
               Frequently Asked Questions

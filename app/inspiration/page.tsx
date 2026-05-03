@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import PHOTOS from "./photos";
+import MobileNav from "@/components/MobileNav";
 
 export default function InspirationPage() {
   const [user, setUser] = useState<any>(null);
@@ -121,7 +122,8 @@ export default function InspirationPage() {
             </Link>
             <Link href="/how-it-works" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">How it works</Link>
           </nav>
-          <div className="flex-1 flex items-center justify-end gap-3">
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <MobileNav activePage="inspiration" />
             {user ? (
               <div className="relative">
                 <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-full px-3 pr-4 py-1.5 hover:shadow-md transition-all group">
@@ -167,44 +169,51 @@ export default function InspirationPage() {
       </div>
 
       {/* 1. HERO SECTION */}
-      <section className="pt-32 pb-24 px-6 relative overflow-hidden">
-        {/* Background Decorative Elements */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#9DF542]/5 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/4" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#525f48]/5 rounded-full blur-[100px] -z-10 -translate-x-1/4 translate-y-1/4" />
+      <section className="pt-20 pb-12 md:pt-32 md:pb-24 px-4 md:px-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-[#9DF542]/5 rounded-full blur-[120px] -z-10 translate-x-1/2 -translate-y-1/4" />
+        <div className="absolute bottom-0 left-0 w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-[#525f48]/5 rounded-full blur-[100px] -z-10 -translate-x-1/4 translate-y-1/4" />
 
-        <div className="container mx-auto max-w-7xl relative z-10 flex flex-col lg:flex-row items-center gap-20">
-          <div className="flex-[1.2] text-left">
+        <div className="container mx-auto max-w-7xl relative z-10 flex flex-col lg:flex-row items-center gap-10 lg:gap-20">
+          <div className="flex-[1.2] text-center lg:text-left w-full">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/40 backdrop-blur-md border border-white/50 text-[#525f48] rounded-full text-[13px] font-bold uppercase tracking-[0.2em] mb-10 shadow-sm">
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-white/40 backdrop-blur-md border border-white/50 text-[#525f48] rounded-full text-[11px] md:text-[13px] font-bold uppercase tracking-[0.2em] mb-6 md:mb-10 shadow-sm">
                 <Sparkles size={14} className="text-[#9DF542]" /> 
                 Curated Creativity
               </div>
               <h1 
-                className="text-7xl md:text-8xl lg:text-[100px] font-medium text-[#111] mb-10 tracking-[-0.04em] leading-[0.95]" 
+                className="text-5xl sm:text-6xl md:text-8xl lg:text-[100px] font-medium text-[#111] mb-6 md:mb-10 tracking-[-0.04em] leading-[0.95]" 
                 style={{ fontFamily: 'var(--font-serif, "Cormorant Garamond", serif)' }}
               >
                 Get <span className="italic font-light text-gray-400">Inspired</span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-500 max-w-xl leading-relaxed mb-12 font-light">
+              <p className="text-lg md:text-xl lg:text-2xl text-gray-500 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8 md:mb-12 font-light">
                 Discover the intersection of art and apparel. A curated guide to finding your signature style through custom creation.
               </p>
               
-              <div className="flex flex-wrap gap-6">
-                <Link href="/products" className="bg-[#111] text-white px-10 py-5 rounded-full font-bold text-lg hover:bg-black transition-all shadow-xl hover:shadow-black/20 hover:-translate-y-1">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center lg:justify-start">
+                <Link href="/products" className="bg-[#111] text-white px-8 py-4 md:px-10 md:py-5 rounded-full font-bold text-base md:text-lg hover:bg-black transition-all shadow-xl hover:shadow-black/20 hover:-translate-y-1 text-center">
                   Explore Catalog
                 </Link>
-                <Link href="/products" className="bg-[#9DF542] text-[#111] px-10 py-5 rounded-full font-bold text-lg hover:opacity-90 transition-all shadow-xl hover:shadow-[#9DF542]/20 hover:-translate-y-1">
+                <Link href="/products" className="bg-[#9DF542] text-[#111] px-8 py-4 md:px-10 md:py-5 rounded-full font-bold text-base md:text-lg hover:opacity-90 transition-all shadow-xl hover:shadow-[#9DF542]/20 hover:-translate-y-1 text-center">
                   Start Creating
                 </Link>
               </div>
             </motion.div>
           </div>
 
-          <div className="flex-1 relative w-full h-[600px] lg:h-[700px]">
+          {/* Mobile: single hero image. Desktop: full collage */}
+          <div className="flex-1 relative w-full">
+            {/* Mobile single image */}
+            <div className="lg:hidden w-full h-[320px] rounded-[2rem] overflow-hidden shadow-2xl border-[8px] border-white">
+              <img src={PHOTOS.hero_main} className="w-full h-full object-cover" alt="Fashion" />
+            </div>
+
+            {/* Desktop collage */}
+            <div className="hidden lg:block relative w-full h-[700px]">
             {/* Artistic Layered Collage */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
@@ -261,19 +270,20 @@ export default function InspirationPage() {
                 <p className="text-sm font-medium text-gray-800 leading-snug">"Art is not what you see, but what you make others see."</p>
               </div>
             </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* 2. QUICK IDEA CATEGORIES */}
-      <section className="py-20 px-6 bg-white border-y border-gray-100">
+      <section className="py-16 md:py-20 px-4 md:px-6 bg-white border-y border-gray-100">
         <div className="container mx-auto max-w-7xl">
-          <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#111]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <div className="mb-10 md:mb-12">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#111] text-center md:text-left" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
               Start with an Idea
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-8">
             {quickIdeas.map((idea, idx) => (
               <div 
                 key={idx} 
