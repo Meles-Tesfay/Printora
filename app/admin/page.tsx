@@ -547,6 +547,68 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* === IN PRODUCTION TAB === */}
+        {activeTab === "processing" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-blue-50/30">
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Active Production Pipeline</h2>
+                <Truck size={18} className="text-blue-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).map((order) => (
+                  <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
+                        {order.mockup_image_url
+                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                          : <Box size={24} className="text-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                            <User size={9} /> {order.customer?.full_name || order.customer?.email}
+                          </span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm border uppercase tracking-tighter ${
+                            order.status === "COMPLETED_BY_SUPPLIER" ? "bg-green-50 text-green-600 border-green-100" :
+                            order.status === "PRODUCTION_APPROVED_AND_PAID" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                            order.status === "SAMPLE_REJECTED" ? "bg-red-50 text-red-600 border-red-100" :
+                            "bg-blue-50 text-blue-600 border-blue-100"
+                          }`}>
+                             {order.status?.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                        <Eye size={16} />
+                      </button>
+                      
+                      {order.status === "COMPLETED_BY_SUPPLIER" && (
+                        <button
+                          onClick={() => handleMarkAsDelivered(order.id)}
+                          className="bg-teal-500 text-white px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm uppercase tracking-widest"
+                        >
+                          <Truck size={14} /> Mark Delivered
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <Box size={40} className="mx-auto text-gray-200 mb-4" />
+                    No orders currently in production.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* === PRODUCTS TAB === */}
         {activeTab === "products" && (
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
