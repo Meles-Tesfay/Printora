@@ -53,7 +53,7 @@ export default function BeforeYouStartPage() {
               Before You Start
               <motion.div layoutId="nav-indicator" className="absolute -bottom-2 left-0 right-0 h-1 bg-[#9DF542] rounded-full" />
             </Link>
-            <Link href="/#pricing" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Pricing</Link>
+            <Link href="/inspiration" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Inspiration</Link>
             <Link href="/how-it-works" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">How it works</Link>
           </nav>
           <div className="flex-1 flex items-center justify-end gap-3">

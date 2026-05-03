@@ -85,7 +85,7 @@ export default function Home() {
           {/* Centered Nav */}
           <nav className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
             <Link href="/before-you-start" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Before You Start</Link>
-            <Link href="#pricing" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Pricing</Link>
+            <Link href="/inspiration" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Inspiration</Link>
             <Link href="/how-it-works" className="flex items-center gap-1.5 text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">
               How it works
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-[2px]"><path d="M6 9l6 6 6-6" /></svg>
