@@ -1059,6 +1059,15 @@ export default function SupplierDashboard() {
                             {((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ብር
                           </span>
                         </div>
+                        <div className="mt-4 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white flex-shrink-0">
+                            <CheckCircle size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Payment Secured</p>
+                            <p className="text-[11px] text-emerald-600 font-bold">50% deposit already paid by customer. Balance held by Printora.</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
