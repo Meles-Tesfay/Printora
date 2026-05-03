@@ -198,7 +198,7 @@ function OrdersContent() {
 
                 {/* Page Header */}
                 <div className="mb-8">
-                    <h1 className="text-4xl font-black text-[#111] uppercase tracking-tighter" style={{ fontFamily: "Impact, sans-serif" }}>
+                    <h1 className="text-4xl font-black text-[#111] uppercase tracking-widest" style={{ fontFamily: "Impact, sans-serif" }}>
                         My Orders
                     </h1>
                     <p className="text-gray-500 font-medium text-sm mt-1">

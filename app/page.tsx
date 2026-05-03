@@ -711,15 +711,20 @@ export default function Home() {
               </div>
 
               {/* Large Title */}
-              <h2 className="text-[60px] md:text-[88px] lg:text-[104px] font-black text-[#111] leading-[1.0] tracking-normal mb-10 md:mb-16 uppercase" style={{ fontFamily: 'Impact, sans-serif', fontStretch: 'condensed' }}>
+              <h2 className="text-[60px] md:text-[88px] lg:text-[104px] font-black text-[#111] leading-[1.0] tracking-widest mb-10 md:mb-16 uppercase" style={{ fontFamily: 'Impact, sans-serif', fontStretch: 'condensed' }}>
                 OWN YOUR<br />MERCH,<br />OWN YOUR<br />BRAND
               </h2>
 
               {/* Footer */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-6 mt-auto">
-                <button className="bg-[#111] text-white px-8 py-5 rounded-full font-extrabold text-[14px] tracking-wider hover:bg-gray-800 transition-transform hover:scale-105 active:scale-95 w-max">
-                  START YOUR JOURNEY
-                </button>
+                <div className="flex items-center gap-3 cursor-default">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-[#111]">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span className="text-[#111] font-black text-[14px] tracking-[0.2em] uppercase">
+                    PREMIUM QUALITY
+                  </span>
+                </div>
                 <div className="flex items-center gap-4 opacity-80">
                   <div className="flex items-end gap-1 h-6">
                     <div className="w-[2px] h-3 bg-gray-400"></div>

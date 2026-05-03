@@ -571,7 +571,7 @@ export default function SupplierDashboard() {
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-3xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+            <h1 className="text-3xl font-black text-[#2B3220] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
               Supplier Dashboard
             </h1>
             <p className="text-gray-500 font-medium text-sm">Manage your products and fulfill orders.</p>
@@ -702,7 +702,7 @@ export default function SupplierDashboard() {
         {activeTab === "add-product" && (
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 max-w-4xl">
             <div className="mb-8">
-              <h2 className="text-2xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h2 className="text-2xl font-black text-[#2B3220] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 {editingProductId ? "Edit Product" : "Add New Product"}
               </h2>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Fill in all details for your product listing</p>
@@ -838,7 +838,7 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-[#1B2412] text-white p-2 rounded-xl"><ShoppingBag size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Pending Fulfillments
               </h2>
             </div>
@@ -887,7 +887,7 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Clock size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Pending Approvals
               </h2>
             </div>
@@ -936,7 +936,7 @@ export default function SupplierDashboard() {
           <div>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-[#1B2412] text-white p-2 rounded-xl"><CheckCircle size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Completed Productions
               </h2>
             </div>
