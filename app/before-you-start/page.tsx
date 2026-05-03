@@ -240,34 +240,61 @@ export default function BeforeYouStartPage() {
                 To ensure a smooth and secure transaction, we process orders exclusively through trusted local payment methods. All orders require manual payment verification.
               </p>
               
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#9DF542]/20 flex items-center justify-center shrink-0">
-                    <Banknote size={24} className="text-[#111]" />
+              <div className="space-y-2">
+                {[
+                  {
+                    icon: Banknote,
+                    title: "Supported Methods",
+                    desc: "We accept direct transfers via CBE (Commercial Bank of Ethiopia), Telebirr, and BOA (Bank of Abyssinia).",
+                    color: "group-hover:bg-[#9DF542]",
+                    lineColor: "bg-[#9DF542]",
+                    gradColor: "from-[#9DF542]/10",
+                    shadow: "group-hover:shadow-[0_0_30px_rgba(157,245,66,0.5)]",
+                    iconColor: "group-hover:text-[#111]",
+                    anim: "group-hover:rotate-12 group-hover:scale-110 group-hover:rounded-full"
+                  },
+                  {
+                    icon: Upload,
+                    title: "Upload Proof",
+                    desc: "After transferring, you must upload a screenshot or photo of your receipt (coupon image) within your dashboard.",
+                    color: "group-hover:bg-blue-500",
+                    lineColor: "bg-blue-500",
+                    gradColor: "from-blue-500/10",
+                    shadow: "group-hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]",
+                    iconColor: "group-hover:text-white",
+                    anim: "group-hover:-translate-y-2 group-hover:scale-110 group-hover:rounded-[10px]"
+                  },
+                  {
+                    icon: CheckCircle2,
+                    title: "Verification",
+                    desc: "Your order will only enter the production queue once our team has successfully verified your payment proof.",
+                    color: "group-hover:bg-purple-500",
+                    lineColor: "bg-purple-500",
+                    gradColor: "from-purple-500/10",
+                    shadow: "group-hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]",
+                    iconColor: "group-hover:text-white",
+                    anim: "group-hover:scale-125 group-hover:rotate-[360deg] group-hover:rounded-full"
+                  }
+                ].map((item, i) => (
+                  <div key={i} className="group relative flex gap-5 p-5 -ml-5 rounded-[2rem] transition-all duration-500 hover:bg-white hover:shadow-[0_10px_40px_rgb(0,0,0,0.06)] cursor-default overflow-hidden">
+                    {/* Left Animated Line */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${item.lineColor} scale-y-0 origin-bottom transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-y-100`} />
+                    
+                    {/* Background Gradient Wash */}
+                    <div className={`absolute inset-0 bg-gradient-to-r ${item.gradColor} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                    
+                    {/* Icon Container */}
+                    <div className={`w-14 h-14 rounded-2xl bg-[#9DF542]/20 flex items-center justify-center shrink-0 relative z-10 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${item.color} ${item.shadow} ${item.anim}`}>
+                      <item.icon size={26} className={`text-[#111] transition-colors duration-500 ${item.iconColor}`} />
+                    </div>
+                    
+                    {/* Text Content */}
+                    <div className="relative z-10 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:translate-x-3">
+                      <h4 className="text-xl font-bold text-[#111] mb-1.5">{item.title}</h4>
+                      <p className="text-gray-500 leading-relaxed text-[15px]">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xl font-bold text-[#111] mb-2">Supported Methods</h4>
-                    <p className="text-gray-500">We accept direct transfers via CBE (Commercial Bank of Ethiopia), Telebirr, and BOA (Bank of Abyssinia).</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#9DF542]/20 flex items-center justify-center shrink-0">
-                    <Upload size={24} className="text-[#111]" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-bold text-[#111] mb-2">Upload Proof</h4>
-                    <p className="text-gray-500">After transferring, you must upload a screenshot or photo of your receipt (coupon image) within your dashboard.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#9DF542]/20 flex items-center justify-center shrink-0">
-                    <CheckCircle2 size={24} className="text-[#111]" />
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-bold text-[#111] mb-2">Verification</h4>
-                    <p className="text-gray-500">Your order will only enter the production queue once our team has successfully verified your payment proof.</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
