@@ -102,7 +102,7 @@ export default function SupplierDashboard() {
   const fetchOrders = async (uid: string) => {
     const { data, error } = await supabase
       .from("custom_orders")
-      .select("*")
+      .select("*, supplier_product:supplier_products(price)")
       .eq("supplier_id", uid)
       .order("created_at", { ascending: false });
 
@@ -974,6 +974,144 @@ export default function SupplierDashboard() {
                           </div>
                         </div>
                       </CardContent>
+        {activeTab === "orders" && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><ShoppingBag size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+                Pending Fulfillments
+              </h2>
+            </div>
+            {(() => {
+              const filtered = orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER" || o.status === "SAMPLE_REJECTED");
+              return filtered.length === 0 ? (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
+                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No assigned orders at the moment</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filtered.map((order) => (
+                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
+                      <CardContent className="p-0 flex h-44">
+                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
+                        </div>
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
+                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
+                            View &amp; Fulfill
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* === PENDING APPROVALS TAB === */}
+        {activeTab === "pending-approvals" && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Clock size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+                Pending Approvals
+              </h2>
+            </div>
+            {(() => {
+              const filtered = orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL" || o.status === "PRODUCTION_APPROVED_AND_PAID");
+              return filtered.length === 0 ? (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
+                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No pending approvals at the moment</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filtered.map((order) => (
+                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
+                      <CardContent className="p-0 flex h-44">
+                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
+                        </div>
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                              <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-2 py-0.5 rounded-full text-center leading-tight max-w-[100px]">{order.status.replace(/_/g, ' ')}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
+                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
+                            </div>
+                          </div>
+                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
+                            {order.status === "PRODUCTION_APPROVED_AND_PAID" ? "Complete Order" : "View"}
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* === COMPLETED TAB === */}
+        {activeTab === "completed" && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><CheckCircle size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+                Completed Productions
+              </h2>
+            </div>
+            {(() => {
+              const filtered = orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER");
+              return filtered.length === 0 ? (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
+                  <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No completed orders yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {filtered.map((order) => (
+                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group opacity-70 hover:opacity-100">
+                      <CardContent className="p-0 flex h-44">
+                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
+                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
+                        </div>
+                        <div className="flex-1 p-5 flex flex-col justify-between">
+                          <div>
+                            <div className="flex justify-between items-start mb-1">
+                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                              <span className="bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
+                            </div>
+                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
+                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-green-500/10 text-green-600 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-center">
+                            Delivered
+                          </div>
+                        </div>
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
@@ -987,29 +1125,27 @@ export default function SupplierDashboard() {
       {selectedOrder && (() => {
         const views: any[] = selectedOrder.design_views || [];
         const hasViews = views.length > 0;
-        // For the layer extractor: use the active view's design if available, else fall back to design_data
         const activeViewData = hasViews ? views[Math.min(activeViewIdx, views.length - 1)] : null;
         const activeDesign  = activeViewData?.design || selectedOrder.design_data;
         const activeMockup  = activeViewData?.mockup_url || selectedOrder.mockup_image_url;
         const layers = extractLayers(activeDesign);
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl my-4 overflow-hidden">
+            <div className="bg-white w-full max-w-6xl rounded-[2rem] shadow-2xl my-4 overflow-hidden flex flex-col">
               {/* Header */}
               <div className="px-7 py-5 border-b border-gray-100 flex items-center justify-between bg-[#1B2412]">
                 <div>
-                  <h2 className="text-lg font-black text-[#A1FF4D] uppercase tracking-tight">Print Order</h2>
+                  <h2 className="text-lg font-black text-[#A1FF4D] uppercase tracking-tight">Print Order Details</h2>
                   <p className="text-[11px] text-gray-400 font-bold mt-0.5">{selectedOrder.product_type} · {selectedOrder.variants?.color} · {selectedOrder.variants?.view}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* Download the full high-res design (3× PNG) */}
                   <button
                     onClick={() => downloadPrintFile(selectedOrder)}
                     title="Download high-res print file (PNG)"
                     className="flex items-center gap-1.5 bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Print File
+                    Download Print File
                   </button>
                   <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white transition-colors">
                     <XCircle size={26} />
@@ -1017,198 +1153,233 @@ export default function SupplierDashboard() {
                 </div>
               </div>
 
-              <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-                {/* View tabs (shown only when multiple views were designed) */}
-                {hasViews && views.length > 1 && (
-                  <div className="flex gap-2 flex-wrap">
-                    {views.map((v: any, i: number) => (
-                      <button
-                        key={v.viewId}
-                        onClick={() => setActiveViewIdx(i)}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all ${
-                          activeViewIdx === i
-                            ? 'bg-[#1B2412] text-[#A1FF4D]'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {v.viewName}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Mockup preview + download */}
-                {activeMockup && (
-                  <div className="relative w-full h-52 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group">
-                    <img src={activeMockup} alt="Mockup" className="w-full h-full object-contain" />
-                    <button
-                      onClick={() => downloadFile(activeMockup, `mockup-${activeViewData?.viewName || 'front'}-${selectedOrder.id.slice(0,8)}.jpg`)}
-                      title="Download mockup image"
-                      className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#1B2412]/80 hover:bg-[#1B2412] text-white text-[10px] font-black px-3 py-1.5 rounded-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100"
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      Download Mockup
-                    </button>
-                  </div>
-                )}
-
-                {/* Customer info */}
-                <div className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-sm flex-shrink-0">
-                    {(selectedOrder.customer?.full_name || selectedOrder.customer?.email || 'C')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-black text-gray-800">{selectedOrder.customer?.full_name || 'Customer'}</p>
-                    <p className="text-[10px] text-gray-400 font-bold">{selectedOrder.customer?.email}</p>
-                  </div>
-                </div>
-
-                {/* Design layers for the active view */}
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
-                    Design Layers — {activeViewData?.viewName || 'Front'} ({layers.length})
-                  </p>
-                  {layers.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">No design elements found.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {layers.map((layer: any, i: number) => (
-                        <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                          {/* Icon */}
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-xs font-black ${
-                            layer.kind === 'text'  ? 'bg-blue-500'   :
-                            layer.kind === 'image' ? 'bg-purple-500' : 'bg-orange-400'
-                          }`}>
-                            {layer.kind === 'text' ? 'T' : layer.kind === 'image' ? '🖼' : '◼'}
-                          </div>
-                          {/* Details */}
-                          <div className="flex-1 min-w-0">
-                            {layer.kind === 'text' && (
-                              <>
-                                <p className="text-sm font-black text-gray-800 truncate">&ldquo;{layer.text}&rdquo;</p>
-                                <p className="text-[10px] text-gray-400 font-bold mt-0.5">
-                                  {layer.font} · {layer.size}px
-                                  {layer.bold ? ' · Bold' : ''}
-                                  {layer.italic ? ' · Italic' : ''}
-                                </p>
-                              </>
-                            )}
-                            {layer.kind === 'image' && (
-                              <>
-                                <p className="text-sm font-black text-gray-800">Image</p>
-                                <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
-                              </>
-                            )}
-                            {layer.kind === 'shape' && (
-                              <>
-                                <p className="text-sm font-black text-gray-800 capitalize">{layer.type}</p>
-                                <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
-                              </>
-                            )}
-                          </div>
-                          {/* Color swatch + Download button */}
-                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                            {layer.color && (
-                              <div title={layer.color} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: layer.color }} />
-                            )}
-                            <button
-                              onClick={() => downloadLayer(layer, activeDesign, i)}
-                              title="Download this layer as PNG"
-                              className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#1B2412] bg-white border border-gray-200 hover:border-gray-400 px-2 py-1 rounded-lg transition-all active:scale-95"
-                            >
-                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                              PNG
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Proof upload */}
-                <div className="pt-2 space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Proof Photo (after printing)</label>
-
-                  {/* File upload drop zone */}
-                  <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl cursor-pointer transition-all p-4 ${
-                    proofPreview ? 'border-[#A1FF4D] bg-[#A1FF4D]/5' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                  }`}>
-                    {proofPreview ? (
-                      <div className="relative w-full">
-                        <img src={proofPreview} alt="Proof preview" className="w-full max-h-40 object-contain rounded-xl" />
-                        <button
-                          type="button"
-                          onClick={e => { e.preventDefault(); setProofUrl(''); setProofPreview(''); }}
-                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black"
-                        >✕</button>
+              <div className="p-8 overflow-y-auto max-h-[85vh]">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                  
+                  {/* Left Column: Design & Layers (7 cols) */}
+                  <div className="lg:col-span-7 space-y-6">
+                    {/* View tabs */}
+                    {hasViews && views.length > 1 && (
+                      <div className="flex gap-2 flex-wrap">
+                        {views.map((v: any, i: number) => (
+                          <button
+                            key={v.viewId}
+                            onClick={() => setActiveViewIdx(i)}
+                            className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all ${
+                              activeViewIdx === i
+                                ? 'bg-[#1B2412] text-[#A1FF4D]'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {v.viewName}
+                          </button>
+                        ))}
                       </div>
-                    ) : (
-                      <>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-300"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span className="text-[11px] font-bold text-gray-400">Click to upload a photo</span>
-                        <span className="text-[10px] text-gray-300">JPG, PNG or WEBP</span>
-                      </>
                     )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = ev => {
-                          const base64 = ev.target?.result as string;
-                          setProofUrl(base64);      // base64 stored in DB
-                          setProofPreview(base64);   // shown as preview
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                    />
-                  </label>
 
-                  {/* URL fallback */}
-                  <div className="flex items-center gap-2">
-                    <div className="h-px flex-1 bg-gray-100" />
-                    <span className="text-[10px] font-bold text-gray-300">or paste URL</span>
-                    <div className="h-px flex-1 bg-gray-100" />
+                    {/* Large Mockup Preview */}
+                    {activeMockup && (
+                      <div className="relative w-full aspect-square bg-gray-50 rounded-[2.5rem] overflow-hidden border border-gray-100 group shadow-inner">
+                        <img src={activeMockup} alt="Mockup" className="w-full h-full object-contain p-4" />
+                        <button
+                          onClick={() => downloadFile(activeMockup, `mockup-${activeViewData?.viewName || 'front'}-${selectedOrder.id.slice(0,8)}.jpg`)}
+                          title="Download mockup image"
+                          className="absolute bottom-6 right-6 flex items-center gap-1.5 bg-[#1B2412]/90 hover:bg-[#1B2412] text-white text-[11px] font-black px-4 py-2 rounded-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100 shadow-xl"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                          Download Mockup
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Design layers list */}
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
+                        Component Breakdown — {activeViewData?.viewName || 'Front'} ({layers.length})
+                      </p>
+                      {layers.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic bg-gray-50 p-4 rounded-xl">No specific design layers found in this view.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                          {layers.map((layer: any, i: number) => (
+                            <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl border border-gray-100 transition-colors group/layer">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-sm font-black shadow-sm ${
+                                layer.kind === 'text'  ? 'bg-blue-500'   :
+                                layer.kind === 'image' ? 'bg-purple-500' : 'bg-orange-400'
+                              }`}>
+                                {layer.kind === 'text' ? 'T' : layer.kind === 'image' ? '🖼' : '◼'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                {layer.kind === 'text' && (
+                                  <>
+                                    <p className="text-[13px] font-black text-gray-800 truncate">&ldquo;{layer.text}&rdquo;</p>
+                                    <p className="text-[10px] text-gray-400 font-bold mt-0.5">
+                                      {layer.font} · {layer.size}px
+                                      {layer.bold ? ' · Bold' : ''}
+                                    </p>
+                                  </>
+                                )}
+                                {layer.kind === 'image' && (
+                                  <>
+                                    <p className="text-[13px] font-black text-gray-800">Uploaded Asset</p>
+                                    <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
+                                  </>
+                                )}
+                                {layer.kind === 'shape' && (
+                                  <>
+                                    <p className="text-[13px] font-black text-gray-800 capitalize">{layer.type} Shape</p>
+                                    <p className="text-[10px] text-gray-400 font-bold">{layer.w} × {layer.h}px</p>
+                                  </>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {layer.color && (
+                                  <div title={layer.color} className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: layer.color }} />
+                                )}
+                                <button
+                                  onClick={() => downloadLayer(layer, activeDesign, i)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 transition-all opacity-0 group-hover/layer:opacity-100"
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <input
-                    type="url"
-                    value={proofPreview ? '' : proofUrl}
-                    onChange={e => { setProofUrl(e.target.value); setProofPreview(''); }}
-                    placeholder="https://..."
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-[#A1FF4C] outline-none transition-all"
-                  />
+
+                  {/* Right Column: Order Details & Fulfillment (5 cols) */}
+                  <div className="lg:col-span-5 space-y-8">
+                    
+                    {/* Primary Order Metrics */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-[#1B2412] rounded-[2rem] p-6 text-[#A1FF4D]">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 opacity-60">Quantity</p>
+                        <p className="text-3xl font-black">{selectedOrder.variants?.quantity || 1}</p>
+                        <p className="text-[10px] font-bold mt-1 opacity-80">Total Items</p>
+                      </div>
+                      <div className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Size</p>
+                        <p className="text-3xl font-black text-[#1B2412]">{selectedOrder.variants?.size || 'M'}</p>
+                        <p className="text-[10px] text-gray-400 font-bold mt-1">International</p>
+                      </div>
+                    </div>
+
+                    {/* Financial Summary */}
+                    <div className="bg-gray-50 rounded-[2.5rem] p-7 border border-gray-100 space-y-4">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Financial Summary</p>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-gray-500">Unit Price</span>
+                          <span className="text-sm font-black text-gray-800">{(selectedOrder.supplier_product?.price || 600).toLocaleString()} ETB</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-gray-500">Total Value</span>
+                          <span className="text-sm font-black text-gray-800">{((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ETB</span>
+                        </div>
+                        <div className="h-px bg-gray-200 my-1" />
+                        <div className="flex justify-between items-center pt-1">
+                          <span className="text-xs font-black text-emerald-600 uppercase">Your Payout (100%)</span>
+                          <span className="text-xl font-black text-emerald-600">
+                            {((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ETB
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Customer & Shipping */}
+                    <div className="bg-gray-50 rounded-[2.5rem] p-6 border border-gray-100">
+                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Customer Contact</p>
+                       <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-lg shadow-sm">
+                          {(selectedOrder.customer?.full_name || selectedOrder.customer?.email || 'C')[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-gray-900 truncate">{selectedOrder.customer?.full_name || 'Anonymous'}</p>
+                          <p className="text-[11px] text-gray-400 font-bold truncate">{selectedOrder.customer?.email}</p>
+                        </div>
+                       </div>
+                    </div>
+
+                    {/* Fulfillment Section */}
+                    <div className="bg-white rounded-[2.5rem] border-2 border-gray-100 p-6 space-y-5 shadow-xl shadow-gray-100/50">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Submit Progress</p>
+                        <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full uppercase tracking-wider">Required</span>
+                      </div>
+
+                      {/* Drop Zone */}
+                      <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-[2rem] cursor-pointer transition-all p-6 ${
+                        proofPreview ? 'border-[#A1FF4D] bg-[#A1FF4D]/5 shadow-inner' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                      }`}>
+                        {proofPreview ? (
+                          <div className="relative w-full group">
+                            <img src={proofPreview} alt="Proof preview" className="w-full max-h-52 object-contain rounded-2xl" />
+                            <button
+                              type="button"
+                              onClick={e => { e.preventDefault(); setProofUrl(''); setProofPreview(''); }}
+                              className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs hover:bg-black transition-colors backdrop-blur-sm"
+                            >✕</button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                              <UploadCloud className="text-gray-400" size={24} />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-[13px] font-black text-gray-800">Upload Final Proof</p>
+                              <p className="text-[10px] text-gray-400 font-bold mt-1">Drag and drop or click to browse</p>
+                            </div>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              const base64 = ev.target?.result as string;
+                              setProofUrl(base64);
+                              setProofPreview(base64);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
+
+                      {/* Actions */}
+                      {selectedOrder.status === 'SAMPLE_AWAITING_APPROVAL' ? (
+                        <div className="bg-yellow-50 border border-yellow-100 text-yellow-800 p-5 rounded-[2rem] text-xs font-black text-center leading-relaxed">
+                          ⚠️ Sample Proof Submitted.<br/>Waiting for customer approval before continuing.
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          <button
+                            onClick={handleFulfill}
+                            disabled={fulfillLoading || !proofUrl.trim()}
+                            className="w-full bg-[#A1FF4D] text-[#1B2412] py-4 rounded-[2rem] font-black shadow-lg shadow-[#A1FF4D]/30 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+                          >
+                            {fulfillLoading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                            {fulfillLoading ? 'Processing...' : ((selectedOrder.variants?.quantity || 1) > 1 && ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(selectedOrder.status)) ? 'Submit Sample Proof' : 'Confirm Completion'}
+                          </button>
+                          <button onClick={() => setSelectedOrder(null)} className="w-full py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">
+                            Close Preview
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                {/* Actions */}
-                {selectedOrder.status === 'SAMPLE_AWAITING_APPROVAL' ? (
-                  <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl text-sm font-bold text-center">
-                    Sample uploaded. Waiting for customer approval.
-                  </div>
-                ) : (
-                  <div className="flex gap-3">
-                    <button onClick={() => setSelectedOrder(null)} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleFulfill}
-                      disabled={fulfillLoading || !proofUrl.trim()}
-                      className="flex-1 bg-[#A1FF4D] text-[#1B2412] py-3.5 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {fulfillLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                      {fulfillLoading ? 'Saving...' : ((selectedOrder.variants?.quantity || 1) > 1 && ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(selectedOrder.status)) ? 'Upload Sample Proof' : 'Upload Final Proof'}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         );
       })()}
-
     </div>
   );
 }
