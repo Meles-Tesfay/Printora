@@ -203,6 +203,9 @@ function OrdersContent() {
                         <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors p-2">
                             <Home size={18} />
                         </Link>
+                        <Link href="/profile" className="text-gray-500 hover:text-gray-900 transition-colors p-2">
+                            <User size={18} />
+                        </Link>
                         <Link href="/editor" className="bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs hover:bg-[#8ee53f] transition-all flex items-center gap-1.5">
                             <PenTool size={13} /> New Design
                         </Link>

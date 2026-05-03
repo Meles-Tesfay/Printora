@@ -564,6 +564,16 @@ export default function SupplierDashboard() {
               <CheckCircle size={16} /> Completed
             </button>
           </div>
+
+          <div className="pt-2">
+            <p className="px-4 text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Account</p>
+            <Link 
+              href="/profile"
+              className="flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold text-gray-400 hover:bg-gray-50 transition-all"
+            >
+              <User size={16} /> Profile Settings
+            </Link>
+          </div>
         </nav>
 
         <div className="p-4 border-t border-gray-100">
