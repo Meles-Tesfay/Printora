@@ -969,10 +969,13 @@ export default function EditorUI() {
                 window.location.href = "/login";
                 return;
             }
-            setShowPaymentModal(true);
+            if (dbOrderId) {
+                await handleSaveProduct();
+            } else {
+                setShowPaymentModal(true);
+            }
         } catch (e) {
             console.error('Auth error', e);
-        } finally {
             setIsSaving(false);
         }
     };

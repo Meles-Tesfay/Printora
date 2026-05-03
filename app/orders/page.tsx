@@ -564,12 +564,17 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
 
                     {/* Edit action — available while still pending */}
                     {order.status === "PENDING_ADMIN" && (
-                        <Link
-                            href={editUrl}
-                            className="flex items-center justify-center gap-2 w-full bg-[#1B2412] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all"
-                        >
-                            <PenTool size={14} /> Edit Design
-                        </Link>
+                        <div className="pt-2">
+                            <Link
+                                href={editUrl}
+                                className="flex items-center justify-center gap-2 w-full bg-[#1B2412] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-md active:scale-[0.98]"
+                            >
+                                <PenTool size={14} /> Edit Design
+                            </Link>
+                            <p className="text-[10px] text-gray-400 font-bold text-center mt-2.5 px-4">
+                                Note: Editing will no longer be supported once your design is approved for production.
+                            </p>
+                        </div>
                     )}
 
                     {/* Rejected action */}
