@@ -292,20 +292,7 @@ function OrdersContent() {
     );
 }
 
-function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }) {
-    const [finalReceipt, setFinalReceipt] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDeclining, setIsDeclining] = useState(false);
-    const [declineMessage, setDeclineMessage] = useState("");
-    const [rating, setRating] = useState(order.variants?.customer_rating || 0);
-    const [feedback, setFeedback] = useState(order.variants?.customer_feedback || "");
-    const [submittingFeedback, setSubmittingFeedback] = useState(false);
-
-    // Sync local state when the order prop changes (e.g. after refresh)
-    useEffect(() => {
-        setRating(order.variants?.customer_rating || 0);
-        setFeedback(order.variants?.customer_feedback || "");
-    }, [order.id, order.variants]);
+    const [activeAction, setActiveAction] = useState<'none' | 'approve' | 'decline'>('none');
 
     const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING_ADMIN;
     const Icon = cfg.icon;
@@ -322,51 +309,50 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
     const editUrl = `/editor?edit_order=${order.id}&template=${templateId}`;
 
     return (
-        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm">
             {/* Status Header */}
-            <div className={`p-6 ${cfg.bg} border-b ${cfg.border}`}>
-                <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl ${cfg.bg} border ${cfg.border} flex items-center justify-center`}>
-                        <Icon size={22} className={cfg.color} />
+            <div className={`p-8 ${cfg.bg} border-b ${cfg.border}`}>
+                <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-2xl ${cfg.bg} border ${cfg.border} flex items-center justify-center shadow-inner`}>
+                        <Icon size={26} className={cfg.color} />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Status</p>
-                        <h3 className={`text-xl font-black ${cfg.color}`}>{cfg.label}</h3>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Current Status</p>
+                        <h3 className={`text-2xl font-black ${cfg.color} uppercase`} style={{ fontFamily: 'Impact, sans-serif' }}>{cfg.label}</h3>
                     </div>
                     <div className="ml-auto text-right">
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
-                        <p className="text-[11px] font-black text-gray-600 font-mono">#{order.id.slice(0, 8).toUpperCase()}</p>
+                        <p className="text-xs font-black text-gray-600 font-mono bg-white px-3 py-1 rounded-full border border-gray-100">#{order.id.slice(0, 8).toUpperCase()}</p>
                     </div>
                 </div>
-                <p className="text-xs text-gray-500 font-medium mt-3">{cfg.description}</p>
+                <p className="text-xs text-gray-500 font-bold mt-4 leading-relaxed max-w-2xl">{cfg.description}</p>
             </div>
 
             {/* Progress Stepper */}
             {order.status !== "REJECTED" && (
-                <div className="px-6 py-5 border-b border-gray-50">
-                    <div className="flex items-center">
+                <div className="px-8 py-6 border-b border-gray-50 bg-[#fafafa]/50">
+                    <div className="flex items-center justify-between gap-4">
                         {STEPS.map((step, idx) => {
                             const done = currentStep >= step.id;
                             const active = currentStep + 1 === step.id;
                             const StepIcon = step.icon;
                             return (
-                                <div key={step.id} className="flex items-center flex-1">
-                                    <div className="flex flex-col items-center gap-1.5">
-                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${done
-                                                ? "bg-[#A1FF4D] text-[#1B2412] shadow-md shadow-[#A1FF4D]/30"
+                                <div key={step.id} className="flex items-center flex-1 last:flex-none">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${done
+                                                ? "bg-[#A1FF4D] text-[#1B2412] shadow-lg shadow-[#A1FF4D]/20"
                                                 : active
-                                                    ? "bg-white border-2 border-[#A1FF4D] text-[#A1FF4D]"
+                                                    ? "bg-white border-2 border-[#A1FF4D] text-[#A1FF4D] scale-110"
                                                     : "bg-gray-100 text-gray-300"
                                             }`}>
-                                            {done ? <CheckCircle size={16} /> : <StepIcon size={14} />}
+                                            {done ? <CheckCircle size={18} /> : <StepIcon size={16} />}
                                         </div>
-                                        <span className={`text-[9px] font-black uppercase tracking-wider text-center leading-tight max-w-[60px] ${done ? "text-[#2B3220]" : active ? "text-gray-500" : "text-gray-300"
-                                            }`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest text-center whitespace-nowrap ${done ? "text-[#2B3220]" : active ? "text-[#A1FF4D]" : "text-gray-300"}`}>
                                             {step.label}
                                         </span>
                                     </div>
                                     {idx < STEPS.length - 1 && (
-                                        <div className={`flex-1 h-0.5 mx-1 mb-5 transition-all ${currentStep > step.id ? "bg-[#A1FF4D]" : "bg-gray-100"}`} />
+                                        <div className={`flex-1 h-0.5 mx-4 -mt-6 transition-all ${currentStep > step.id ? "bg-[#A1FF4D]" : "bg-gray-100"}`} />
                                     )}
                                 </div>
                             );
@@ -375,259 +361,272 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                 </div>
             )}
 
-            {/* Design Preview */}
-            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Mockup */}
-                <div className="bg-gray-50 rounded-2xl overflow-hidden aspect-square flex items-center justify-center p-4 border border-gray-100">
-                    {order.mockup_image_url ? (
-                        <img src={order.mockup_image_url} className="w-full h-full object-contain" alt="Your design" />
-                    ) : (
-                        <div className="text-gray-200 flex flex-col items-center gap-2">
-                            <Package size={40} />
-                            <p className="text-xs font-bold text-gray-300">No preview</p>
+            <div className="p-8 space-y-8">
+                {/* 2-Column Info Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Mockup Column */}
+                    <div className="bg-gray-50 rounded-[2rem] overflow-hidden aspect-square flex items-center justify-center p-6 border border-gray-100 shadow-inner group">
+                        {order.mockup_image_url ? (
+                            <img src={order.mockup_image_url} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" alt="Your design" />
+                        ) : (
+                            <div className="text-gray-200 flex flex-col items-center gap-2">
+                                <Package size={60} />
+                                <p className="text-sm font-black uppercase tracking-widest text-gray-300">No Preview</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Details Column */}
+                    <div className="space-y-4 flex flex-col justify-center">
+                        <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Product Identity</p>
+                            <p className="font-black text-[#1B2412] text-xl uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>{order.product_type}</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Specs</p>
+                                <p className="font-black text-[#111] text-[13px]">{order.variants?.color} • {order.variants?.size}</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Volume</p>
+                                <p className="font-black text-[#111] text-[13px]">x{order.variants?.quantity || 1} Units</p>
+                            </div>
+                        </div>
+
+                        {/* Financial Card */}
+                        <div className="bg-[#1B2412] rounded-3xl p-6 text-white shadow-xl shadow-[#1B2412]/10">
+                            <div className="flex justify-between items-center mb-3">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Valuation</p>
+                                <p className="font-black text-lg">
+                                    {(() => {
+                                        const basePrice = order.supplier_product?.price || 600;
+                                        return (basePrice * (order.variants?.quantity || 1)).toLocaleString();
+                                    })()} ብር
+                                </p>
+                            </div>
+                            <div className="h-px bg-white/10 my-3" />
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="text-[9px] font-black text-[#A1FF4D] uppercase tracking-widest">Deposit Paid (50%)</p>
+                                <p className="font-black text-[#A1FF4D] text-sm italic">
+                                    {(() => {
+                                        const basePrice = order.supplier_product?.price || 600;
+                                        return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
+                                    })()} ብር
+                                </p>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Payable Balance</p>
+                                <p className="font-black text-amber-400 text-sm">
+                                    {(() => {
+                                        const basePrice = order.supplier_product?.price || 600;
+                                        return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
+                                    })()} ብር
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Full-Width Action Section */}
+                <div className="space-y-6">
+                    {/* Supplier proof & Approval Logic */}
+                    {order.supplier_proof_image_url && (
+                        <div className="bg-emerald-50 border border-emerald-100 rounded-[2.5rem] p-8">
+                            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                                {/* Proof Image */}
+                                <div className="w-full lg:w-2/5 group relative">
+                                    <img src={order.supplier_proof_image_url} className="w-full rounded-2xl shadow-lg border-4 border-white" alt="Proof" />
+                                    <a
+                                        href={order.supplier_proof_image_url}
+                                        download={`proof-${order.id.slice(0,8)}.jpg`}
+                                        className="absolute bottom-4 right-4 bg-[#1B2412] text-white p-3 rounded-xl shadow-xl hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100"
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    </a>
+                                </div>
+
+                                {/* Approval Actions */}
+                                <div className="flex-1 space-y-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.2em]">Production Milestone: Sample Ready</p>
+                                        <span className="bg-emerald-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase">Review Required</span>
+                                    </div>
+                                    <h4 className="text-2xl font-black text-[#1B2412] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>Verify Your Sample Proof</h4>
+                                    <p className="text-sm text-emerald-700 font-bold leading-relaxed mb-6">
+                                        The supplier has completed the first sample. Review the quality and layout. 
+                                        If satisfied, pay the remaining <span className="underline decoration-emerald-300 decoration-2 underline-offset-4">
+                                            {(() => {
+                                                const basePrice = order.supplier_product?.price || 600;
+                                                return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
+                                            })()} ብር
+                                        </span> to CBE 100021312323 to start the full production batch.
+                                    </p>
+
+                                    {!order.variants?.finalReceiptUrl ? (
+                                        <div className="pt-4">
+                                            {order.status === 'SAMPLE_AWAITING_APPROVAL' ? (
+                                                <div className="space-y-6">
+                                                    {activeAction === 'none' && (
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <button 
+                                                                onClick={() => setActiveAction('approve')}
+                                                                className="bg-[#1B2412] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-black transition-all shadow-xl shadow-[#1B2412]/20 flex items-center justify-center gap-2"
+                                                            >
+                                                                <CheckCircle size={16} /> Approve & Pay
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setActiveAction('decline')}
+                                                                className="bg-white border-2 border-red-100 text-red-500 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                                                            >
+                                                                <XCircle size={16} /> Decline & Request Change
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {activeAction === 'decline' && (
+                                                        <div className="bg-white/80 p-6 rounded-3xl border border-red-100 animate-in fade-in slide-in-from-bottom-2">
+                                                            <div className="flex justify-between items-center mb-3">
+                                                                <label className="text-[11px] font-black text-red-600 uppercase tracking-widest">Rejection Feedback</label>
+                                                                <button onClick={() => setActiveAction('none')} className="text-[10px] font-black text-gray-400 hover:text-gray-600">Cancel</button>
+                                                            </div>
+                                                            <textarea 
+                                                                value={declineMessage}
+                                                                onChange={e => setDeclineMessage(e.target.value)}
+                                                                placeholder="What specific changes are needed? (e.g. Logo size, color shade, etc.)"
+                                                                className="w-full text-sm p-4 rounded-2xl border border-red-50 outline-none focus:ring-2 focus:ring-red-400 mb-4 resize-none min-h-[100px]"
+                                                            />
+                                                            <button 
+                                                                onClick={async () => {
+                                                                    if (!declineMessage.trim()) return alert('Please provide a reason');
+                                                                    setIsDeclining(true);
+                                                                    const newVariants = { ...order.variants, sample_rejection_message: declineMessage };
+                                                                    await supabase.from('custom_orders').update({ variants: newVariants, status: 'SAMPLE_REJECTED' }).eq('id', order.id);
+                                                                    setIsDeclining(false);
+                                                                    onRefresh();
+                                                                }}
+                                                                disabled={isDeclining || !declineMessage.trim()}
+                                                                className="w-full bg-red-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-600 transition-all disabled:opacity-50"
+                                                            >
+                                                                {isDeclining ? 'Submitting...' : 'Confirm Rejection'}
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {activeAction === 'approve' && (
+                                                        <div className="bg-white/80 p-6 rounded-3xl border border-emerald-100 animate-in fade-in slide-in-from-bottom-2">
+                                                            <div className="flex justify-between items-center mb-4">
+                                                                <label className="text-[11px] font-black text-emerald-700 uppercase tracking-widest">Final Batch Payment Receipt</label>
+                                                                <button onClick={() => setActiveAction('none')} className="text-[10px] font-black text-gray-400 hover:text-gray-600">Cancel</button>
+                                                            </div>
+                                                            <div className="relative border-2 border-dashed border-emerald-100 rounded-2xl p-6 bg-emerald-50/30 flex flex-col items-center">
+                                                                <input 
+                                                                    type="file" 
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) {
+                                                                            const reader = new FileReader();
+                                                                            reader.onload = (event) => setFinalReceipt(event.target?.result as string);
+                                                                            reader.readAsDataURL(file);
+                                                                        }
+                                                                    }}
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                />
+                                                                {finalReceipt ? (
+                                                                    <div className="flex flex-col items-center gap-3">
+                                                                        <img src={finalReceipt} className="h-32 rounded-xl object-contain shadow-md" alt="Receipt Preview" />
+                                                                        <p className="text-[10px] font-black text-emerald-600 uppercase">File Selected ✓</p>
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm">
+                                                                            <ShieldCheck className="text-emerald-500" size={20} />
+                                                                        </div>
+                                                                        <p className="text-[11px] font-black text-emerald-700 uppercase">Click to upload payment screenshot</p>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                            {finalReceipt && (
+                                                                <button 
+                                                                    onClick={async () => {
+                                                                        setIsSubmitting(true);
+                                                                        const newVariants = { ...order.variants, finalReceiptUrl: finalReceipt };
+                                                                        await supabase.from('custom_orders').update({ variants: newVariants, status: 'PRODUCTION_APPROVED_AND_PAID' }).eq('id', order.id);
+                                                                        setIsSubmitting(false);
+                                                                        onRefresh();
+                                                                    }}
+                                                                    disabled={isSubmitting}
+                                                                    className="w-full mt-4 bg-[#1B2412] text-[#A1FF4D] py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-[#A1FF4D]/10 hover:scale-[1.01] active:scale-95 transition-all"
+                                                                >
+                                                                    {isSubmitting ? 'Verifying...' : 'Approve & Start Full Production'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-emerald-500/10 rounded-3xl p-6 border border-emerald-500/20">
+                                                    <p className="text-sm font-black text-emerald-800 mb-2 italic">Sample Approved! ✅</p>
+                                                    <p className="text-[11px] text-emerald-700 font-bold">The supplier is now processing the full production batch of {order.variants?.quantity || 1} units.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-white/80 p-5 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                                    <ShieldCheck size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-[#1B2412] uppercase tracking-wider">Order in Production</p>
+                                                    <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Final payment verified ✓</p>
+                                                </div>
+                                            </div>
+                                            <a
+                                                href={order.variants.finalReceiptUrl}
+                                                download={`final-receipt-${order.id.slice(0,8)}.jpg`}
+                                                className="bg-emerald-600 text-white text-[10px] font-black px-4 py-2 rounded-xl hover:bg-emerald-700 transition-all"
+                                            >
+                                                Receipt
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Details */}
-                <div className="space-y-3">
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product</p>
-                        <p className="font-black text-[#111] text-base">{order.product_type}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Color</p>
-                            <p className="font-black text-[#111] text-sm">{order.variants?.color || "Default"}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">View</p>
-                            <p className="font-black text-[#111] text-sm">{order.variants?.view || "Front"}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Size</p>
-                            <p className="font-black text-[#111] text-sm">{order.variants?.size || "M"}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-2xl p-3">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
-                            <p className="font-black text-[#111] text-sm">x {order.variants?.quantity || 1}</p>
+                {/* Secondary Actions Row */}
+                <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-gray-50 px-4 py-2 rounded-full border border-gray-100 flex items-center gap-2">
+                            <Clock size={12} className="text-gray-400" />
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{new Date(order.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                        <div className="flex justify-between items-center mb-2">
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
-                            <p className="font-black text-[#111] text-sm">
-                                {(() => {
-                                    const basePrice = order.supplier_product?.price || (Array.isArray(order.supplier_product) ? order.supplier_product[0]?.price : 0) || 600;
-                                    return (basePrice * (order.variants?.quantity || 1)).toLocaleString();
-                                })()} ETB
-                            </p>
-                        </div>
-                        <div className="flex justify-between items-center mb-2">
-                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Paid (50% Deposit)</p>
-                            <p className="font-black text-emerald-600 text-sm">
-                                {(() => {
-                                    const basePrice = order.supplier_product?.price || (Array.isArray(order.supplier_product) ? order.supplier_product[0]?.price : 0) || 600;
-                                    return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
-                                })()} ETB
-                            </p>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Remaining Balance</p>
-                            <p className="font-black text-amber-600 text-sm">
-                                {(() => {
-                                    const basePrice = order.supplier_product?.price || (Array.isArray(order.supplier_product) ? order.supplier_product[0]?.price : 0) || 600;
-                                    return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
-                                })()} ETB
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Submitted</p>
-                        <p className="font-bold text-[#111] text-sm">{new Date(order.created_at).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                    </div>
-
-                    {/* Supplier proof (if completed) */}
-                    {order.supplier_proof_image_url && (
-                        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-[9px] font-black text-green-600 uppercase tracking-widest">Completion Proof</p>
-                                <a
-                                    href={order.supplier_proof_image_url}
-                                    download={`proof-${order.id.slice(0,8)}.jpg`}
-                                    className="flex items-center gap-1 bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:bg-green-700 active:scale-95 transition-all"
-                                >
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    Download
-                                </a>
-                            </div>
-                            <img src={order.supplier_proof_image_url} className="w-full rounded-xl" alt="Proof" />
-                            {/* Final Payment Section / Sample Approval */}
-                            {!order.variants?.finalReceiptUrl ? (
-                                <div className="mt-4 pt-4 border-t border-green-200">
-                                    {order.status === 'SAMPLE_AWAITING_APPROVAL' ? (
-                                        <>
-                                            <p className="text-sm font-black text-green-800 mb-2">Sample is ready! 📸</p>
-                                            <p className="text-xs text-green-700 font-medium mb-4">Please review the sample proof. If approved, pay the remaining balance of <span className="font-bold">${(((order.variants?.quality === "Premium" ? 30 : 25) * (order.variants?.quantity || 1)) / 2).toFixed(2)}</span> to CBE 100021312323 to start the final batch production. If unsatisfied, you can decline and request changes.</p>
-                                            
-                                            <div className="flex flex-col gap-4">
-                                                {/* Decline Section */}
-                                                <div className="bg-white/50 p-3 rounded-xl border border-green-200">
-                                                    <label className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1 block">Decline Sample</label>
-                                                    <textarea 
-                                                        value={declineMessage}
-                                                        onChange={e => setDeclineMessage(e.target.value)}
-                                                        placeholder="What needs to be changed?"
-                                                        className="w-full text-xs p-2 rounded-lg border border-red-100 outline-none focus:ring-1 focus:ring-red-400 mb-2 resize-none"
-                                                        rows={2}
-                                                    />
-                                                    <button 
-                                                        onClick={async () => {
-                                                            if (!declineMessage.trim()) return alert('Please provide a reason');
-                                                            setIsDeclining(true);
-                                                            const newVariants = { ...order.variants, sample_rejection_message: declineMessage };
-                                                            await supabase.from('custom_orders').update({ variants: newVariants, status: 'SAMPLE_REJECTED' }).eq('id', order.id);
-                                                            setIsDeclining(false);
-                                                            onRefresh();
-                                                        }}
-                                                        disabled={isDeclining || !declineMessage.trim()}
-                                                        className="w-full bg-red-50 text-red-600 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider border border-red-100 hover:bg-red-100 transition-all disabled:opacity-50"
-                                                    >
-                                                        {isDeclining ? 'Declining...' : 'Decline & Request Change'}
-                                                    </button>
-                                                </div>
-
-                                                {/* Approve Section */}
-                                                <div className="bg-white/50 p-3 rounded-xl border border-green-200">
-                                                    <label className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-2 block">Approve & Upload Receipt</label>
-                                                    <input 
-                                                        type="file" 
-                                                        accept="image/*"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                const reader = new FileReader();
-                                                                reader.onload = (event) => setFinalReceipt(event.target?.result as string);
-                                                                reader.readAsDataURL(file);
-                                                            }
-                                                        }}
-                                                        className="w-full text-xs text-green-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700 transition-all"
-                                                    />
-                                                    {finalReceipt && (
-                                                        <div className="mt-3">
-                                                            <img src={finalReceipt} className="h-20 rounded-lg object-contain bg-white/50 p-1 border border-green-200" alt="Final Receipt" />
-                                                            <button 
-                                                                onClick={async () => {
-                                                                    setIsSubmitting(true);
-                                                                    const newVariants = { ...order.variants, finalReceiptUrl: finalReceipt };
-                                                                    await supabase.from('custom_orders').update({ variants: newVariants, status: 'PRODUCTION_APPROVED_AND_PAID' }).eq('id', order.id);
-                                                                    setIsSubmitting(false);
-                                                                    onRefresh();
-                                                                }}
-                                                                disabled={isSubmitting}
-                                                                className="w-full mt-2 bg-[#1B2412] text-[#A1FF4D] py-2.5 rounded-xl font-black text-xs uppercase tracking-wider hover:bg-black transition-all"
-                                                            >
-                                                                {isSubmitting ? 'Submitting...' : 'Approve & Submit Receipt'}
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-sm font-black text-green-800 mb-2">Production is complete! 🎉</p>
-                                            <p className="text-xs text-green-700 font-medium mb-3">Please pay the remaining balance of <span className="font-bold">${(((order.variants?.quality === "Premium" ? 30 : 25) * (order.variants?.quantity || 1)) / 2).toFixed(2)}</span> to Bank Account (CBE) 100021312323 to arrange delivery.</p>
-                                            
-                                            <div className="flex flex-col gap-2">
-                                                <label className="text-[10px] font-black text-green-600 uppercase tracking-widest">Upload Final Receipt</label>
-                                                <input 
-                                                    type="file" 
-                                                    accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) {
-                                                            const reader = new FileReader();
-                                                            reader.onload = (event) => setFinalReceipt(event.target?.result as string);
-                                                            reader.readAsDataURL(file);
-                                                        }
-                                                    }}
-                                                    className="w-full text-xs text-green-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-green-600 file:text-white hover:file:bg-green-700 transition-all"
-                                                />
-                                                {finalReceipt && (
-                                                    <div className="mt-2">
-                                                        <img src={finalReceipt} className="h-20 rounded-lg object-contain bg-white/50 p-1 border border-green-200" alt="Final Receipt" />
-                                                        <button 
-                                                            onClick={async () => {
-                                                                setIsSubmitting(true);
-                                                                const newVariants = { ...order.variants, finalReceiptUrl: finalReceipt };
-                                                                // Since this is for qty == 1 or after final batch
-                                                                await supabase.from('custom_orders').update({ variants: newVariants }).eq('id', order.id);
-                                                                setIsSubmitting(false);
-                                                                onRefresh();
-                                                            }}
-                                                            disabled={isSubmitting}
-                                                            className="w-full mt-2 bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all"
-                                                        >
-                                                            {isSubmitting ? 'Submitting...' : 'Submit Final Payment'}
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="mt-4 pt-4 border-t border-green-200 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm font-black text-green-800 mb-1">
-                                            {order.status === 'PRODUCTION_APPROVED_AND_PAID' ? 'Sample approved! ✅' : 'Final payment submitted! ✅'}
-                                        </p>
-                                        <p className="text-xs text-green-700 font-medium">
-                                            {order.status === 'PRODUCTION_APPROVED_AND_PAID' ? 'The supplier is completing the rest of your batch.' : 'We are verifying your payment and preparing your order for delivery.'}
-                                        </p>
-                                    </div>
-                                    <a
-                                        href={order.variants.finalReceiptUrl}
-                                        download={`final-receipt-${order.id.slice(0,8)}.jpg`}
-                                        className="flex items-center gap-1 bg-green-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg hover:bg-green-700 active:scale-95 transition-all flex-shrink-0"
-                                    >
-                                        View Receipt
-                                    </a>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Edit action — available while still pending */}
-                    {order.status === "PENDING_ADMIN" && (
-                        <div className="pt-2">
+                    <div className="flex items-center gap-3">
+                        {order.status === "PENDING_ADMIN" && (
                             <Link
                                 href={editUrl}
-                                className="flex items-center justify-center gap-2 w-full bg-[#1B2412] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-md active:scale-[0.98]"
+                                className="bg-[#1B2412] text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-lg active:scale-95 flex items-center gap-2"
                             >
                                 <PenTool size={14} /> Edit Design
                             </Link>
-                            <p className="text-[10px] text-gray-400 font-bold text-center mt-2.5 px-4">
-                                Note: Editing will no longer be supported once your design is approved for production.
-                            </p>
-                        </div>
-                    )}
+                        )}
+                        {order.status === "REJECTED" && (
+                            <Link
+                                href={editUrl}
+                                className="bg-red-500 text-white px-6 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-red-600 transition-all flex items-center gap-2"
+                            >
+                                <PenTool size={14} /> Redesign
+                            </Link>
+                    </div>
+                </div>
 
-                    {/* Rejected action */}
-                    {order.status === "REJECTED" && (
-                        <Link
-                            href={editUrl}
-                            className="flex items-center justify-center gap-2 w-full bg-[#111] text-white py-3 rounded-2xl font-bold text-sm hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all"
-                        >
-                            <PenTool size={14} /> Redesign &amp; Resubmit
-                        </Link>
-                    )}
-
-                    {/* Feedback Section for Delivered Orders */}
+                {/* Feedback Section for Delivered Orders */}
                     {order.status === "DELIVERED" && (
                         Number(order.variants?.customer_rating) > 0 ? (
                             /* Already submitted — show compact thank-you card only */
