@@ -649,7 +649,7 @@ export default function SupplierDashboard() {
                         <span className="text-xs font-black text-gray-700 bg-gray-100 px-2 py-1 rounded-lg">{p.product_type}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm font-bold text-[#2B3220]">${p.price}</span>
+                        <span className="text-sm font-bold text-[#2B3220]">{p.price} ETB</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-1 flex-wrap">

@@ -26,6 +26,11 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"orders" | "products" | "suppliers" | "customers">("orders");
+  const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveImageUrl(null);
+  }, [selectedProduct]);
 
   useEffect(() => {
     initDashboard();
@@ -699,24 +704,37 @@ export default function AdminDashboard() {
                 {/* Left Column: Image Gallery */}
                 <div className="w-full lg:w-[45%] flex flex-col gap-6">
                   <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center relative shadow-inner">
-                     <img src={selectedProduct.image_url} className="w-full h-full object-contain p-6" alt="Primary" />
-                     <div className="absolute top-6 left-6 bg-[#ccff00] text-[#111] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Primary View</div>
+                     <img src={activeImageUrl || selectedProduct.image_url} className="w-full h-full object-contain p-6 transition-all duration-300" alt="Primary" />
+                     <div className="absolute top-6 left-6 bg-[#ccff00] text-[#111] text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
+                       {(() => {
+                         if (!activeImageUrl || activeImageUrl === selectedProduct.image_url) return "Primary View";
+                         if (activeImageUrl === selectedProduct.hover_image_url) return "Hover View";
+                         const imgs = Array.isArray(selectedProduct.detail_images) ? selectedProduct.detail_images : (selectedProduct.detail_images?.split(',').filter(Boolean) || []);
+                         const idx = imgs.findIndex((img: string) => img.trim() === activeImageUrl);
+                         if (idx !== -1) return `Extra ${idx + 1} View`;
+                         return "Primary View";
+                       })()}
+                     </div>
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
+                    <div onClick={() => setActiveImageUrl(selectedProduct.image_url)} className={`aspect-square rounded-2xl overflow-hidden bg-gray-50 border flex items-center justify-center relative group cursor-pointer ${(!activeImageUrl || activeImageUrl === selectedProduct.image_url) ? 'border-[#ccff00] border-2' : 'border-gray-100'}`}>
+                      <img src={selectedProduct.image_url} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" alt="Primary Thumb" />
+                      <div className="absolute top-2 left-2 bg-black/60 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">Primary</div>
+                    </div>
                     {selectedProduct.hover_image_url && (
-                      <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center relative group cursor-zoom-in">
+                      <div onClick={() => setActiveImageUrl(selectedProduct.hover_image_url)} className={`aspect-square rounded-2xl overflow-hidden bg-gray-50 border flex items-center justify-center relative group cursor-pointer ${activeImageUrl === selectedProduct.hover_image_url ? 'border-[#ccff00] border-2' : 'border-gray-100'}`}>
                         <img src={selectedProduct.hover_image_url} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" alt="Hover" />
                         <div className="absolute top-2 left-2 bg-black/60 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">Hover</div>
                       </div>
                     )}
                     {(() => {
-                      const imgs = Array.isArray(selectedProduct.additional_images) 
-                        ? selectedProduct.additional_images 
-                        : (selectedProduct.additional_images?.split(',').filter(Boolean) || []);
+                      const imgs = Array.isArray(selectedProduct.detail_images) 
+                        ? selectedProduct.detail_images 
+                        : (selectedProduct.detail_images?.split(',').filter(Boolean) || []);
                       
                       return imgs.map((img: string, i: number) => (
-                        <div key={i} className="aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center relative group cursor-zoom-in">
+                        <div key={i} onClick={() => setActiveImageUrl(img.trim())} className={`aspect-square rounded-2xl overflow-hidden bg-gray-50 border flex items-center justify-center relative group cursor-pointer ${activeImageUrl === img.trim() ? 'border-[#ccff00] border-2' : 'border-gray-100'}`}>
                           <img src={img.trim()} className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" alt={`Extra ${i}`} />
                           <div className="absolute top-2 left-2 bg-black/60 text-white text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest">Extra {i+1}</div>
                         </div>
@@ -739,7 +757,7 @@ export default function AdminDashboard() {
                       )}
                     </div>
                     <h4 className="text-3xl font-black text-[#111] leading-tight mb-1">{selectedProduct.name}</h4>
-                    <p className="text-2xl font-black text-[#3da85b]">${selectedProduct.price}</p>
+                    <p className="text-2xl font-black text-[#3da85b]">{selectedProduct.price} ETB</p>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
