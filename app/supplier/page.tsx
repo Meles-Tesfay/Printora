@@ -26,6 +26,23 @@ const PRESET_COLORS = [
   { name: "Pink", hex: "#ec4899" },
 ];
 
+const INITIAL_FORM = {
+  name: "",
+  description: "",
+  long_description: "",
+  product_type: "T-Shirt",
+  price: "",
+  bulk_pricing: "",
+  image_url: "",
+  hover_image_url: "",
+  detail_images: "",
+  turnaround_time: "2-4 Business Days",
+  quality: "Premium",
+  tags: [] as string[],
+  available_colors: [] as { name: string; hex: string }[],
+  available_sizes: [] as string[],
+};
+
 export default function SupplierDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -42,23 +59,8 @@ export default function SupplierDashboard() {
   const [activeTab, setActiveTab] = useState("my-products");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
-  // Form state
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    long_description: "",
-    product_type: "T-Shirt",
-    price: "",
-    bulk_pricing: "",
-    image_url: "",
-    hover_image_url: "",
-    detail_images: "",
-    turnaround_time: "2-4 Business Days",
-    quality: "Premium",
-    tags: [] as string[],
-    available_colors: [] as { name: string; hex: string }[],
-    available_sizes: [] as string[],
-  });
+  // Form state initialized with INITIAL_FORM
+  const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
     initPage();
@@ -612,44 +614,65 @@ export default function SupplierDashboard() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-4">
                 {products.map((product) => (
-                  <Card key={product.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
-                    <div className="relative aspect-[4/5] bg-gray-50 flex items-center justify-center overflow-hidden">
-                      <img src={product.image_url} alt={product.name} className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-500" />
-                      <div className="absolute top-4 right-4 flex flex-col gap-2">
-                        <button onClick={() => handleEditProduct(product)} className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-gray-600 hover:bg-[#1B2412] hover:text-[#A1FF4D] transition-all">
-                          <Plus size={16} className="rotate-45" />
-                        </button>
-                        <button onClick={() => handleDeleteProduct(product.id)} className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      <div className="absolute bottom-4 left-4">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          product.status === 'APPROVED' ? 'bg-emerald-500 text-white' : 
-                          product.status === 'REJECTED' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
+                  <div key={product.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 flex items-center gap-6 group">
+                    {/* Thumbnail */}
+                    <div className="w-32 h-32 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-3">
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+
+                    {/* Content Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{product.product_type}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                          product.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 
+                          product.status === 'REJECTED' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
                         }`}>
                           {product.status}
                         </span>
                       </div>
+                      <h3 className="font-black text-[#1B2412] text-lg truncate mb-1">{product.name}</h3>
+                      <p className="text-xs text-gray-400 font-medium line-clamp-1">{product.description || 'No description provided.'}</p>
                     </div>
-                    <CardContent className="p-6">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{product.product_type}</p>
-                      <h3 className="font-black text-[#1B2412] text-lg leading-tight mb-2">{product.name}</h3>
-                      <div className="flex items-end justify-between mt-4">
-                        <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Base Price</p>
-                          <p className="text-xl font-black text-[#2B3220]">{product.price} <span className="text-[10px]">ETB</span></p>
-                        </div>
-                        <div className="flex -space-x-2">
-                          {product.available_colors?.slice(0, 3).map((c: any, i: number) => (
-                            <div key={i} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
-                          ))}
-                        </div>
+
+                    {/* Colors & Price */}
+                    <div className="hidden md:flex flex-col items-center gap-2 px-8 border-x border-gray-100">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Available Colors</p>
+                      <div className="flex -space-x-1.5">
+                        {product.available_colors?.slice(0, 4).map((c: any, i: number) => (
+                          <div key={i} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} title={c.name} />
+                        ))}
+                        {product.available_colors?.length > 4 && (
+                          <div className="w-5 h-5 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-black text-gray-500">
+                            +{product.available_colors.length - 4}
+                          </div>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    <div className="text-right px-6">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Base Price</p>
+                      <p className="text-xl font-black text-[#2B3220] whitespace-nowrap">{product.price} <span className="text-[10px] opacity-60">ብር</span></p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pr-2">
+                      <button 
+                        onClick={() => handleEditProduct(product)}
+                        className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#1B2412] hover:text-[#A1FF4D] transition-all shadow-sm active:scale-90"
+                      >
+                        <Plus size={18} className="rotate-45" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="w-10 h-10 rounded-xl bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-90"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -657,33 +680,131 @@ export default function SupplierDashboard() {
         )}
 
         {activeTab === "add-product" && (
-          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 max-w-4xl">
-            <h2 className="text-2xl font-black text-[#2B3220] uppercase mb-8" style={{ fontFamily: 'Impact, sans-serif' }}>
-              {editingProductId ? "Edit Product" : "Add New Product"}
-            </h2>
-            <form onSubmit={handleSubmitProduct} className="space-y-6">
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-10 max-w-5xl">
+            <div className="flex items-center justify-between mb-10">
               <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase block mb-2">Product Name *</label>
-                <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+                <h2 className="text-2xl font-black text-[#2B3220] uppercase tracking-tight" style={{ fontFamily: 'Impact, sans-serif' }}>
+                  {editingProductId ? "Edit Product" : "Add New Product"}
+                </h2>
+                <p className="text-gray-400 text-xs font-bold mt-1">Configure your product catalog listing details.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Short description..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm" />
-                <textarea value={form.long_description} onChange={e => setForm(f => ({ ...f, long_description: e.target.value }))} placeholder="Long description..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm" />
+              {editingProductId && (
+                <button onClick={() => { setEditingProductId(null); setForm(INITIAL_FORM); }} className="text-xs font-black text-red-500 uppercase tracking-widest border-b-2 border-red-100 pb-1 hover:border-red-500 transition-all">
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmitProduct} className="space-y-10">
+              {/* Basic Details Section */}
+              <div className="space-y-6">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] border-b pb-2">01. Basic Identity</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Product Display Name *</label>
+                    <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium Cotton Heavyweight Tee" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 focus:ring-4 focus:ring-[#A1FF4C]/20 focus:border-[#A1FF4C] outline-none text-sm font-black transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Short Summary</label>
+                    <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief pitch for the product list page..." className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold min-h-[100px] outline-none focus:border-[#A1FF4C]" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Full Technical Specs</label>
+                    <textarea value={form.long_description} onChange={e => setForm(f => ({ ...f, long_description: e.target.value }))} placeholder="Detailed fabric composition, care instructions, etc..." className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold min-h-[100px] outline-none focus:border-[#A1FF4C]" />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <select value={form.product_type} onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))} className="bg-gray-50 border rounded-xl p-3 text-sm font-bold">
-                  {PRODUCT_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-                <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="Price" className="bg-gray-50 border rounded-xl p-3 text-sm font-bold" />
-                <input type="text" value={form.bulk_pricing} onChange={e => setForm(f => ({ ...f, bulk_pricing: e.target.value }))} placeholder="Bulk pricing" className="bg-gray-50 border rounded-xl p-3 text-sm font-bold" />
+
+              {/* Attributes Section */}
+              <div className="space-y-6">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] border-b pb-2">02. Attributes & Logistics</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Category</label>
+                    <select value={form.product_type} onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none appearance-none">
+                      {PRODUCT_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Base Payout (ETB)</label>
+                    <div className="relative">
+                      <input required type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="600" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-[#A1FF4C]" />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">ብር</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Lead Time</label>
+                    <input type="text" value={form.turnaround_time} onChange={e => setForm(f => ({ ...f, turnaround_time: e.target.value }))} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-[#A1FF4C]" />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FileDropzone label="Primary Image *" field="image_url" value={form.image_url} />
-                <FileDropzone label="Hover Image" field="hover_image_url" value={form.hover_image_url} />
+
+              {/* Colors & Sizes Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] border-b pb-2">03. Available Colors</p>
+                  <div className="grid grid-cols-6 gap-3">
+                    {PRESET_COLORS.map(c => {
+                      const isSelected = form.available_colors.some(ac => ac.hex === c.hex);
+                      return (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => handleColorToggle(c)}
+                          className={`group relative w-full aspect-square rounded-xl border-4 transition-all ${isSelected ? 'border-[#A1FF4D] scale-110 shadow-lg' : 'border-white hover:border-gray-100'}`}
+                          title={c.name}
+                        >
+                          <div className="w-full h-full rounded-lg shadow-inner" style={{ backgroundColor: c.hex }} />
+                          {isSelected && (
+                            <div className="absolute -top-2 -right-2 bg-[#1B2412] text-[#A1FF4D] rounded-full p-0.5">
+                              <CheckCircle size={12} />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] border-b pb-2">04. Available Sizes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["XS", "S", "M", "L", "XL", "XXL", "3XL"].map(s => {
+                      const isSelected = form.available_sizes.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => handleSizeToggle(s)}
+                          className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                            isSelected ? 'bg-[#1B2412] text-[#A1FF4D] shadow-lg scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-              <button type="submit" disabled={formLoading} className="w-full bg-[#A1FF4D] text-[#1B2412] py-4 rounded-xl font-black">
-                {formLoading ? "Submitting..." : "Submit Product"}
-              </button>
+
+              {/* Media Section */}
+              <div className="space-y-6">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] border-b pb-2">05. Product Imagery</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <FileDropzone label="Hero Image (Default) *" field="image_url" value={form.image_url} />
+                  <FileDropzone label="Hover / Secondary" field="hover_image_url" value={form.hover_image_url} />
+                  <FileDropzone label="Detail Gallery (Multi)" field="detail_images" value={form.detail_images} multiple />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-6">
+                <button type="submit" disabled={formLoading} className="w-full bg-[#A1FF4D] text-[#1B2412] py-5 rounded-3xl font-black shadow-xl shadow-[#A1FF4D]/20 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 text-sm uppercase tracking-widest">
+                  {formLoading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
+                  {formLoading ? "Publishing to Marketplace..." : editingProductId ? "Update Marketplace Listing" : "Launch Product to Marketplace"}
+                </button>
+              </div>
             </form>
           </div>
         )}
