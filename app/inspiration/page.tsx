@@ -5,7 +5,8 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronDown, ArrowRight, ShoppingBag, LogOut, 
-  Sparkles, PenTool, Image as ImageIcon, Type, Contrast, Lightbulb, Hexagon, Quote, Shapes, Briefcase
+  Sparkles, PenTool, Image as ImageIcon, Type, Contrast, Lightbulb, Hexagon, Quote, Shapes, Briefcase,
+  User, Gift, Users
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -28,24 +29,44 @@ export default function InspirationPage() {
   }, []);
 
   const quickIdeas = [
-    { title: "Personal Style", desc: "Express yourself with unique 1-of-1 pieces.", bg: "bg-[#e2e8df]" },
-    { title: "Gifts", desc: "Meaningful, custom presents for loved ones.", bg: "bg-[#f0eae1]" },
-    { title: "Business Branding", desc: "Professional uniforms and promotional items.", bg: "bg-[#d8d4f0]" },
-    { title: "Events", desc: "Apparel for reunions, marathons, or causes.", bg: "bg-[#e0f7fa]" }
+    { title: "Personal Style", desc: "Express yourself with unique 1-of-1 pieces tailored to you.", icon: User, accent: "#9DF542", bg: "#f4fbe8" },
+    { title: "Gifts", desc: "Meaningful, custom presents that leave a lasting impression.", icon: Gift, accent: "#FF8A65", bg: "#fff2ec" },
+    { title: "Business", desc: "Professional uniforms and high-end promotional branding.", icon: Briefcase, accent: "#5C6BC0", bg: "#f0f2fa" },
+    { title: "Events", desc: "Cohesive apparel for reunions, marathons, or major causes.", icon: Users, accent: "#26A69A", bg: "#e9f6f5" }
   ];
 
   const designDirections = [
-    { name: "Minimal Text", desc: "Clean, simple typography that speaks volumes.", img: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&fit=crop" },
-    { name: "Bold Graphic", desc: "Vibrant illustrations and eye-catching art.", img: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?q=80&w=600&fit=crop" },
-    { name: "Quote-based", desc: "Your favorite sayings and daily mantras.", img: "https://images.unsplash.com/photo-1513094735237-8f2714d57c13?q=80&w=600&fit=crop" },
-    { name: "Logo Branding", desc: "Sleek placement of your company's identity.", img: "https://images.unsplash.com/photo-1588636136274-90fb915e683f?q=80&w=600&fit=crop" }
+    { name: "Minimal Text", desc: "Clean, simple typography that speaks volumes.", img: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=600&fit=crop", accent: "#9DF542" },
+    { name: "Bold Graphic", desc: "Vibrant illustrations and eye-catching art.", img: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?q=80&w=600&fit=crop", accent: "#FF8A65" },
+    { name: "Quote-based", desc: "Your favorite sayings and daily mantras.", img: "https://images.unsplash.com/photo-1513094735237-8f2714d57c13?q=80&w=600&fit=crop", accent: "#5C6BC0" },
+    { name: "Logo Branding", desc: "Sleek placement of your company's identity.", img: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=600&fit=crop", accent: "#26A69A" }
   ];
 
   const styleCollections = [
-    { title: "Minimal", desc: "Subtle elegance, small placements, and neutral tones.", icon: Shapes },
-    { title: "Streetwear", desc: "Oversized prints, edgy graphics, and bold colors.", icon: Sparkles },
-    { title: "Elegant", desc: "Refined designs, often using delicate embroidery or fine lines.", icon: Hexagon },
-    { title: "Bold & Colorful", desc: "High contrast, full-coverage prints, and vibrant aesthetics.", icon: Palette }
+    { 
+      title: "Minimal", 
+      desc: "Subtle elegance, small placements, and neutral tones.", 
+      tags: ["Line Art", "Small Logos", "Neutral Colors"],
+      colors: { bg: "#E6F3FA", tagBg: "#CBE6F6", hoverText: "#0284c7" } // Pale Blue
+    },
+    { 
+      title: "Streetwear", 
+      desc: "Oversized prints, edgy graphics, and bold colors.", 
+      tags: ["Oversized", "Edgy Graphics", "Heavy Cotton"],
+      colors: { bg: "#FCE6D5", tagBg: "#F9D4B5", hoverText: "#ea580c" } // Pale Orange
+    },
+    { 
+      title: "Elegant", 
+      desc: "Refined designs, often using delicate embroidery or fine lines.", 
+      tags: ["Embroidery", "Fine Lines", "Script Fonts"],
+      colors: { bg: "#E9E0F8", tagBg: "#D7C6F1", hoverText: "#7c3aed" } // Pale Purple
+    },
+    { 
+      title: "Bold & Colorful", 
+      desc: "High contrast, full-coverage prints, and vibrant aesthetics.", 
+      tags: ["Full Print", "High Contrast", "Vibrant"],
+      colors: { bg: "#DCF5E8", tagBg: "#BDF0D3", hoverText: "#059669" } // Pale Green
+    }
   ];
 
   // Helper component to replace imported Palette as it was missing from lucide-react import
@@ -246,11 +267,40 @@ export default function InspirationPage() {
               Start with an Idea
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {quickIdeas.map((idea, idx) => (
-              <div key={idx} className={`p-8 rounded-[2rem] ${idea.bg} transition-all duration-300 hover:shadow-md hover:-translate-y-1`}>
-                <h3 className="text-xl font-bold text-[#111] mb-3">{idea.title}</h3>
-                <p className="text-[15px] text-gray-700 leading-relaxed">{idea.desc}</p>
+              <div 
+                key={idx} 
+                className="group relative border border-transparent p-10 rounded-[2.5rem] transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 overflow-hidden min-h-[320px] flex flex-col justify-start"
+                style={{ backgroundColor: idea.bg }}
+              >
+                {/* Dynamic Accent Background */}
+                <div 
+                  className={`absolute -right-4 -top-4 w-32 h-32 rounded-full transition-all duration-700 group-hover:scale-[8] opacity-0 group-hover:opacity-100 -z-0`}
+                  style={{ backgroundColor: `${idea.accent}15` }}
+                />
+                
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-10 transition-all duration-500 group-hover:bg-white group-hover:shadow-md border border-white group-hover:border-transparent shadow-sm">
+                    <idea.icon size={28} className="text-[#111]" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-[#111] mb-4 tracking-tight" style={{ fontFamily: 'var(--font-serif, serif)' }}>{idea.title}</h3>
+                  <p className="text-[16px] text-gray-600 leading-relaxed mb-8 group-hover:text-gray-800 transition-colors">{idea.desc}</p>
+                  
+                  <div 
+                    className="flex items-center gap-3 text-[14px] font-bold uppercase tracking-[0.1em] transition-all duration-500 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100"
+                    style={{ color: idea.accent }}
+                  >
+                    View Inspiration
+                    <ArrowRight size={18} className="-translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
+                  </div>
+                </div>
+
+                {/* Bottom Border Accent */}
+                <div 
+                  className="absolute bottom-0 left-0 h-1.5 transition-all duration-700 w-0 group-hover:w-full"
+                  style={{ backgroundColor: idea.accent }}
+                />
               </div>
             ))}
           </div>
@@ -258,23 +308,44 @@ export default function InspirationPage() {
       </section>
 
       {/* 3. FEATURED DESIGN IDEAS */}
-      <section className="py-20 px-6">
+      <section className="py-24 px-6">
         <div className="container mx-auto max-w-7xl">
-          <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#111] mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <div className="mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#111] mb-4" style={{ fontFamily: 'var(--font-serif, "Cormorant Garamond", serif)' }}>
               Popular Design Directions
             </h2>
-            <p className="text-gray-500">Trending concepts to guide your creativity.</p>
+            <p className="text-gray-500 text-lg">Trending concepts to guide your creativity and spark new ideas.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {designDirections.map((dir, idx) => (
-              <div key={idx} className="bg-white rounded-[2rem] overflow-hidden border border-gray-100 transition-all duration-300 hover:shadow-xl group">
-                <div className="h-64 overflow-hidden relative">
-                  <img src={dir.img} alt={dir.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div 
+                key={idx} 
+                className="group relative rounded-[2.5rem] bg-white overflow-hidden transition-all duration-700 hover:-translate-y-3 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] border border-gray-100"
+                style={{ '--dir-accent': dir.accent } as React.CSSProperties}
+              >
+                {/* Image Section - Framed inside the card */}
+                <div className="h-72 w-full relative overflow-hidden bg-white p-3">
+                  <div className="w-full h-full relative rounded-[2rem] overflow-hidden bg-gray-50">
+                    <img src={dir.img} alt={dir.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                    {/* Unique Hover Overlay Wash */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-40 transition-opacity duration-700 mix-blend-multiply" style={{ backgroundColor: dir.accent }} />
+                  </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="text-[18px] font-bold text-[#111] mb-2">{dir.name}</h3>
-                  <p className="text-[14px] text-gray-500">{dir.desc}</p>
+
+                {/* Content Section */}
+                <div className="px-8 pb-10 pt-4 relative bg-white z-10 flex flex-col h-full">
+                  <div className="absolute top-0 left-8 w-12 h-0.5 bg-gray-200 transition-all duration-500 group-hover:w-full group-hover:left-0 group-hover:h-1" style={{ backgroundColor: 'var(--dir-accent)' }} />
+                  
+                  <h3 className="text-2xl font-bold text-[#111] mb-4 mt-4 tracking-tight transition-colors duration-500 group-hover:text-[var(--dir-accent)]" style={{ fontFamily: 'var(--font-serif, serif)' }}>
+                    {dir.name}
+                  </h3>
+                  <p className="text-[16px] text-gray-500 leading-relaxed mb-8 flex-grow">
+                    {dir.desc}
+                  </p>
+                  
+                  <div className="flex items-center gap-3 text-[14px] font-bold uppercase tracking-[0.15em] opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 delay-75" style={{ color: 'var(--dir-accent)' }}>
+                    See Examples <ArrowRight size={18} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -283,19 +354,56 @@ export default function InspirationPage() {
       </section>
 
       {/* 4. STYLE COLLECTIONS */}
-      <section className="py-20 px-6 bg-[#111] text-white">
-        <div className="container mx-auto max-w-7xl">
-          <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+      <section className="py-24 px-6 bg-[#f8f9fa]">
+        <div className="container mx-auto max-w-6xl">
+          <div className="mb-16 flex flex-col items-center text-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-[#111] mb-4 tracking-tight" style={{ fontFamily: 'var(--font-serif, "Cormorant Garamond", serif)' }}>
               Explore Styles
             </h2>
+            <p className="text-gray-500 text-lg max-w-2xl">
+              Find the aesthetic that matches your vision. Every style represents a unique approach to custom creation.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
             {styleCollections.map((style, idx) => (
-              <div key={idx} className="border-t border-gray-800 pt-6">
-                <style.icon size={32} className="text-[#9DF542] mb-6" />
-                <h3 className="text-xl font-bold text-white mb-3">{style.title}</h3>
-                <p className="text-gray-400 text-[15px] leading-relaxed">{style.desc}</p>
+              <div 
+                key={idx} 
+                className="group bg-white p-2 md:p-3 rounded-[2rem] shadow-[0_8px_20px_rgba(0,0,0,0.04)] border border-gray-100 transition-all duration-500 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 cursor-pointer"
+                style={{ 
+                  '--card-hover-color': style.colors.hoverText,
+                  '--card-bg': style.colors.bg,
+                  '--card-tag': style.colors.tagBg
+                } as React.CSSProperties}
+              >
+                {/* Colored Top Block */}
+                <div 
+                  className="rounded-[1.5rem] p-8 md:p-10 transition-colors duration-500 min-h-[240px] flex flex-col"
+                  style={{ backgroundColor: 'var(--card-bg)' }}
+                >
+                  <h3 className="text-[26px] font-semibold text-gray-900 mb-3 tracking-tight">{style.title}</h3>
+                  <p className="text-[15px] text-gray-700 leading-relaxed mb-6 flex-grow">{style.desc}</p>
+                  
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2.5 mt-auto">
+                    {style.tags.map((tag, tIdx) => (
+                      <span 
+                        key={tIdx} 
+                        className="px-3.5 py-1.5 rounded-full text-[13px] font-medium text-gray-800 transition-colors duration-300"
+                        style={{ backgroundColor: 'var(--card-tag)' }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bottom Action Area */}
+                <div className="flex items-center justify-end px-6 py-5">
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center transition-all duration-300 group-hover:bg-[var(--card-hover-color)] group-hover:shadow-md">
+                    <ArrowRight size={18} className="text-gray-500 group-hover:text-white transition-colors duration-300 group-hover:translate-x-0.5" />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
