@@ -12,6 +12,7 @@ import {
   PenTool, FileText, Printer
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import MobileNav from "@/components/MobileNav";
 
 export default function BeforeYouStartPage() {
   const [user, setUser] = useState<any>(null);
@@ -56,7 +57,8 @@ export default function BeforeYouStartPage() {
             <Link href="/inspiration" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">Inspiration</Link>
             <Link href="/how-it-works" className="text-[17px] font-normal text-[#2d3227] hover:text-[#525f48] transition-colors">How it works</Link>
           </nav>
-          <div className="flex-1 flex items-center justify-end gap-3">
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <MobileNav activePage="before-you-start" />
             {user ? (
               <div className="relative">
                 <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-full px-3 pr-4 py-1.5 hover:shadow-md transition-all group">
@@ -102,7 +104,7 @@ export default function BeforeYouStartPage() {
       </div>
 
       {/* Hero Section */}
-      <section className="pt-24 pb-20 px-6 relative overflow-hidden">
+      <section className="pt-20 pb-12 md:pt-24 md:pb-20 px-4 md:px-6 relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#9DF542]/10 rounded-full blur-[150px] pointer-events-none" />
         
         <div className="container mx-auto max-w-4xl relative z-10 text-center">
@@ -118,7 +120,7 @@ export default function BeforeYouStartPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="text-5xl md:text-7xl font-bold text-[#111] mb-6 tracking-tight" 
+            className="text-4xl md:text-5xl lg:text-7xl font-bold text-[#111] mb-6 tracking-tight" 
             style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
           >
             Before You Start
@@ -127,7 +129,7 @@ export default function BeforeYouStartPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed"
+            className="text-base md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed px-2 md:px-0"
           >
             Everything you need to know before placing your order. We keep it simple, transparent, and completely straightforward.
           </motion.p>
@@ -135,9 +137,9 @@ export default function BeforeYouStartPage() {
       </section>
 
       {/* Quick Summary Grid */}
-      <section className="py-12 px-6">
+      <section className="py-8 md:py-12 px-4 md:px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
               { icon: ShieldCheck, title: "No hidden costs", desc: "Pay only for what you print. Transparent pricing always." },
               { icon: RefreshCcw, title: "Non-refundable", desc: "Custom items are uniquely yours and cannot be returned." },
@@ -164,13 +166,13 @@ export default function BeforeYouStartPage() {
       </section>
 
       {/* Order Process Overview */}
-      <section className="py-20 px-6 bg-white border-y border-gray-100">
+      <section className="py-16 md:py-20 px-4 md:px-6 bg-white border-y border-gray-100">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#111] mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-[#111] mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
               The Order Process
             </h2>
-            <p className="text-gray-500">A smooth, 5-step journey from idea to delivery.</p>
+            <p className="text-gray-500 text-sm md:text-base">A smooth, 5-step journey from idea to delivery.</p>
           </div>
 
           <div className="relative">
@@ -235,9 +237,9 @@ export default function BeforeYouStartPage() {
       </section>
 
       {/* Payment Rules (Crucial) */}
-      <section className="py-24 px-6 bg-[#fafafa]">
+      <section className="py-16 md:py-24 px-4 md:px-6 bg-[#fafafa]">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-sm font-bold mb-6">
                 <CreditCard size={16} /> Payment & Verification
