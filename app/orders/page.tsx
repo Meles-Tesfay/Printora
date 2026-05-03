@@ -107,7 +107,7 @@ function OrdersContent() {
 
         const { data: ordersData } = await supabase
             .from("custom_orders")
-            .select("*")
+            .select("*, supplier_product:supplier_products(price)")
             .eq("customer_id", user.id)
             .order("created_at", { ascending: false });
 
@@ -395,6 +395,7 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product</p>
                         <p className="font-black text-[#111] text-base">{order.product_type}</p>
                     </div>
+                    
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-gray-50 rounded-2xl p-3">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Color</p>
@@ -404,7 +405,31 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">View</p>
                             <p className="font-black text-[#111] text-sm">{order.variants?.view || "Front"}</p>
                         </div>
+                        <div className="bg-gray-50 rounded-2xl p-3">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Size</p>
+                            <p className="font-black text-[#111] text-sm">{order.variants?.size || "M"}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-2xl p-3">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
+                            <p className="font-black text-[#111] text-sm">x {order.variants?.quantity || 1}</p>
+                        </div>
                     </div>
+
+                    <div className="bg-gray-50 rounded-2xl p-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
+                            <p className="font-black text-[#111] text-sm">{((order.supplier_product?.price || 0) * (order.variants?.quantity || 1)).toLocaleString()} ETB</p>
+                        </div>
+                        <div className="flex justify-between items-center mb-2">
+                            <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Paid (50% Deposit)</p>
+                            <p className="font-black text-emerald-600 text-sm">{((order.supplier_product?.price || 0) * (order.variants?.quantity || 1) / 2).toLocaleString()} ETB</p>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Remaining Balance</p>
+                            <p className="font-black text-amber-600 text-sm">{((order.supplier_product?.price || 0) * (order.variants?.quantity || 1) / 2).toLocaleString()} ETB</p>
+                        </div>
+                    </div>
+
                     <div className="bg-gray-50 rounded-2xl p-4">
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Submitted</p>
                         <p className="font-bold text-[#111] text-sm">{new Date(order.created_at).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
