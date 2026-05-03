@@ -534,9 +534,22 @@ export default function SupplierDashboard() {
             <p className="px-4 text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Orders</p>
             <button 
               onClick={() => setActiveTab("orders")}
-              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-[#1B2412] text-[#A1FF4D]" : "text-gray-400 hover:bg-gray-50"}`}
             >
               <ShoppingBag size={16} /> Fulfillments
+            </button>
+            <button 
+              onClick={() => setActiveTab("resubmissions")}
+              className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "resubmissions" ? "bg-red-500 text-white shadow-lg shadow-red-500/20" : "text-red-400 hover:bg-red-50"}`}
+            >
+              <div className="flex items-center gap-3">
+                <XCircle size={16} /> Resubmissions
+              </div>
+              {orders.filter(o => o.status === 'SAMPLE_REJECTED').length > 0 && (
+                <span className="bg-white text-red-500 text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center">
+                  {orders.filter(o => o.status === 'SAMPLE_REJECTED').length}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab("pending-approvals")}
@@ -803,7 +816,7 @@ export default function SupplierDashboard() {
           <div>
             <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Pending Fulfillments</h2>
             <div className="space-y-4">
-              {orders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(o.status)).map(order => (
+              {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 flex items-center gap-6 group">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
                     <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
@@ -811,9 +824,6 @@ export default function SupplierDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</span>
-                      {order.status === 'SAMPLE_REJECTED' && (
-                        <span className="bg-red-50 text-red-500 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Needs Resubmission</span>
-                      )}
                     </div>
                     <h3 className="font-black text-[#1B2412] text-lg truncate uppercase tracking-tight">Order #{order.id.slice(0, 8)}</h3>
                     <div className="flex items-center gap-4 mt-2">
@@ -832,6 +842,72 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
               ))}
+              {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").length === 0 && (
+                <div className="p-12 text-center bg-white rounded-[2rem] border border-dashed border-gray-100">
+                   <p className="text-gray-400 font-bold">No pending assignments</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "resubmissions" && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>Needs Resubmission</h2>
+                <div className="bg-red-50 text-red-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-red-100 animate-pulse">Action Required</div>
+            </div>
+            <div className="space-y-6">
+              {orders.filter(o => o.status === 'SAMPLE_REJECTED').map(order => (
+                <div key={order.id} className="bg-white rounded-[2.5rem] border border-red-100 shadow-xl shadow-red-500/5 p-6 flex flex-col gap-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                  
+                  <div className="flex items-center gap-8 relative z-10">
+                    <div className="w-32 h-32 bg-gray-50 rounded-[2rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-3 border border-gray-100">
+                        <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</span>
+                            <div className="h-px w-8 bg-gray-200" />
+                            <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Sample Rejected</span>
+                        </div>
+                        <h3 className="font-black text-[#1B2412] text-2xl uppercase tracking-tight mb-2">Order #{order.id.slice(0, 8)}</h3>
+                        <div className="flex items-center gap-5">
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full border border-gray-100" style={{ backgroundColor: order.variants?.color?.toLowerCase() }} /><span className="text-xs font-bold text-gray-600">{order.variants?.color}</span></div>
+                            <div className="text-xs font-bold text-gray-400">Qty: {order.variants?.quantity || 1} Units</div>
+                        </div>
+                    </div>
+
+                    <div className="pr-2">
+                        <button onClick={() => setSelectedOrder(order)} className="bg-[#1B2412] text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest hover:bg-red-500 transition-all shadow-xl active:scale-95 flex items-center gap-3 group/btn">
+                        Correct & Resubmit <UploadCloud size={16} className="group-hover/btn:-translate-y-1 transition-transform" />
+                        </button>
+                    </div>
+                  </div>
+
+                  {/* Customer Feedback Block */}
+                  <div className="bg-red-50 rounded-3xl p-6 border border-red-100 relative">
+                    <div className="flex items-center gap-2 mb-3">
+                        <XCircle size={14} className="text-red-500" />
+                        <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em]">Customer Feedback</p>
+                    </div>
+                    <p className="text-sm font-bold text-red-900 leading-relaxed italic">
+                        &ldquo;{order.variants?.sample_rejection_message || "No specific feedback provided. Please review the design specs carefully."}&rdquo;
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {orders.filter(o => o.status === 'SAMPLE_REJECTED').length === 0 && (
+                <div className="p-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-300">
+                        <CheckCircle size={32} />
+                    </div>
+                    <h3 className="text-lg font-black text-[#2B3220] uppercase mb-1">Clean Slate</h3>
+                    <p className="text-sm text-gray-400 font-medium">No samples need resubmission at this time.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
