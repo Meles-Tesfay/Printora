@@ -324,9 +324,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white text-gray-800 border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-gray-100">
-          <Link href="/">
-            <img src="/logo.png" alt="Logo" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
-          </Link>
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
           <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">Admin Panel</span>
         </div>
 
@@ -431,7 +429,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
           <div className="flex items-start justify-between w-full">
             <div>
-              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 System Control
               </h1>
               <p className="text-gray-400 font-bold tracking-widest uppercase text-[10px] mt-1">Platform Overview & Administrative Actions</p>
@@ -842,7 +840,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xl font-black text-[#111] uppercase" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h3 className="text-xl font-black text-[#111] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Order Details
               </h3>
               <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-900">
@@ -1002,7 +1000,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[3rem] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col">
             <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <h3 className="text-2xl font-black text-[#111] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>Review Submission</h3>
+              <h3 className="text-2xl font-black text-[#111] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>Review Submission</h3>
               <button onClick={() => setSelectedProduct(null)} className="text-gray-400 hover:text-gray-900 transition-colors">
                 <XCircle size={32} />
               </button>
