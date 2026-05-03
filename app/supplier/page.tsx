@@ -1087,47 +1087,49 @@ export default function SupplierDashboard() {
                         <span className="text-[10px] font-black bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full uppercase tracking-wider">Required</span>
                       </div>
 
-                      {/* Drop Zone */}
-                      <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-[2rem] cursor-pointer transition-all p-6 ${
-                        proofPreview ? 'border-[#A1FF4D] bg-[#A1FF4D]/5 shadow-inner' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                      }`}>
-                        {proofPreview ? (
-                          <div className="relative w-full group">
-                            <img src={proofPreview} alt="Proof preview" className="w-full max-h-52 object-contain rounded-2xl" />
-                            <button
-                              type="button"
-                              onClick={e => { e.preventDefault(); setProofUrl(''); setProofPreview(''); }}
-                              className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs hover:bg-black transition-colors backdrop-blur-sm"
-                            >✕</button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
-                              <UploadCloud className="text-gray-400" size={24} />
+                      {/* Drop Zone - Hidden when waiting for customer approval */}
+                      {selectedOrder.status !== 'SAMPLE_AWAITING_APPROVAL' && (
+                        <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-[2rem] cursor-pointer transition-all p-6 ${
+                          proofPreview ? 'border-[#A1FF4D] bg-[#A1FF4D]/5 shadow-inner' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                        }`}>
+                          {proofPreview ? (
+                            <div className="relative w-full group">
+                              <img src={proofPreview} alt="Proof preview" className="w-full max-h-52 object-contain rounded-2xl" />
+                              <button
+                                type="button"
+                                onClick={e => { e.preventDefault(); setProofUrl(''); setProofPreview(''); }}
+                                className="absolute top-2 right-2 bg-black/70 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs hover:bg-black transition-colors backdrop-blur-sm"
+                              >✕</button>
                             </div>
-                            <div className="text-center">
-                              <p className="text-[13px] font-black text-gray-800">Upload Final Proof</p>
-                              <p className="text-[10px] text-gray-400 font-bold mt-1">Drag and drop or click to browse</p>
-                            </div>
-                          </>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onload = ev => {
-                              const base64 = ev.target?.result as string;
-                              setProofUrl(base64);
-                              setProofPreview(base64);
-                            };
-                            reader.readAsDataURL(file);
-                          }}
-                        />
-                      </label>
+                          ) : (
+                            <>
+                              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                <UploadCloud className="text-gray-400" size={24} />
+                              </div>
+                              <div className="text-center">
+                                <p className="text-[13px] font-black text-gray-800">Upload Final Proof</p>
+                                <p className="text-[10px] text-gray-400 font-bold mt-1">Drag and drop or click to browse</p>
+                              </div>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              const reader = new FileReader();
+                              reader.onload = ev => {
+                                const base64 = ev.target?.result as string;
+                                setProofUrl(base64);
+                                setProofPreview(base64);
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                      )}
 
                       {/* Actions */}
                       {selectedOrder.status === 'SAMPLE_AWAITING_APPROVAL' ? (
