@@ -716,11 +716,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                             </div>
                         )
                     )}
+                {/* Removed Timeline as requested */}
                 </div>
             </div>
-
-            {/* Removed Timeline as requested */}
-        </div>
     );
 }
 
