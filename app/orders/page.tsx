@@ -7,7 +7,8 @@ import { supabase } from "@/lib/supabase";
 import {
     Clock, CheckCircle, Truck, XCircle, PenTool,
     Package, ArrowRight, Loader2, LogOut, Home,
-    Sparkles, ShieldCheck, User, Star, ShoppingBag
+    Sparkles, ShieldCheck, User, Star, ShoppingBag,
+    AlertCircle, Image as ImageIcon
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, {
@@ -74,12 +75,21 @@ const STATUS_CONFIG: Record<string, {
         step: 3,
     },
     COMPLETED_BY_SUPPLIER: {
-        label: "Production Done",
-        icon: Truck,
-        color: "text-blue-600",
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-        description: "The batch is ready and being prepared for delivery.",
+        label: "Ready for Delivery",
+        icon: CheckCircle,
+        color: "text-teal-600",
+        bg: "bg-teal-50",
+        border: "border-teal-200",
+        description: "The supplier has completed production! Your order is ready and waiting for delivery confirmation.",
+        step: 3,
+    },
+    COMPLETED: {
+        label: "Ready for Delivery",
+        icon: CheckCircle,
+        color: "text-teal-600",
+        bg: "bg-teal-50",
+        border: "border-teal-200",
+        description: "Your order is complete and ready for delivery. The admin will confirm once it has been handed to you.",
         step: 3,
     },
     DELIVERED: {
@@ -412,87 +422,57 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                 </div>
             )}
 
-            <div className="p-10 space-y-12">
-                {/* 3-Column Info Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* 1. Mockup Column (4/12) */}
-                    <div className="lg:col-span-4 bg-gray-50 rounded-[2.5rem] aspect-square flex items-center justify-center p-8 border border-gray-100 shadow-inner group">
+            <div className="p-6 space-y-6">
+                {/* Compact 3-Column Info — horizontal strip */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Mockup */}
+                    <div className="bg-gray-50 rounded-2xl h-40 flex items-center justify-center p-4 border border-gray-100 shadow-inner group overflow-hidden">
                         {order.mockup_image_url ? (
-                            <img src={order.mockup_image_url} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Your design" />
+                            <img src={order.mockup_image_url} className="h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Your design" />
                         ) : (
-                            <div className="text-gray-200 flex flex-col items-center gap-4">
-                                <Package size={60} />
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300">No Preview</p>
+                            <div className="text-gray-200 flex flex-col items-center gap-2">
+                                <Package size={36} />
+                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-300">No Preview</p>
                             </div>
                         )}
                     </div>
 
-                    {/* 2. Specs Column (4/12) */}
-                    <div className="lg:col-span-4 flex flex-col justify-between py-2">
-                        <div className="space-y-6">
-                            <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Product Identity</p>
-                                <p className="font-black text-[#1B2412] text-2xl uppercase leading-none" style={{ fontFamily: 'Impact, sans-serif' }}>{order.product_type}</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="bg-gray-50 rounded-3xl p-5 border border-gray-100 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Configuration</p>
-                                        <p className="font-black text-[#111] text-sm">{order.variants?.color} • {order.variants?.size}</p>
-                                    </div>
-                                    <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: order.variants?.color?.toLowerCase() }} />
-                                </div>
-                                <div className="bg-gray-50 rounded-3xl p-5 border border-gray-100">
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Batch Volume</p>
-                                    <p className="font-black text-[#111] text-sm">{order.variants?.quantity || 1} Custom Units</p>
-                                </div>
-                            </div>
+                    {/* Specs */}
+                    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+                        <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Product</p>
+                            <p className="font-black text-[#1B2412] text-base uppercase leading-tight" style={{ fontFamily: 'Impact, sans-serif' }}>{order.product_type}</p>
                         </div>
-
-                        <div className="bg-emerald-50 rounded-2xl p-4 flex items-center gap-3 border border-emerald-100">
-                            <ShieldCheck className="text-emerald-500" size={18} />
-                            <p className="text-[10px] font-bold text-emerald-700">Quality Assured by Printora Studio</p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Config</p>
+                                <p className="font-black text-[#111] text-xs">{order.variants?.color} • {order.variants?.size}</p>
+                            </div>
+                            <div className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: order.variants?.color?.toLowerCase() }} />
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Qty</p>
+                            <p className="font-black text-[#111] text-xs">{order.variants?.quantity || 1} units</p>
                         </div>
                     </div>
 
-                    {/* 3. Financial Column (4/12) */}
-                    <div className="lg:col-span-4 bg-[#1B2412] rounded-[2.5rem] p-8 text-white shadow-2xl shadow-[#1B2412]/20 relative overflow-hidden flex flex-col justify-between">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#A1FF4D]/5 rounded-full blur-3xl -mr-16 -mt-16" />
-                        
+                    {/* Financial */}
+                    <div className="bg-[#1B2412] rounded-2xl p-4 text-white flex flex-col justify-between">
                         <div>
-                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Order Valuation</p>
-                            <p className="font-black text-4xl tracking-tighter flex items-baseline gap-1">
-                                {(() => {
-                                    const basePrice = order.supplier_product?.price || 600;
-                                    return (basePrice * (order.variants?.quantity || 1)).toLocaleString();
-                                })()}
-                                <span className="text-sm font-bold text-gray-600">ብር</span>
+                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Total</p>
+                            <p className="font-black text-2xl tracking-tighter">
+                                {(() => { const b = order.supplier_product?.price || 600; return (b * (order.variants?.quantity || 1)).toLocaleString(); })()}
+                                <span className="text-xs font-bold text-gray-500 ml-1">ብር</span>
                             </p>
                         </div>
-
-                        <div className="space-y-4">
-                            <div className="h-px bg-white/5" />
-                            <div className="flex justify-between items-center text-[11px] font-bold">
-                                <span className="text-[#A1FF4D] uppercase tracking-widest flex items-center gap-1">✓ 50% Deposit Paid</span>
-                                <span className="text-emerald-400">
-                                    {(() => {
-                                        const basePrice = order.supplier_product?.price || 600;
-                                        return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
-                                    })()} ብር
-                                </span>
+                        <div className="mt-3 space-y-1.5">
+                            <div className="flex justify-between text-[10px] font-bold">
+                                <span className="text-[#A1FF4D]">✓ Deposit Paid</span>
+                                <span className="text-emerald-400">{(() => { const b = order.supplier_product?.price || 600; return (b * (order.variants?.quantity || 1) / 2).toLocaleString(); })()} ብር</span>
                             </div>
-                            <div className="bg-white/5 rounded-2xl p-4 flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Balance Due</span>
-                                    <Sparkles size={10} className="text-amber-400 animate-pulse" />
-                                </div>
-                                <span className="font-black text-xl text-amber-400">
-                                    {(() => {
-                                        const basePrice = order.supplier_product?.price || 600;
-                                        return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
-                                    })()} <span className="text-[10px] ml-0.5">ብር</span>
-                                </span>
+                            <div className="bg-white/5 rounded-xl p-2.5 flex justify-between items-center">
+                                <span className="text-[9px] font-black text-amber-400 uppercase">Balance</span>
+                                <span className="font-black text-sm text-amber-400">{(() => { const b = order.supplier_product?.price || 600; return (b * (order.variants?.quantity || 1) / 2).toLocaleString(); })()} ብር</span>
                             </div>
                         </div>
                     </div>
@@ -506,9 +486,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                             {/* Decorative Background */}
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/20 rounded-full blur-3xl -mr-32 -mt-32" />
                             
-                            <div className="flex flex-col xl:flex-row gap-12 relative z-10">
+                            <div className="flex flex-col sm:flex-row gap-6 relative z-10">
                                 {/* Proof Image Container */}
-                                <div className="w-full xl:w-1/2 group">
+                                <div className="w-full sm:w-48 flex-shrink-0 group">
                                     <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white aspect-[4/3]">
                                         <img src={order.supplier_proof_image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="Proof" />
                                         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -524,21 +504,13 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                 </div>
 
                                 {/* Content and Actions */}
-                                <div className="flex-1 flex flex-col justify-center">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-emerald-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-emerald-500/20">
+                                <div className="flex-1 flex flex-col justify-center gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-lg shadow-emerald-500/20">
                                             Sample Review
                                         </div>
-                                        <div className="h-px flex-1 bg-emerald-100" />
+                                        <p className="text-sm font-bold text-emerald-800/80">Inspect color, placement &amp; finish before approving the full batch.</p>
                                     </div>
-
-                                    <h4 className="text-4xl font-black text-[#1B2412] uppercase leading-[0.9] mb-4" style={{ fontFamily: 'Impact, sans-serif' }}>
-                                        Verify Your <br/> <span className="text-emerald-600 underline decoration-emerald-200">Production</span> Sample
-                                    </h4>
-                                    
-                                    <p className="text-base text-emerald-800/70 font-bold leading-relaxed mb-10 max-w-lg">
-                                        The first physical sample is ready. Inspect the colors, placement, and finish carefully before we start the full batch.
-                                    </p>
 
                                     {!order.variants?.finalReceiptUrl ? (
                                         <div className="space-y-6">
@@ -555,20 +527,20 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                 </div>
                                             )}
                                             {order.status === 'SAMPLE_AWAITING_APPROVAL' && (
-                                                <div className="flex flex-col gap-6">
+                                                <div className="flex flex-col gap-4">
                                                     {activeAction === 'none' && (
-                                                        <div className="flex flex-col sm:flex-row gap-4">
-                                                            <button 
-                                                                onClick={() => setActiveAction('approve')}
-                                                                className="flex-1 bg-[#1B2412] text-white py-5 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black hover:shadow-2xl hover:shadow-[#A1FF4D]/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-                                                            >
-                                                                <CheckCircle size={18} className="text-[#A1FF4D]" /> Approve & Pay Balance
-                                                            </button>
+                                                        <div className="flex gap-3">
                                                             <button 
                                                                 onClick={() => setActiveAction('decline')}
-                                                                className="bg-white border-2 border-red-50 text-red-500 py-5 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                                                className="flex-1 bg-white border-2 border-red-100 text-red-500 py-3 px-3 rounded-xl font-black text-xs uppercase tracking-wide hover:bg-red-50 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                                                             >
-                                                                <XCircle size={18} /> Request Correction
+                                                                <XCircle size={14} /> Reject
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setActiveAction('approve')}
+                                                                className="flex-[2] bg-[#1B2412] text-white py-3 px-3 rounded-xl font-black text-xs uppercase tracking-wide hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                                            >
+                                                                <CheckCircle size={14} className="text-[#A1FF4D]" /> Approve & Pay
                                                             </button>
                                                         </div>
                                                     )}
@@ -743,36 +715,28 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                     )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 mt-6 border-t border-gray-100">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-gray-50 px-4 py-2.5 rounded-full border border-gray-100 flex items-center gap-3">
-                            <Clock size={14} className="text-gray-400" />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 mt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-gray-50 px-3 py-2 rounded-full border border-gray-100 flex items-center gap-2">
+                            <Clock size={12} className="text-gray-400" />
                             <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                         {order.status === "DELIVERED" && (
-                            <div className="flex items-center gap-2 text-emerald-600">
-                                <CheckCircle size={16} />
+                            <div className="flex items-center gap-1.5 text-emerald-600">
+                                <CheckCircle size={14} />
                                 <span className="text-xs font-black uppercase tracking-widest">Completed</span>
                             </div>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                        {["DELIVERED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(order.status) && (
-                            <button className="flex-1 sm:flex-none bg-[#1B2412] text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#1B2412]/10">
-                                <ShoppingBag size={14} /> Reorder Batch
-                            </button>
-                        )}
-                        
-                        {["PENDING_ADMIN", "REJECTED"].includes(order.status) && (
-                            <Link 
-                                href={editUrl}
-                                className="flex-1 sm:flex-none bg-white border-2 border-gray-100 text-[#1B2412] px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                            >
-                                <PenTool size={14} /> {order.status === "REJECTED" ? "Fix Design" : "Edit Design"}
-                            </Link>
-                        )}
-                    </div>
+                    {["PENDING_ADMIN", "REJECTED"].includes(order.status) && (
+                        <Link 
+                            href={editUrl}
+                            className="bg-white border-2 border-gray-100 text-[#1B2412] px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider hover:bg-gray-50 transition-all flex items-center gap-2"
+                        >
+                            <PenTool size={13} /> {order.status === "REJECTED" ? "Fix Design" : "Edit Design"}
+                        </Link>
+                    )}
                 </div>
 
                 {/* Feedback Section for Delivered Orders */}

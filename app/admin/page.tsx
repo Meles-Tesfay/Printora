@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "products" | "suppliers" | "customers">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       supabase
         .from("custom_orders")
         .select("*, customer:profiles(*), supplier_product:supplier_products(*, supplier:profiles(*))")
-        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"])
+        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"])
         .order("created_at", { ascending: false }),
 
       // Products submitted by suppliers awaiting approval
@@ -161,12 +161,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleApproveFinalPayment = async (orderId: string) => {
-    if (!confirm("Confirm that final payment receipt is valid? This will move the order to PRODUCTION.")) return;
+  const handleApproveFinalPayment = async (order: any) => {
+    const qty = order.variants?.quantity || 1;
+    const isBulk = qty > 1;
+    // Flow A (qty==1): Final payment → COMPLETED (skip production phase)
+    // Flow B (qty>1):  Final payment → PRODUCTION_APPROVED_AND_PAID (full production run)
+    const nextStatus = isBulk ? "PRODUCTION_APPROVED_AND_PAID" : "COMPLETED";
+    const confirmMsg = isBulk
+      ? "Confirm payment receipt is valid? This will hand the order off for FULL PRODUCTION."
+      : "Confirm payment receipt is valid? This single-item order will move directly to COMPLETED.";
+    if (!confirm(confirmMsg)) return;
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "PRODUCTION_APPROVED_AND_PAID" })
-      .eq("id", orderId);
+      .update({ status: nextStatus })
+      .eq("id", order.id);
 
     if (error) alert("Error: " + error.message);
     else {
@@ -223,8 +231,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleMarkAsDelivered = async (id: string) => {
-    if (!confirm("Mark this order as delivered? This will allow the customer to provide feedback.")) return;
+  // Supplier finished → move to Completed tab (awaiting final delivery confirmation)
+  const handleMarkAsCompleted = async (id: string) => {
+    if (!confirm("Move this order to Completed? It will appear in the Completed tab for delivery.")) return;
+    const { error } = await supabase
+      .from("custom_orders")
+      .update({ status: "COMPLETED" })
+      .eq("id", id);
+    if (error) alert("Error: " + error.message);
+    else fetchAll();
+  };
+
+  // Final step — physically delivered to customer, enables feedback
+  const handleDeliverOrder = async (id: string) => {
+    if (!confirm("Mark this order as DELIVERED? The customer will be able to leave feedback.")) return;
     const { error } = await supabase
       .from("custom_orders")
       .update({ status: "DELIVERED" })
@@ -283,9 +303,12 @@ export default function AdminDashboard() {
   const STATUS_COLOR: Record<string, string> = {
     PENDING_ADMIN: "bg-yellow-100 text-yellow-700",
     ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
-    REJECTED: "bg-red-100 text-red-700",
+    FINAL_PAYMENT_PENDING: "bg-amber-100 text-amber-700",
+    PRODUCTION_APPROVED_AND_PAID: "bg-emerald-100 text-emerald-700",
     COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+    COMPLETED: "bg-teal-100 text-teal-700",
     DELIVERED: "bg-teal-100 text-teal-700",
+    REJECTED: "bg-red-100 text-red-700",
   };
 
   if (loading) {
@@ -339,9 +362,9 @@ export default function AdminDashboard() {
             className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "processing" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
             <span className="flex items-center gap-3"><Truck size={16} /> In Production</span>
-            {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length > 0 && (
+            {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).length > 0 && (
               <span className="bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
-                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length}
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).length}
               </span>
             )}
           </button>
@@ -353,6 +376,17 @@ export default function AdminDashboard() {
             {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length > 0 && (
               <span className="bg-amber-400 text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">
                 {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("completed")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "completed" ? "bg-teal-500/10 text-teal-700" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <span className="flex items-center gap-3"><CheckCircle size={16} /> Completed</span>
+            {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).length > 0 && (
+              <span className="bg-teal-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).length}
               </span>
             )}
           </button>
@@ -528,7 +562,7 @@ export default function AdminDashboard() {
                         REJECT RECEIPT
                       </button>
                       <button
-                        onClick={() => handleApproveFinalPayment(order.id)}
+                        onClick={() => handleApproveFinalPayment(order)}
                         className="bg-amber-400 text-[#1B2412] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all text-xs"
                       >
                         APPROVE PAYMENT
@@ -556,7 +590,7 @@ export default function AdminDashboard() {
                 <Truck size={18} className="text-blue-500" />
               </div>
               <div className="p-4 space-y-3">
-                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).map((order) => (
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).map((order) => (
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 hover:shadow-lg transition-all">
                     <div className="flex items-center gap-4 mb-3 sm:mb-0">
                       <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
@@ -572,7 +606,6 @@ export default function AdminDashboard() {
                             <User size={9} /> {order.customer?.full_name || order.customer?.email}
                           </span>
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm border uppercase tracking-tighter ${
-                            order.status === "COMPLETED_BY_SUPPLIER" ? "bg-green-50 text-green-600 border-green-100" :
                             order.status === "PRODUCTION_APPROVED_AND_PAID" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
                             order.status === "SAMPLE_REJECTED" ? "bg-red-50 text-red-600 border-red-100" :
                             "bg-blue-50 text-blue-600 border-blue-100"
@@ -586,22 +619,82 @@ export default function AdminDashboard() {
                       <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
                         <Eye size={16} />
                       </button>
-                      
-                      {order.status === "COMPLETED_BY_SUPPLIER" && (
-                        <button
-                          onClick={() => handleMarkAsDelivered(order.id)}
-                          className="bg-teal-500 text-white px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm uppercase tracking-widest"
-                        >
-                          <Truck size={14} /> Mark Delivered
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
-                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length === 0 && (
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).length === 0 && (
                   <div className="p-16 text-center text-gray-400 italic font-medium">
                     <Box size={40} className="mx-auto text-gray-200 mb-4" />
                     No orders currently in production.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === COMPLETED TAB === */}
+        {activeTab === "completed" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-teal-50/30">
+                <div>
+                  <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Completed Orders</h2>
+                  <p className="text-[10px] text-teal-600 font-bold uppercase tracking-widest mt-0.5">Click &quot;Delivered&quot; once the order has been physically handed to the customer</p>
+                </div>
+                <CheckCircle size={18} className="text-teal-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).map((order) => {
+                  const qty = order.variants?.quantity || 1;
+                  return (
+                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-teal-50/20 rounded-2xl border border-teal-100 hover:bg-white hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                        <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-teal-100">
+                          {order.mockup_image_url
+                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                            : <Box size={24} className="text-gray-300" />
+                          }
+                        </div>
+                        <div>
+                          <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="flex items-center gap-1 text-[10px] font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full border border-teal-100">
+                              <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
+                            </span>
+                            <span className="text-[10px] font-black text-teal-600 bg-white px-2 py-0.5 rounded-md shadow-sm border border-teal-100 uppercase tracking-tighter">
+                              {qty > 1 ? `Bulk · ${qty} units` : 'Single Item'}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-gray-400 font-bold mt-1">
+                            {new Date(order.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                          <Eye size={16} />
+                        </button>
+                        {order.status === "DELIVERED" ? (
+                          <div className="bg-gray-100 text-teal-700 border border-teal-200 px-5 py-2.5 rounded-xl font-black flex items-center gap-1.5 text-sm uppercase tracking-widest cursor-default">
+                            <CheckCircle size={14} /> Delivered
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleDeliverOrder(order.id)}
+                            className="bg-teal-500 text-white px-5 py-2.5 rounded-xl font-black shadow-md hover:bg-teal-600 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm uppercase tracking-widest"
+                          >
+                            <Truck size={14} /> Mark Delivered
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                    No completed orders awaiting delivery confirmation.
                   </div>
                 )}
               </div>
@@ -872,12 +965,26 @@ export default function AdminDashboard() {
                           Reject Receipt
                         </button>
                         <button 
-                          onClick={() => handleApproveFinalPayment(selectedOrder.id)} 
+                          onClick={() => handleApproveFinalPayment(selectedOrder)} 
                           className="flex-[2] bg-amber-400 text-[#1B2412] py-4 rounded-xl font-black hover:bg-amber-500 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
                         >
                           <ShieldCheck size={18} /> Approve Payment
                         </button>
                       </div>
+                    ) : selectedOrder.status === "COMPLETED" ? (
+                      <button
+                        onClick={() => handleDeliverOrder(selectedOrder.id)}
+                        className="w-full bg-teal-500 text-white py-3 rounded-xl font-black hover:bg-teal-600 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
+                      >
+                        <Truck size={16} /> Mark as Delivered
+                      </button>
+                    ) : selectedOrder.status === "COMPLETED_BY_SUPPLIER" ? (
+                      <button
+                        onClick={() => handleMarkAsCompleted(selectedOrder.id)}
+                        className="w-full bg-teal-500 text-white py-3 rounded-xl font-black hover:bg-teal-600 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
+                      >
+                        <CheckCircle size={16} /> Move to Completed
+                      </button>
                     ) : (
                       <div className="w-full py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center justify-center border-2 bg-gray-100 text-gray-600 border-gray-200">
                         Status: {selectedOrder.status?.replace(/_/g, ' ')}
@@ -1136,7 +1243,10 @@ export default function AdminDashboard() {
 const STATUS_COLOR: Record<string, string> = {
   PENDING_ADMIN: "bg-yellow-100 text-yellow-700",
   ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
-  REJECTED: "bg-red-100 text-red-700",
+  FINAL_PAYMENT_PENDING: "bg-amber-100 text-amber-700",
+  PRODUCTION_APPROVED_AND_PAID: "bg-emerald-100 text-emerald-700",
   COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+  COMPLETED: "bg-teal-100 text-teal-700",
   DELIVERED: "bg-teal-100 text-teal-700",
+  REJECTED: "bg-red-100 text-red-700",
 };

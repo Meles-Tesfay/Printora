@@ -534,9 +534,14 @@ export default function SupplierDashboard() {
             <p className="px-4 text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Orders</p>
             <button 
               onClick={() => setActiveTab("orders")}
-              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-[#1B2412] text-[#A1FF4D]" : "text-gray-400 hover:bg-gray-50"}`}
+              className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-[#1B2412] text-[#A1FF4D]" : "text-gray-400 hover:bg-gray-50"}`}
             >
-              <ShoppingBag size={16} /> Fulfillments
+              <span className="flex items-center gap-3"><ShoppingBag size={16} /> Fulfillments</span>
+              {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${activeTab === "orders" ? "bg-[#A1FF4D] text-[#1B2412]" : "bg-gray-200 text-gray-600"}`}>
+                  {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").length}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab("resubmissions")}
@@ -553,15 +558,36 @@ export default function SupplierDashboard() {
             </button>
             <button 
               onClick={() => setActiveTab("pending-approvals")}
-              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "pending-approvals" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+              className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "pending-approvals" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
             >
-              <Clock size={16} /> Pending Approvals
+              <span className="flex items-center gap-3"><Clock size={16} /> Pending Approvals</span>
+              {orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL").length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${activeTab === "pending-approvals" ? "bg-[#1B2412] text-[#A1FF4D]" : "bg-amber-100 text-amber-700"}`}>
+                  {orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL").length}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={() => setActiveTab("in-production")}
+              className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "in-production" ? "bg-blue-500/10 text-blue-700" : "text-gray-400 hover:bg-gray-50"}`}
+            >
+              <span className="flex items-center gap-3"><Package size={16} /> In Production</span>
+              {orders.filter(o => o.status === "PRODUCTION_APPROVED_AND_PAID").length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${activeTab === "in-production" ? "bg-blue-600 text-white" : "bg-blue-100 text-blue-700"}`}>
+                  {orders.filter(o => o.status === "PRODUCTION_APPROVED_AND_PAID").length}
+                </span>
+              )}
             </button>
             <button 
               onClick={() => setActiveTab("completed")}
-              className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "completed" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+              className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "completed" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
             >
-              <CheckCircle size={16} /> Completed
+              <span className="flex items-center gap-3"><CheckCircle size={16} /> Completed</span>
+              {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${activeTab === "completed" ? "bg-[#1B2412] text-[#A1FF4D]" : "bg-emerald-100 text-emerald-700"}`}>
+                  {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").length}
+                </span>
+              )}
             </button>
           </div>
         </nav>
@@ -916,7 +942,7 @@ export default function SupplierDashboard() {
           <div>
             <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Pending Approvals</h2>
             <div className="space-y-4">
-              {orders.filter(o => ["SAMPLE_AWAITING_APPROVAL", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).map(order => (
+              {orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL").map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 flex items-center gap-6 opacity-90 group hover:opacity-100 transition-all">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
                     <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain" />
@@ -941,6 +967,54 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "in-production" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif' }}>In Production</h2>
+              <div className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">Full Production Run</div>
+            </div>
+            <div className="space-y-4">
+              {orders.filter(o => o.status === "PRODUCTION_APPROVED_AND_PAID").map(order => (
+                <div key={order.id} className="bg-white rounded-[2rem] border border-blue-100 shadow-sm hover:shadow-md transition-all p-4 flex items-center gap-6 group">
+                  <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
+                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</span>
+                      <span className="bg-blue-50 text-blue-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Full Batch</span>
+                    </div>
+                    <h3 className="font-black text-[#1B2412] text-lg truncate uppercase tracking-tight">Order #{order.id.slice(0, 8)}</h3>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="text-[11px] font-bold text-gray-500">Qty: {order.variants?.quantity || 1} units</span>
+                      <span className="text-[11px] font-bold text-gray-400">{order.variants?.color} • {order.variants?.size}</span>
+                    </div>
+                  </div>
+                  <div className="pr-4">
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Mark Order #${order.id.slice(0,8)} as completed by supplier?`)) return;
+                        const { error } = await supabase.from('custom_orders').update({ status: 'COMPLETED_BY_SUPPLIER' }).eq('id', order.id);
+                        if (error) alert('Error: ' + error.message);
+                        else { const { data: { user } } = await supabase.auth.getUser(); if (user) fetchOrders(user.id); }
+                      }}
+                      className="bg-[#1B2412] text-white px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#A1FF4D] hover:text-[#1B2412] transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                    >
+                      <CheckCircle size={14} /> Mark Completed
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {orders.filter(o => o.status === "PRODUCTION_APPROVED_AND_PAID").length === 0 && (
+                <div className="p-16 text-center bg-white rounded-[2rem] border border-dashed border-gray-100">
+                  <Package size={40} className="mx-auto text-gray-200 mb-3" />
+                  <p className="text-gray-400 font-bold text-sm">No orders currently in full production.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
