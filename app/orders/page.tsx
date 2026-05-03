@@ -418,15 +418,30 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                     <div className="bg-gray-50 rounded-2xl p-4">
                         <div className="flex justify-between items-center mb-2">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
-                            <p className="font-black text-[#111] text-sm">{((order.supplier_product?.price || 0) * (order.variants?.quantity || 1)).toLocaleString()} ETB</p>
+                            <p className="font-black text-[#111] text-sm">
+                                {(() => {
+                                    const basePrice = order.supplier_product?.price || (Array.isArray(order.supplier_product) ? order.supplier_product[0]?.price : 0) || (order.product_type?.toLowerCase().includes('hoodie') ? 600 : 350);
+                                    return (basePrice * (order.variants?.quantity || 1)).toLocaleString();
+                                })()} ETB
+                            </p>
                         </div>
                         <div className="flex justify-between items-center mb-2">
                             <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Paid (50% Deposit)</p>
-                            <p className="font-black text-emerald-600 text-sm">{((order.supplier_product?.price || 0) * (order.variants?.quantity || 1) / 2).toLocaleString()} ETB</p>
+                            <p className="font-black text-emerald-600 text-sm">
+                                {(() => {
+                                    const basePrice = order.supplier_product?.price || (Array.isArray(order.supplier_product) ? order.supplier_product[0]?.price : 0) || (order.product_type?.toLowerCase().includes('hoodie') ? 600 : 350);
+                                    return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
+                                })()} ETB
+                            </p>
                         </div>
                         <div className="flex justify-between items-center">
                             <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Remaining Balance</p>
-                            <p className="font-black text-amber-600 text-sm">{((order.supplier_product?.price || 0) * (order.variants?.quantity || 1) / 2).toLocaleString()} ETB</p>
+                            <p className="font-black text-amber-600 text-sm">
+                                {(() => {
+                                    const basePrice = order.supplier_product?.price || (Array.isArray(order.supplier_product) ? order.supplier_product[0]?.price : 0) || (order.product_type?.toLowerCase().includes('hoodie') ? 600 : 350);
+                                    return (basePrice * (order.variants?.quantity || 1) / 2).toLocaleString();
+                                })()} ETB
+                            </p>
                         </div>
                     </div>
 
