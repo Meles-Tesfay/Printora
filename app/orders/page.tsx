@@ -623,11 +623,12 @@ function OrdersContent() {
                             >
                                 <PenTool size={14} /> Redesign
                             </Link>
+                        )}
                     </div>
                 </div>
 
                 {/* Feedback Section for Delivered Orders */}
-                    {order.status === "DELIVERED" && (
+                {order.status === "DELIVERED" && (
                         Number(order.variants?.customer_rating) > 0 ? (
                             /* Already submitted — show compact thank-you card only */
                             <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 mt-4 flex items-center gap-3">
