@@ -7,12 +7,12 @@ import { supabase } from '@/lib/supabase';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    full_name: '',
     email: '',
     password: '',
-    phone: '',
+    phone_number: '',
     location: '',
+    company_name: '',
     role: 'CUSTOMER'
   });
 
@@ -32,7 +32,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { firstName, lastName, email, password, phone, location, role } = formData;
+    const { full_name, email, password, phone_number, location, company_name, role } = formData;
 
     // 1. Sign up the user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -52,9 +52,10 @@ export default function SignupPage() {
         .insert({
           id: authData.user.id,
           email: email,
-          full_name: `${firstName} ${lastName}`,
-          phone: phone,
+          full_name: full_name,
+          phone_number: phone_number,
           location: location,
+          company_name: role === 'SUPPLIER' ? company_name : null,
           role: role
         });
 
@@ -145,27 +146,16 @@ export default function SignupPage() {
           </div>
 
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex flex-col gap-1.5 flex-1">
-                <label className="text-[14px] font-bold text-gray-800">First name</label>
-                <input 
-                  type="text" 
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-1.5 flex-1">
-                <label className="text-[14px] font-bold text-gray-800">Last name</label>
-                <input 
-                  type="text" 
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
-                  required
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[14px] font-bold text-gray-800">Full Name</label>
+              <input 
+                type="text" 
+                value={formData.full_name}
+                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                placeholder="Jane Doe"
+                className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                required
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -184,8 +174,8 @@ export default function SignupPage() {
                 <label className="text-[14px] font-bold text-gray-800">Phone number</label>
                 <input 
                   type="tel" 
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
                   className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
                   required
                 />
@@ -201,6 +191,20 @@ export default function SignupPage() {
                 />
               </div>
             </div>
+
+            {formData.role === 'SUPPLIER' && (
+              <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-[14px] font-bold text-gray-800">Company Name</label>
+                <input 
+                  type="text" 
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                  placeholder="e.g. Acme Printing Co."
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                  required={formData.role === 'SUPPLIER'}
+                />
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5 relative">
               <label className="text-[14px] font-bold text-gray-800">Password</label>
