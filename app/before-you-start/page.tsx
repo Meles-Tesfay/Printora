@@ -274,10 +274,42 @@ export default function BeforeYouStartPage() {
             {/* Payment Method Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { name: "CBE", border: "hover:border-purple-200", image: "/cbe-logo.png" },
-                { name: "Telebirr", border: "hover:border-blue-200", image: "/telebirr-logo.png" },
-                { name: "BOA", border: "hover:border-yellow-200", image: "/boa-logo.png" },
-                { name: "Upload Receipt", border: "hover:border-gray-200", icon: Upload },
+                { 
+                  name: "CBE", 
+                  border: "hover:border-purple-300", 
+                  glow: "bg-purple-400",
+                  image: "/cbe-logo.png", 
+                  anim: "group-hover:[transform:rotateY(360deg)]",
+                  desc: "Direct Bank Transfer",
+                  action: "Fast & Secure"
+                },
+                { 
+                  name: "Telebirr", 
+                  border: "hover:border-blue-300", 
+                  glow: "bg-blue-400",
+                  image: "/telebirr-logo.png", 
+                  anim: "group-hover:-translate-y-2 group-hover:scale-125 group-hover:-rotate-12",
+                  desc: "Mobile Money",
+                  action: "Instant Verification"
+                },
+                { 
+                  name: "BOA", 
+                  border: "hover:border-yellow-300", 
+                  glow: "bg-yellow-400",
+                  image: "/boa-logo.png", 
+                  anim: "group-hover:rotate-[360deg] group-hover:scale-110",
+                  desc: "Bank of Abyssinia",
+                  action: "Trusted Partner"
+                },
+                { 
+                  name: "Upload Receipt", 
+                  border: "hover:border-[#9DF542]/50", 
+                  glow: "bg-[#9DF542]",
+                  icon: Upload, 
+                  anim: "group-hover:-translate-y-3 group-hover:scale-125",
+                  desc: "Payment Proof",
+                  action: "Required Step"
+                },
               ].map((method, idx) => (
                 <motion.div
                   key={idx}
@@ -285,25 +317,40 @@ export default function BeforeYouStartPage() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.1 }}
-                  className={`bg-white p-8 rounded-[2rem] border border-gray-100 ${method.border} hover:shadow-lg transition-all duration-300 hover:scale-105 flex flex-col items-center justify-center text-center aspect-square group`}
+                  className={`relative bg-white p-6 rounded-[2rem] border border-gray-100 ${method.border} hover:shadow-xl transition-all duration-500 hover:-translate-y-2 flex flex-col items-center justify-center text-center aspect-square group overflow-hidden`}
                 >
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-5 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden transition-transform duration-500 group-hover:scale-110 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${method.image ? 'p-2' : 'p-0'}`}>
+                  {/* Subtle Colored Background Glow on Hover */}
+                  <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-[40px] opacity-0 group-hover:opacity-15 transition-opacity duration-700 pointer-events-none ${method.glow}`} />
+
+                  {/* Logo Container */}
+                  <div className={`relative z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center mb-4 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden transition-all duration-500 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] group-hover:-translate-y-2 ${method.image ? 'p-2' : 'p-0'} [perspective:1000px]`}>
                     {method.image ? (
-                      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                      <div className={`w-full h-full rounded-full overflow-hidden flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${method.anim}`}>
                         <img src={method.image} alt={method.name} className="w-full h-full object-contain" />
                       </div>
                     ) : method.icon ? (
-                      <div className="w-full h-full bg-gray-50 flex items-center justify-center rounded-full">
-                        <method.icon size={32} className="text-gray-600" />
+                      <div className={`w-full h-full bg-gray-50 flex items-center justify-center rounded-full transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${method.anim}`}>
+                        <method.icon size={32} className="text-[#111]" />
                       </div>
                     ) : (
                       <div className="w-full h-full bg-gray-50 flex items-center justify-center rounded-full">
-                        <Smartphone size={32} className="text-gray-600" />
+                        <Smartphone size={32} className="text-[#111]" />
                       </div>
                     )}
                   </div>
-                  <h4 className="text-xl font-bold text-[#111]">{method.name}</h4>
-                  {method.name === "Upload Receipt" && <p className="text-xs text-gray-400 mt-2">Required for processing</p>}
+                  
+                  {/* Text Content */}
+                  <div className="relative z-10 transition-transform duration-500 group-hover:-translate-y-2">
+                    <h4 className="text-xl font-bold text-[#111]">{method.name}</h4>
+                    <p className="text-sm text-gray-400 mt-1">{method.desc}</p>
+                  </div>
+
+                  {/* Hidden Action Pill that slides up on hover */}
+                  <div className="absolute bottom-5 left-0 right-0 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 flex justify-center z-10">
+                    <span className="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold text-[#111] shadow-sm border border-gray-100">
+                      {method.action}
+                    </span>
+                  </div>
                 </motion.div>
               ))}
             </div>
