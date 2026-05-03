@@ -506,7 +506,6 @@ export default function SupplierDashboard() {
           </Link>
         </div>
 
-        {/* User Info */}
         {profile && (
           <div className="p-4 mx-4 my-4 bg-[#A1FF4D]/10 rounded-2xl">
             <div className="flex items-center gap-3">
@@ -569,7 +568,6 @@ export default function SupplierDashboard() {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
@@ -580,543 +578,176 @@ export default function SupplierDashboard() {
           </div>
         </div>
 
-        {/* === MY PRODUCTS TAB === */}
         {activeTab === "my-products" && (
           <>
-            {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {stats.map((stat, i) => (
-            <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow rounded-2xl">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className={`${stat.color} p-3 rounded-xl text-white flex-shrink-0`}>
-                  <stat.icon size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
-                  <p className="text-2xl font-black text-[#2B3220]">{stat.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* My Products */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-10">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-lg font-black text-[#2B3220] uppercase tracking-tight">My Products</h2>
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{products.length} total</span>
-          </div>
-
-          {products.length === 0 ? (
-            <div className="p-16 text-center">
-              <Box size={40} className="mx-auto text-gray-200 mb-4" />
-              <p className="text-sm font-bold text-gray-400">No products yet. Add your first product!</p>
-              <button onClick={() => setActiveTab("add-product")} className="mt-4 bg-[#2B3220] text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-black transition-all">
-                Add Product
-              </button>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+              {stats.map((stat, i) => (
+                <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow rounded-2xl">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className={`${stat.color} p-3 rounded-xl text-white flex-shrink-0`}>
+                      <stat.icon size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                      <p className="text-2xl font-black text-[#2B3220]">{stat.value}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-50/80">
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Product</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Price</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Colors</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {products.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-                            {p.image_url
-                              ? <img src={p.image_url} className="w-full h-full object-cover" alt={p.name} />
-                              : <div className="w-full h-full flex items-center justify-center text-gray-300"><ImageIcon size={18} /></div>
-                            }
-                          </div>
-                          <div>
-                            <p className="font-black text-[#2B3220] text-sm">{p.name}</p>
-                            <p className="text-xs text-gray-400 font-medium line-clamp-1 max-w-[180px]">{p.description}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-black text-gray-700 bg-gray-100 px-2 py-1 rounded-lg">{p.product_type}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-bold text-[#2B3220]">{p.price} ETB</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-1 flex-wrap">
-                          {(p.available_colors || []).slice(0, 6).map((c: any) => (
-                            <div key={c.hex} title={c.name} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
-                          ))}
-                          {(p.available_colors || []).length > 6 && (
-                            <span className="text-[10px] font-bold text-gray-500">+{(p.available_colors || []).length - 6}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${STATUS_STYLE[p.status] || 'bg-gray-100 text-gray-600'}`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button 
-                            onClick={() => handleEditProduct(p)}
-                            className={`p-2 rounded-lg transition-all ${p.status === 'APPROVED' ? 'text-gray-300 cursor-not-allowed hover:bg-gray-100' : 'text-gray-400 hover:text-[#3da85b] hover:bg-[#3da85b]/10'}`}
-                            title={p.status === 'APPROVED' ? "Product is Live (Locked)" : "Edit Product"}
-                          >
-                            {p.status === 'APPROVED' ? (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            ) : (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            )}
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                            title="Delete Product"
-                          >
-                            <XCircle size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
 
-        {/* End of My Products Tab */}
-        </>
-        )}
-
-        {/* === ADD PRODUCT TAB === */}
-        {activeTab === "add-product" && (
-          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 max-w-4xl">
-            <div className="mb-8">
-              <h2 className="text-2xl font-black text-[#2B3220] uppercase" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                {editingProductId ? "Edit Product" : "Add New Product"}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Package size={18} /></div>
+              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+                Your Product Catalog
               </h2>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Fill in all details for your product listing</p>
             </div>
 
-            <form onSubmit={handleSubmitProduct} className="space-y-6">
-              {/* Product Name */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">
-                  <Package size={12} className="inline mr-1" /> Product Name *
-                </label>
-                <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Premium Black Mug" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
-              </div>
-
-              {/* Descriptions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Short Description (Catalog)</label>
-                  <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief summary for the landing page..." rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Long Description (Detail Page)</label>
-                  <textarea value={form.long_description} onChange={e => setForm(f => ({ ...f, long_description: e.target.value }))} placeholder="Detailed product specifications, features, etc..." rows={3} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm resize-none transition-all" />
-                </div>
-              </div>
-
-              {/* Type, Price, Bulk Pricing */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Product Type *</label>
-                  <div className="relative">
-                    <select required value={form.product_type} onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold appearance-none cursor-pointer transition-all">
-                      {PRODUCT_TYPES.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Price (ብር) *</label>
-                  <input required type="number" min="0" step="0.01" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="150" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Bulk Pricing details</label>
-                  <input type="text" value={form.bulk_pricing} onChange={e => setForm(f => ({ ...f, bulk_pricing: e.target.value }))} placeholder="e.g. 10% off for 50+" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
-                </div>
-              </div>
-
-              {/* Delivery info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Turnaround Time</label>
-                  <input type="text" value={form.turnaround_time} onChange={e => setForm(f => ({ ...f, turnaround_time: e.target.value }))} placeholder="e.g. 2-4 Days" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
-                </div>
-                <div>
-                  <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-2">Quality</label>
-                  <input type="text" value={form.quality} onChange={e => setForm(f => ({ ...f, quality: e.target.value }))} placeholder="e.g. Premium, 100% Cotton" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
-                </div>
-              </div>
-
-              {/* Images */}
-              <div className="space-y-6 border-2 border-dashed border-gray-100 p-8 rounded-[2.5rem] bg-gray-50/50">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-400"><ImageIcon size={20} /></div>
-                  <h3 className="text-sm font-black text-[#2B3220] uppercase tracking-tight">Product Visuals</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FileDropzone 
-                    label="Primary Catalog Image *" 
-                    field="image_url" 
-                    value={form.image_url} 
-                  />
-                  <FileDropzone 
-                    label="Secondary Hover Image" 
-                    field="hover_image_url" 
-                    value={form.hover_image_url} 
-                  />
-                </div>
-                
-                <FileDropzone 
-                  label="Additional Detail Images" 
-                  field="detail_images" 
-                  value={form.detail_images} 
-                  multiple={true}
-                />
-              </div>
-
-              {/* Available Sizes */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3">Available Sizes *</label>
-                <div className="flex flex-wrap gap-2">
-                  {['S', 'M', 'L', 'XL', '2XL', '3XL', 'One Size'].map(size => {
-                    const selected = form.available_sizes.includes(size);
-                    return (
-                      <button key={size} type="button" onClick={() => handleSizeToggle(size)} className={`px-4 py-2 rounded-xl border-2 text-[11px] font-bold transition-all ${selected ? 'border-[#A1FF4C] bg-[#A1FF4C]/10 text-[#1B2412]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}>
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Available Colors */}
-              <div>
-                <label className="text-[11px] font-black text-[#2B3220] uppercase tracking-widest block mb-3"><Palette size={12} className="inline mr-1" /> Available Colors * (select all that apply)</label>
-                <div className="flex flex-wrap gap-2">
-                  {PRESET_COLORS.map(color => {
-                    const selected = form.available_colors.some(c => c.hex === color.hex);
-                    return (
-                      <button key={color.hex} type="button" onClick={() => handleColorToggle(color)} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-[11px] font-bold transition-all ${selected ? 'border-[#A1FF4C] bg-[#A1FF4C]/10 text-[#1B2412]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}>
-                        <div className="w-4 h-4 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: color.hex }} />
-                        {color.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                {form.available_colors.length === 0 && <p className="text-[10px] text-red-400 font-bold mt-2 uppercase tracking-widest">Please select at least one color</p>}
-              </div>
-
-              {/* Submit */}
-              <div className="flex gap-3 pt-4">
-                <button type="submit" disabled={formLoading || form.available_colors.length === 0} className="w-full bg-[#A1FF4D] text-[#1B2412] py-4 rounded-xl font-black shadow-lg hover:shadow-[#A1FF4D]/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {formLoading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                  {formLoading ? "Submitting..." : "Submit for Approval"}
+            {products.length === 0 ? (
+              <div className="p-20 text-center border-2 border-dashed border-gray-100 rounded-[3rem] bg-white">
+                <Box size={48} className="mx-auto text-gray-200 mb-4" />
+                <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No products listed yet</p>
+                <button onClick={() => setActiveTab("add-product")} className="mt-6 bg-[#A1FF4D] text-[#1B2412] px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:shadow-lg transition-all active:scale-95">
+                  Create First Product
                 </button>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <Card key={product.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
+                    <div className="relative aspect-[4/5] bg-gray-50 flex items-center justify-center overflow-hidden">
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-contain p-6 group-hover:scale-110 transition-transform duration-500" />
+                      <div className="absolute top-4 right-4 flex flex-col gap-2">
+                        <button onClick={() => handleEditProduct(product)} className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-gray-600 hover:bg-[#1B2412] hover:text-[#A1FF4D] transition-all">
+                          <Plus size={16} className="rotate-45" />
+                        </button>
+                        <button onClick={() => handleDeleteProduct(product.id)} className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-4 left-4">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                          product.status === 'APPROVED' ? 'bg-emerald-500 text-white' : 
+                          product.status === 'REJECTED' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
+                        }`}>
+                          {product.status}
+                        </span>
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{product.product_type}</p>
+                      <h3 className="font-black text-[#1B2412] text-lg leading-tight mb-2">{product.name}</h3>
+                      <div className="flex items-end justify-between mt-4">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Base Price</p>
+                          <p className="text-xl font-black text-[#2B3220]">{product.price} <span className="text-[10px]">ETB</span></p>
+                        </div>
+                        <div className="flex -space-x-2">
+                          {product.available_colors?.slice(0, 3).map((c: any, i: number) => (
+                            <div key={i} className="w-5 h-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "add-product" && (
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 max-w-4xl">
+            <h2 className="text-2xl font-black text-[#2B3220] uppercase mb-8" style={{ fontFamily: 'Impact, sans-serif' }}>
+              {editingProductId ? "Edit Product" : "Add New Product"}
+            </h2>
+            <form onSubmit={handleSubmitProduct} className="space-y-6">
+              <div>
+                <label className="text-[11px] font-black text-[#2B3220] uppercase block mb-2">Product Name *</label>
+                <input required type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#A1FF4C] outline-none text-sm font-bold transition-all" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Short description..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm" />
+                <textarea value={form.long_description} onChange={e => setForm(f => ({ ...f, long_description: e.target.value }))} placeholder="Long description..." className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <select value={form.product_type} onChange={e => setForm(f => ({ ...f, product_type: e.target.value }))} className="bg-gray-50 border rounded-xl p-3 text-sm font-bold">
+                  {PRODUCT_TYPES.map(t => <option key={t}>{t}</option>)}
+                </select>
+                <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="Price" className="bg-gray-50 border rounded-xl p-3 text-sm font-bold" />
+                <input type="text" value={form.bulk_pricing} onChange={e => setForm(f => ({ ...f, bulk_pricing: e.target.value }))} placeholder="Bulk pricing" className="bg-gray-50 border rounded-xl p-3 text-sm font-bold" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FileDropzone label="Primary Image *" field="image_url" value={form.image_url} />
+                <FileDropzone label="Hover Image" field="hover_image_url" value={form.hover_image_url} />
+              </div>
+              <button type="submit" disabled={formLoading} className="w-full bg-[#A1FF4D] text-[#1B2412] py-4 rounded-xl font-black">
+                {formLoading ? "Submitting..." : "Submit Product"}
+              </button>
             </form>
           </div>
         )}
 
-        {/* === ORDERS TAB === */}
         {activeTab === "orders" && (
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><ShoppingBag size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                Pending Fulfillments
-              </h2>
+            <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Pending Fulfillments</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {orders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(o.status)).map(order => (
+                <Card key={order.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white flex h-44">
+                  <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100">
+                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-2" />
+                  </div>
+                  <div className="flex-1 p-5 flex flex-col justify-between">
+                    <div>
+                      <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                      <p className="text-[11px] text-gray-400 font-bold">{order.variants?.color} • {order.variants?.size}</p>
+                    </div>
+                    <button onClick={() => setSelectedOrder(order)} className="w-full bg-[#1B2412] text-white py-2 rounded-xl text-xs font-bold uppercase">View & Fulfill</button>
+                  </div>
+                </Card>
+              ))}
             </div>
-            {(() => {
-              const filtered = orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER" || o.status === "SAMPLE_REJECTED");
-              return filtered.length === 0 ? (
-                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No assigned orders at the moment</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filtered.map((order) => (
-                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
-                      <CardContent className="p-0 flex h-44">
-                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
-                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                            </div>
-                          </div>
-                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
-                            View &amp; Fulfill
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              );
-            })()}
           </div>
         )}
 
-        {/* === PENDING APPROVALS TAB === */}
         {activeTab === "pending-approvals" && (
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Clock size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                Pending Approvals
-              </h2>
+            <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Pending Approvals</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {orders.filter(o => ["SAMPLE_AWAITING_APPROVAL", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).map(order => (
+                <Card key={order.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white flex h-44 opacity-80">
+                  <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100">
+                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-2" />
+                  </div>
+                  <div className="flex-1 p-5 flex flex-col justify-between">
+                    <div>
+                      <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                      <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status}</span>
+                    </div>
+                    <button onClick={() => setSelectedOrder(order)} className="w-full bg-[#1B2412] text-white py-2 rounded-xl text-xs font-bold uppercase">View Status</button>
+                  </div>
+                </Card>
+              ))}
             </div>
-            {(() => {
-              const filtered = orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL" || o.status === "PRODUCTION_APPROVED_AND_PAID");
-              return filtered.length === 0 ? (
-                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No pending approvals at the moment</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filtered.map((order) => (
-                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
-                      <CardContent className="p-0 flex h-44">
-                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                              <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-2 py-0.5 rounded-full text-center leading-tight max-w-[100px]">{order.status.replace(/_/g, ' ')}</span>
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
-                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                            </div>
-                          </div>
-                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
-                            {order.status === "PRODUCTION_APPROVED_AND_PAID" ? "Complete Order" : "View"}
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              );
-            })()}
           </div>
         )}
 
-        {/* === COMPLETED TAB === */}
         {activeTab === "completed" && (
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><CheckCircle size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                Completed Productions
-              </h2>
+            <h2 className="text-xl font-black text-[#2B3220] uppercase mb-6" style={{ fontFamily: 'Impact, sans-serif' }}>Completed</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").map(order => (
+                <Card key={order.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white flex h-44 opacity-60">
+                   <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100">
+                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-2" />
+                  </div>
+                  <div className="flex-1 p-5 flex flex-col justify-between">
+                    <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
+                    <div className="w-full bg-green-50 text-green-600 py-2 rounded-xl font-black text-xs text-center">DELIVERED</div>
+                  </div>
+                </Card>
+              ))}
             </div>
-            {(() => {
-              const filtered = orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER");
-              return filtered.length === 0 ? (
-                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-                  <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No completed orders yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filtered.map((order) => (
-                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group opacity-70 hover:opacity-100">
-                      <CardContent className="p-0 flex h-44">
-                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                              <span className="bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
-                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                            </div>
-                          </div>
-                          <div className="w-full bg-green-500/10 text-green-600 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-center">
-                            Delivered
-                          </div>
-                        </div>
-                      </CardContent>
-        {activeTab === "orders" && (
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><ShoppingBag size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                Pending Fulfillments
-              </h2>
-            </div>
-            {(() => {
-              const filtered = orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER" || o.status === "SAMPLE_REJECTED");
-              return filtered.length === 0 ? (
-                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No assigned orders at the moment</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filtered.map((order) => (
-                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
-                      <CardContent className="p-0 flex h-44">
-                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                              <span className="bg-blue-50 text-blue-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
-                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                            </div>
-                          </div>
-                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
-                            View &amp; Fulfill
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* === PENDING APPROVALS TAB === */}
-        {activeTab === "pending-approvals" && (
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><Clock size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                Pending Approvals
-              </h2>
-            </div>
-            {(() => {
-              const filtered = orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL" || o.status === "PRODUCTION_APPROVED_AND_PAID");
-              return filtered.length === 0 ? (
-                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-                  <Clock size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No pending approvals at the moment</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filtered.map((order) => (
-                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group">
-                      <CardContent className="p-0 flex h-44">
-                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                              <span className="bg-yellow-50 text-yellow-600 text-[9px] font-black px-2 py-0.5 rounded-full text-center leading-tight max-w-[100px]">{order.status.replace(/_/g, ' ')}</span>
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
-                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                            </div>
-                          </div>
-                          <button onClick={() => { setSelectedOrder(order); setProofUrl(''); setProofPreview(''); setActiveViewIdx(0); }} className="w-full bg-[#1B2412] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-black transition-all active:scale-95">
-                            {order.status === "PRODUCTION_APPROVED_AND_PAID" ? "Complete Order" : "View"}
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* === COMPLETED TAB === */}
-        {activeTab === "completed" && (
-          <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-[#1B2412] text-white p-2 rounded-xl"><CheckCircle size={18} /></div>
-              <h2 className="text-xl font-black text-[#2B3220] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
-                Completed Productions
-              </h2>
-            </div>
-            {(() => {
-              const filtered = orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER");
-              return filtered.length === 0 ? (
-                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-3xl bg-white/50">
-                  <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
-                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No completed orders yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filtered.map((order) => (
-                    <Card key={order.id} className="border-none shadow-sm hover:shadow-xl transition-all rounded-[2rem] overflow-hidden bg-white group opacity-70 hover:opacity-100">
-                      <CardContent className="p-0 flex h-44">
-                        <div className="w-1/3 bg-gray-50 flex items-center justify-center border-r border-gray-100 overflow-hidden">
-                          {order.mockup_image_url ? <img src={order.mockup_image_url} alt="Design" className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform" /> : <Box size={36} className="text-gray-200" />}
-                        </div>
-                        <div className="flex-1 p-5 flex flex-col justify-between">
-                          <div>
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="font-black text-[#2B3220] text-sm uppercase">{order.product_type}</p>
-                              <span className="bg-green-50 text-green-600 text-[9px] font-black px-2 py-0.5 rounded-full">{order.status.replace(/_/g, ' ')}</span>
-                            </div>
-                            <p className="text-[11px] text-gray-400 font-bold mb-2">{order.variants?.color || 'Default'} • {order.variants?.view || 'Front'}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center"><User size={10} className="text-gray-400" /></div>
-                              <span className="text-[10px] font-bold text-gray-600">{order.customer?.full_name || order.customer?.email || 'Customer'}</span>
-                            </div>
-                          </div>
-                          <div className="w-full bg-green-500/10 text-green-600 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider text-center">
-                            Delivered
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              );
-            })()}
           </div>
         )}
       </main>
@@ -1129,6 +760,7 @@ export default function SupplierDashboard() {
         const activeDesign  = activeViewData?.design || selectedOrder.design_data;
         const activeMockup  = activeViewData?.mockup_url || selectedOrder.mockup_image_url;
         const layers = extractLayers(activeDesign);
+
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white w-full max-w-6xl rounded-[2rem] shadow-2xl my-4 overflow-hidden flex flex-col">
@@ -1144,7 +776,7 @@ export default function SupplierDashboard() {
                     title="Download high-res print file (PNG)"
                     className="flex items-center gap-1.5 bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
                   >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <Upload size={13} />
                     Download Print File
                   </button>
                   <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-white transition-colors">
@@ -1186,7 +818,7 @@ export default function SupplierDashboard() {
                           title="Download mockup image"
                           className="absolute bottom-6 right-6 flex items-center gap-1.5 bg-[#1B2412]/90 hover:bg-[#1B2412] text-white text-[11px] font-black px-4 py-2 rounded-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100 shadow-xl"
                         >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                          <ImageIcon size={12} />
                           Download Mockup
                         </button>
                       </div>
@@ -1240,7 +872,7 @@ export default function SupplierDashboard() {
                                   onClick={() => downloadLayer(layer, activeDesign, i)}
                                   className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 transition-all opacity-0 group-hover/layer:opacity-100"
                                 >
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                  <Upload size={12} />
                                 </button>
                               </div>
                             </div>
@@ -1273,17 +905,17 @@ export default function SupplierDashboard() {
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-gray-500">Unit Price</span>
-                          <span className="text-sm font-black text-gray-800">{(selectedOrder.supplier_product?.price || 600).toLocaleString()} ETB</span>
+                          <span className="text-sm font-black text-gray-800">{(selectedOrder.supplier_product?.price || 600).toLocaleString()} ብር</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-gray-500">Total Value</span>
-                          <span className="text-sm font-black text-gray-800">{((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ETB</span>
+                          <span className="text-sm font-black text-gray-800">{((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ብር</span>
                         </div>
                         <div className="h-px bg-gray-200 my-1" />
                         <div className="flex justify-between items-center pt-1">
                           <span className="text-xs font-black text-emerald-600 uppercase">Your Payout (100%)</span>
                           <span className="text-xl font-black text-emerald-600">
-                            {((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ETB
+                            {((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ብር
                           </span>
                         </div>
                       </div>
