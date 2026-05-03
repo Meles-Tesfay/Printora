@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "products" | "suppliers" | "customers" | "receipts">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -335,10 +335,21 @@ export default function AdminDashboard() {
             )}
           </button>
           <button
+            onClick={() => setActiveTab("processing")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "processing" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <span className="flex items-center gap-3"><Truck size={16} /> In Production</span>
+            {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length > 0 && (
+              <span className="bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab("receipts")}
             className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "receipts" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
-            <span className="flex items-center gap-3"><ShieldCheck size={16} /> Payment Approvals</span>
+            <span className="flex items-center gap-3"><ShieldCheck size={16} /> Final Payment</span>
             {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length > 0 && (
               <span className="bg-amber-400 text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">
                 {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length}
@@ -481,7 +492,7 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-amber-50/30">
-                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Final Payment Verification</h2>
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Final Payment</h2>
                 <ShieldCheck size={18} className="text-amber-500" />
               </div>
               <div className="p-4 space-y-3">
