@@ -680,7 +680,7 @@ export default function EditorUI() {
         if (requestedTemplate) {
             let p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
             if (!p) p = PRODUCT_TEMPLATES.find(t => t.category === requestedTemplate || t.id.includes(requestedTemplate) || requestedTemplate.includes(t.category));
-            
+
             // If it's a reload, and we have a saved session for this exact product, we can use it.
             // But fundamentally, the product is the one requested in the URL.
             if (p) return p;
@@ -749,14 +749,14 @@ export default function EditorUI() {
             if (requestedTemplate && !isReload) return {};
 
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { 
-                try { 
+            if (sess) {
+                try {
                     const data = JSON.parse(sess);
                     // Ensure the saved session actually belongs to the product we are loading
                     if (data.productTemplateId === selectedProduct.id) {
-                        return data.viewStates || {}; 
+                        return data.viewStates || {};
                     }
-                } catch { } 
+                } catch { }
             }
         }
         return {};
@@ -772,15 +772,15 @@ export default function EditorUI() {
     const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(() => {
         if (typeof window !== 'undefined') {
             if (requestedTemplate && !isReload) return null;
-            
+
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { 
-                try { 
+            if (sess) {
+                try {
                     const data = JSON.parse(sess);
                     if (data.productTemplateId === selectedProduct.id) {
-                        return data.loadedTemplateId || null; 
+                        return data.loadedTemplateId || null;
                     }
-                } catch { } 
+                } catch { }
             }
         }
         return null;
@@ -801,12 +801,12 @@ export default function EditorUI() {
     const [bulkRules, setBulkRules] = useState<{threshold: number, value: number} | null>(null);
 
     const PAYMENT_METHODS = [
-        { id: 'telebirr', name: 'Telebirr', type: 'mobile', shortcode: '123456', icon: Smartphone },
-        { id: 'cbe-birr', name: 'CBE Birr', type: 'mobile', shortcode: '654321', icon: Smartphone },
-        { id: 'm-pesa', name: 'M-Pesa', type: 'mobile', shortcode: '987654', icon: Smartphone },
-        { id: 'cbe', name: 'Commercial Bank of Ethiopia', type: 'bank', account: '100021312323', icon: Building2 },
-        { id: 'abyssinia', name: 'Bank of Abyssinia', type: 'bank', account: '888999000', icon: Building2 },
-        { id: 'dashen', name: 'Dashen Bank', type: 'bank', account: '111222333', icon: Building2 },
+        { id: 'telebirr', name: 'Telebirr', type: 'mobile', shortcode: '123456', icon: Smartphone, image: '/telebirr.png' },
+        { id: 'cbe-birr', name: 'CBE Birr', type: 'mobile', shortcode: '654321', icon: Smartphone, image: '/cbe-birr.png' },
+        { id: 'm-pesa', name: 'M-Pesa', type: 'mobile', shortcode: '987654', icon: Smartphone, image: '/m-pesa.png' },
+        { id: 'cbe', name: 'Commercial Bank of Ethiopia', type: 'bank', account: '100021312323', icon: Building2, image: '/cbe.png' },
+        { id: 'abyssinia', name: 'Bank of Abyssinia', type: 'bank', account: '888999000', icon: Building2, image: '/abyssinia.png' },
+        { id: 'dashen', name: 'Dashen Bank', type: 'bank', account: '111222333', icon: Building2, image: '/dashen.png' },
     ];
 
     // Fetch supplier product details if customizing a specific supplier product
@@ -878,7 +878,7 @@ export default function EditorUI() {
         if (requestedTemplate) {
             let p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
             if (!p) p = PRODUCT_TEMPLATES.find(t => t.category === requestedTemplate || t.id.includes(requestedTemplate) || requestedTemplate.includes(t.category));
-            
+
             if (p && p.id !== selectedProduct.id) {
                 setSelectedProduct(p);
                 setSelectedColor(p.defaultColorHex);
@@ -1603,7 +1603,6 @@ export default function EditorUI() {
                 <div className="absolute right-4 top-4 w-[320px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-100 z-30 overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
                         <h3 className="font-bold text-[15px] text-gray-800">Variants and layers</h3>
-                        <button className="text-gray-400 hover:text-gray-700"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="p-5 flex-1 min-h-[150px] bg-white">
                         <h4 className="font-bold text-[13px] text-gray-800 mb-4">Variants</h4>
@@ -1757,12 +1756,16 @@ export default function EditorUI() {
                                             key={method.id}
                                             onClick={() => setSelectedPaymentMethod(method.id)}
                                             className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${selectedPaymentMethod === method.id
-                                                    ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]'
-                                                    : 'border-gray-100 hover:border-gray-200 bg-white'
+                                                ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]'
+                                                : 'border-gray-100 hover:border-gray-200 bg-white'
                                                 }`}
                                         >
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedPaymentMethod === method.id ? 'bg-[#ccff00] text-[#1B2412]' : 'bg-gray-50 text-gray-400'}`}>
-                                                <method.icon size={24} />
+                                            <div className={`w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center ${selectedPaymentMethod === method.id ? 'bg-[#ccff00] text-[#1B2412]' : 'bg-gray-50 text-gray-400'}`}>
+                                                {method.image ? (
+                                                    <img src={method.image} alt={method.name} className="w-full h-full object-contain p-1" />
+                                                ) : (
+                                                    <method.icon size={24} />
+                                                )}
                                             </div>
                                             <div className="flex-1">
                                                 <p className="text-sm font-black text-gray-900">{method.name}</p>
@@ -1780,8 +1783,16 @@ export default function EditorUI() {
                                 {/* Dynamic Payment Instructions */}
                                 {selectedPaymentMethod && (
                                     <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-[#ccff00]">
-                                            <CreditCard size={28} />
+                                        <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 overflow-hidden p-1">
+                                            {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.image ? (
+                                                <img
+                                                    src={PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.image}
+                                                    alt="Bank Logo"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            ) : (
+                                                <CreditCard size={28} className="text-[#ccff00]" />
+                                            )}
                                         </div>
                                         <p className="text-sm font-medium text-gray-500 mb-2">Transfer to the following {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.type === 'mobile' ? 'shortcode' : 'account'}:</p>
                                         <div className="flex flex-col gap-1">
