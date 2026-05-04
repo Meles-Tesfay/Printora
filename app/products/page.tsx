@@ -54,8 +54,8 @@ function ProductsPageContent() {
       href: "/products?category=T-shirts",
       bg: "linear-gradient(135deg, #1b2412 0%, #2d3f1a 50%, #1a2a10 100%)",
       accent: "#9DF542",
-      image: "/hustle-tee.jpg",
-      imagePos: "object-top"
+      image: "/mug.png",
+      imagePos: "object-center"
     },
     {
       title: "WEAR THE HOODIE LIFE.",
@@ -64,8 +64,8 @@ function ProductsPageContent() {
       href: "/products?category=Hoodies",
       bg: "linear-gradient(135deg, #1a1030 0%, #2d1b5e 50%, #3b2080 100%)",
       accent: "#A78BFA",
-      image: "/orange-hoodie.jpg",
-      imagePos: "object-top"
+      image: "/i2.jpg",
+      imagePos: "object-center"
     },
     {
       title: "SHE WEARS HER BRAND.",
@@ -74,7 +74,7 @@ function ProductsPageContent() {
       href: "/products?category=T-shirts",
       bg: "linear-gradient(135deg, #2a0a18 0%, #5c1430 50%, #7d1a42 100%)",
       accent: "#FB7185",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1200&fit=crop",
+      image: "/u1.jpg",
       imagePos: "object-[center_20%]"
     },
     {
@@ -84,7 +84,7 @@ function ProductsPageContent() {
       href: "/products",
       bg: "linear-gradient(135deg, #0a1f30 0%, #0e3a5c 50%, #0f4878 100%)",
       accent: "#38BDF8",
-      image: "/bag1.jpg",
+      image: "/p1.jpg",
       imagePos: "object-center"
     },
   ], []);
