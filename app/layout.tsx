@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/AuthProvider";
 import AgreementModal from "@/components/globals/AgreementModal";
 
 const geistSans = Geist({
@@ -29,8 +30,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
-        <AgreementModal />
+        <AuthProvider>
+          {children}
+          <AgreementModal />
+        </AuthProvider>
       </body>
     </html>
   );

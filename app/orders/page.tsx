@@ -9,6 +9,7 @@ import {
     Package, ArrowRight, Loader2, LogOut, Home,
     Sparkles, ShieldCheck, User, Star, ShoppingBag
 } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
 const STATUS_CONFIG: Record<string, {
     label: string;
@@ -178,43 +179,7 @@ function OrdersContent() {
 
     return (
         <div className="min-h-screen bg-[#fafafa] font-sans">
-            {/* Top Nav */}
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
-                <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href="/">
-                            <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
-                        </Link>
-                        <div className="hidden sm:block w-px h-5 bg-gray-200" />
-                        <span className="hidden sm:block text-[11px] font-black text-gray-400 uppercase tracking-widest">My Orders</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {profile && (
-                            <div className="flex items-center gap-2.5 bg-gray-50 rounded-full px-3 py-1.5">
-                                <div className="w-7 h-7 rounded-full bg-[#A1FF4D] flex items-center justify-center text-[#1B2412] font-black text-xs">
-                                    {profile.full_name?.[0]?.toUpperCase() || "U"}
-                                </div>
-                                <span className="text-[12px] font-bold text-[#1B2412] hidden sm:block max-w-[100px] truncate">
-                                    {profile.full_name}
-                                </span>
-                            </div>
-                        )}
-                        <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors p-2">
-                            <Home size={18} />
-                        </Link>
-                        <Link href="/profile" className="text-gray-500 hover:text-gray-900 transition-colors p-2">
-                            <User size={18} />
-                        </Link>
-                        <Link href="/editor" className="bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs hover:bg-[#8ee53f] transition-all flex items-center gap-1.5">
-                            <PenTool size={13} /> New Design
-                        </Link>
-                        <button onClick={handleSignOut} className="text-gray-400 hover:text-red-500 transition-colors p-2">
-                            <LogOut size={16} />
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <Navbar />
 
             <main className="max-w-6xl mx-auto px-6 py-10">
                 {/* Success Banner */}

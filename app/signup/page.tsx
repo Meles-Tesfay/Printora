@@ -84,7 +84,7 @@ export default function SignupPage() {
         {/* Content */}
         <div className="relative z-10 flex flex-col pt-16 px-12 xl:px-16 text-white h-full">
           {/* Headline */}
-          <h1 className="text-[52px] xl:text-[62px] font-black leading-none uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+          <h1 className="text-[52px] xl:text-[62px] font-black leading-none uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
             <span className="block mb-1 drop-shadow-md">SMALL PRODUCT,</span>
             <span className="bg-[#2DC1DB] text-white px-3 py-1 -ml-3 inline-block shadow-md">BIG PROFIT</span>
             <span className="block mt-1 drop-shadow-md">POTENTIAL</span>
@@ -121,7 +121,7 @@ export default function SignupPage() {
 
         <div className="w-full max-w-[440px] flex flex-col my-auto mt-4 md:mt-auto">
 
-          <h2 className="text-[44px] md:text-[54px] font-black uppercase text-[#2B3118] tracking-normal text-center mb-8" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em', letterSpacing: '0.02em' }}>
+          <h2 className="text-[44px] md:text-[54px] font-black uppercase text-[#2B3118] tracking-widest text-center mb-8" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
             JOIN STENVO.
           </h2>
 

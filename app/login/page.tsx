@@ -86,7 +86,7 @@ export default function LoginPage() {
             <div className="w-12 h-1.5 bg-[#A1FF4C] mb-8 rounded-full shadow-[0_0_15px_rgba(161,255,76,0.5)]"></div>
 
             {/* Headline */}
-            <h1 className="text-[42px] xl:text-[50px] font-black leading-[1.05] uppercase tracking-normal mb-8 drop-shadow-2xl" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+            <h1 className="text-[42px] xl:text-[50px] font-black leading-[1.05] uppercase tracking-widest mb-8 drop-shadow-2xl" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
               <span className="block text-white mb-2">SMALL PRODUCT,</span>
               <span className="bg-[#2DC1DB] text-white px-3 py-1.5 -ml-1 inline-block shadow-lg leading-none transform -skew-x-6">
                 <span className="block transform skew-x-6">BIG PROFIT</span>
@@ -131,7 +131,7 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[440px] flex flex-col my-auto">
 
-          <h2 className="text-[44px] md:text-[54px] font-black uppercase text-[#2B3118] tracking-normal text-center mb-10" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em', letterSpacing: '0.02em' }}>
+          <h2 className="text-[44px] md:text-[54px] font-black uppercase text-[#2B3118] tracking-widest text-center mb-10" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
             WELCOME BACK.
           </h2>
 

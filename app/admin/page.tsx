@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+
 import {
   ShoppingBag, CheckCircle, Clock, XCircle, BarChart3, Users,
-  User, Box, Truck, ArrowRight, ShieldCheck, AlertCircle,
+  User, Box, Truck, ShieldCheck, AlertCircle,
   Package, Palette, Loader2, LogOut, Eye, Download, Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,8 +25,11 @@ export default function AdminDashboard() {
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "products" | "suppliers" | "customers">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "rejected" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     setActiveImageUrl(null);
@@ -63,7 +66,7 @@ export default function AdminDashboard() {
       supabase
         .from("custom_orders")
         .select("*, customer:profiles(*), supplier_product:supplier_products(*, supplier:profiles(*))")
-        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"])
+        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED", "REJECTED"])
         .order("created_at", { ascending: false }),
 
       // Products submitted by suppliers awaiting approval
@@ -161,12 +164,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleApproveFinalPayment = async (orderId: string) => {
-    if (!confirm("Confirm that final payment receipt is valid? This will move the order to PRODUCTION.")) return;
+  const handleApproveFinalPayment = async (order: any) => {
+    const qty = order.variants?.quantity || 1;
+    const isBulk = qty > 1;
+    // Flow A (qty==1): Final payment → COMPLETED (skip production phase)
+    // Flow B (qty>1):  Final payment → PRODUCTION_APPROVED_AND_PAID (full production run)
+    const nextStatus = isBulk ? "PRODUCTION_APPROVED_AND_PAID" : "COMPLETED";
+    const confirmMsg = isBulk
+      ? "Confirm payment receipt is valid? This will hand the order off for FULL PRODUCTION."
+      : "Confirm payment receipt is valid? This single-item order will move directly to COMPLETED.";
+    if (!confirm(confirmMsg)) return;
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "PRODUCTION_APPROVED_AND_PAID" })
-      .eq("id", orderId);
+      .update({ status: nextStatus })
+      .eq("id", order.id);
 
     if (error) alert("Error: " + error.message);
     else {
@@ -202,14 +213,20 @@ export default function AdminDashboard() {
   };
 
   // Reject order
-  const handleRejectOrder = async (id: string) => {
-    if (!confirm("Reject this order?")) return;
+  const handleRejectOrder = async (order: any) => {
+    if (!rejectReason.trim()) return;
+    const newVariants = { ...(order.variants || {}), admin_rejection_reason: rejectReason };
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "REJECTED" })
-      .eq("id", id);
+      .update({ status: "REJECTED", variants: newVariants })
+      .eq("id", order.id);
     if (error) alert("Error: " + error.message);
-    else fetchAll();
+    else {
+      setShowRejectModal(false);
+      setRejectReason("");
+      setSelectedOrder(null);
+      fetchAll();
+    }
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -223,8 +240,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleMarkAsDelivered = async (id: string) => {
-    if (!confirm("Mark this order as delivered? This will allow the customer to provide feedback.")) return;
+  // Supplier finished → move to Completed tab (awaiting final delivery confirmation)
+  const handleMarkAsCompleted = async (id: string) => {
+    if (!confirm("Move this order to Completed? It will appear in the Completed tab for delivery.")) return;
+    const { error } = await supabase
+      .from("custom_orders")
+      .update({ status: "COMPLETED" })
+      .eq("id", id);
+    if (error) alert("Error: " + error.message);
+    else fetchAll();
+  };
+
+  // Final step — physically delivered to customer, enables feedback
+  const handleDeliverOrder = async (id: string) => {
+    if (!confirm("Mark this order as DELIVERED? The customer will be able to leave feedback.")) return;
     const { error } = await supabase
       .from("custom_orders")
       .update({ status: "DELIVERED" })
@@ -283,9 +312,12 @@ export default function AdminDashboard() {
   const STATUS_COLOR: Record<string, string> = {
     PENDING_ADMIN: "bg-yellow-100 text-yellow-700",
     ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
-    REJECTED: "bg-red-100 text-red-700",
+    FINAL_PAYMENT_PENDING: "bg-amber-100 text-amber-700",
+    PRODUCTION_APPROVED_AND_PAID: "bg-emerald-100 text-emerald-700",
     COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+    COMPLETED: "bg-teal-100 text-teal-700",
     DELIVERED: "bg-teal-100 text-teal-700",
+    REJECTED: "bg-red-100 text-red-700",
   };
 
   if (loading) {
@@ -301,9 +333,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-white text-gray-800 border-r border-gray-100 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-gray-100">
-          <Link href="/">
-            <img src="/logo.png" alt="Logo" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
-          </Link>
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
           <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2 block">Admin Panel</span>
         </div>
 
@@ -339,9 +369,9 @@ export default function AdminDashboard() {
             className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "processing" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
             <span className="flex items-center gap-3"><Truck size={16} /> In Production</span>
-            {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length > 0 && (
+            {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).length > 0 && (
               <span className="bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
-                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER"].includes(o.status)).length}
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).length}
               </span>
             )}
           </button>
@@ -353,6 +383,28 @@ export default function AdminDashboard() {
             {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length > 0 && (
               <span className="bg-amber-400 text-[#1B2412] text-[9px] font-black px-1.5 py-0.5 rounded-full">
                 {pendingOrders.filter(o => o.status === "FINAL_PAYMENT_PENDING").length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("completed")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "completed" ? "bg-teal-500/10 text-teal-700" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <span className="flex items-center gap-3"><CheckCircle size={16} /> Completed</span>
+            {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).length > 0 && (
+              <span className="bg-teal-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("rejected")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "rejected" ? "bg-red-500/10 text-red-600" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <span className="flex items-center gap-3"><XCircle size={16} /> Rejected</span>
+            {pendingOrders.filter(o => o.status === "REJECTED").length > 0 && (
+              <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => o.status === "REJECTED").length}
               </span>
             )}
           </button>
@@ -383,9 +435,7 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="p-4 border-t border-gray-100 space-y-1">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-50 rounded-xl text-sm font-bold">
-            <ArrowRight size={16} /> View Site
-          </Link>
+
           <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-400/10 w-full rounded-xl text-sm font-bold transition-all">
             <LogOut size={16} /> Sign Out
           </button>
@@ -397,7 +447,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-10">
           <div className="flex items-start justify-between w-full">
             <div>
-              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h1 className="text-4xl font-black text-[#111] leading-none uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 System Control
               </h1>
               <p className="text-gray-400 font-bold tracking-widest uppercase text-[10px] mt-1">Platform Overview & Administrative Actions</p>
@@ -528,7 +578,7 @@ export default function AdminDashboard() {
                         REJECT RECEIPT
                       </button>
                       <button
-                        onClick={() => handleApproveFinalPayment(order.id)}
+                        onClick={() => handleApproveFinalPayment(order)}
                         className="bg-amber-400 text-[#1B2412] px-4 py-2.5 rounded-xl font-black shadow-md hover:scale-105 active:scale-95 transition-all text-xs"
                       >
                         APPROVE PAYMENT
@@ -540,6 +590,178 @@ export default function AdminDashboard() {
                   <div className="p-16 text-center text-gray-400 italic font-medium">
                     <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
                     All receipts verified!
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === IN PRODUCTION TAB === */}
+        {activeTab === "processing" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-blue-50/30">
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Active Production Pipeline</h2>
+                <Truck size={18} className="text-blue-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).map((order) => (
+                  <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
+                        {order.mockup_image_url
+                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                          : <Box size={24} className="text-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                            <User size={9} /> {order.customer?.full_name || order.customer?.email}
+                          </span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-md shadow-sm border uppercase tracking-tighter ${
+                            order.status === "PRODUCTION_APPROVED_AND_PAID" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                            order.status === "SAMPLE_REJECTED" ? "bg-red-50 text-red-600 border-red-100" :
+                            "bg-blue-50 text-blue-600 border-blue-100"
+                          }`}>
+                             {order.status?.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {pendingOrders.filter(o => ["ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "PRODUCTION_APPROVED_AND_PAID"].includes(o.status)).length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <Box size={40} className="mx-auto text-gray-200 mb-4" />
+                    No orders currently in production.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === COMPLETED TAB === */}
+        {activeTab === "completed" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-teal-50/30">
+                <div>
+                  <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Completed Orders</h2>
+                  <p className="text-[10px] text-teal-600 font-bold uppercase tracking-widest mt-0.5">Click &quot;Delivered&quot; once the order has been physically handed to the customer</p>
+                </div>
+                <CheckCircle size={18} className="text-teal-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).map((order) => {
+                  const qty = order.variants?.quantity || 1;
+                  return (
+                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-teal-50/20 rounded-2xl border border-teal-100 hover:bg-white hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                        <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-teal-100">
+                          {order.mockup_image_url
+                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                            : <Box size={24} className="text-gray-300" />
+                          }
+                        </div>
+                        <div>
+                          <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className="flex items-center gap-1 text-[10px] font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full border border-teal-100">
+                              <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
+                            </span>
+                            <span className="text-[10px] font-black text-teal-600 bg-white px-2 py-0.5 rounded-md shadow-sm border border-teal-100 uppercase tracking-tighter">
+                              {qty > 1 ? `Bulk · ${qty} units` : 'Single Item'}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-gray-400 font-bold mt-1">
+                            {new Date(order.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                          <Eye size={16} />
+                        </button>
+                        {order.status === "DELIVERED" ? (
+                          <div className="bg-gray-100 text-teal-700 border border-teal-200 px-5 py-2.5 rounded-xl font-black flex items-center gap-1.5 text-sm uppercase tracking-widest cursor-default">
+                            <CheckCircle size={14} /> Delivered
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleDeliverOrder(order.id)}
+                            className="bg-teal-500 text-white px-5 py-2.5 rounded-xl font-black shadow-md hover:bg-teal-600 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-sm uppercase tracking-widest"
+                          >
+                            <Truck size={14} /> Mark Delivered
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {pendingOrders.filter(o => ["COMPLETED", "COMPLETED_BY_SUPPLIER", "DELIVERED"].includes(o.status)).length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                    No completed orders awaiting delivery confirmation.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === REJECTED TAB === */}
+        {activeTab === "rejected" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-red-50/30">
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Rejected Designs</h2>
+                <XCircle size={18} className="text-red-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => o.status === "REJECTED").map((order) => (
+                  <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50/20 rounded-2xl border border-red-100 hover:bg-white hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-red-100">
+                        {order.mockup_image_url
+                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                          : <Box size={24} className="text-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-100">
+                            <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
+                          </span>
+                          <span className="text-[10px] font-black text-red-600 bg-white px-2 py-0.5 rounded-md shadow-sm border border-red-100 uppercase tracking-tighter">
+                            Awaiting Redesign
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                        <Eye size={16} />
+                      </button>
+                      <div className="bg-white border border-red-200 text-red-500 px-4 py-2.5 rounded-xl text-xs font-black italic">
+                        {order.variants?.admin_rejection_reason ? `"${order.variants.admin_rejection_reason}"` : "No reason provided"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {pendingOrders.filter(o => o.status === "REJECTED").length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                    No rejected orders.
                   </div>
                 )}
               </div>
@@ -687,7 +909,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xl font-black text-[#111] uppercase" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
+              <h3 className="text-xl font-black text-[#111] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>
                 Order Details
               </h3>
               <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-900">
@@ -697,44 +919,50 @@ export default function AdminDashboard() {
             <div className="p-6 flex flex-col md:flex-row gap-6 max-h-[80vh] overflow-y-auto">
               {/* Left Column: Images */}
               <div className="w-full md:w-1/2 flex flex-col gap-4">
-                 {selectedOrder.mockup_image_url && (
-                   <div className="w-full h-64 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group">
-                     <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">Design Mockup</p>
-                     <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
-                   </div>
-                 )}
-                  <div className="flex flex-col gap-4">
+                 {/* Design Views */}
+                 <div className="grid grid-cols-2 gap-4">
+                     {selectedOrder.design_views && selectedOrder.design_views.length > 0 ? (
+                         selectedOrder.design_views.filter((v: any) => v.mockup_url).map((v: any) => (
+                             <div 
+                                key={v.viewId} 
+                                onClick={() => setFullscreenImage(v.mockup_url)}
+                                className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                             >
+                                 <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">{v.viewName}</p>
+                                 <img src={v.mockup_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt={v.viewName} />
+                             </div>
+                         ))
+                     ) : selectedOrder.mockup_image_url ? (
+                         <div 
+                            onClick={() => setFullscreenImage(selectedOrder.mockup_image_url)}
+                            className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group col-span-2 cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                         >
+                           <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">Design Mockup</p>
+                           <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt="Design" />
+                         </div>
+                     ) : null}
+                 </div>
+                  
+                  <div className="flex flex-row gap-4 mt-2">
                     {/* Initial Receipt (Deposit) */}
                     {selectedOrder.variants?.receiptDataUrl && (
-                      <div className="w-full bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group min-h-[160px] flex items-center justify-center">
-                          <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">1st Receipt: Deposit (50%)</p>
-                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-4" alt="Deposit Receipt" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <a 
-                                 href={selectedOrder.variants.receiptDataUrl} 
-                                 target="_blank"
-                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
-                              >
-                                 <Eye size={14} /> Full View
-                              </a>
-                          </div>
+                      <div 
+                        onClick={() => setFullscreenImage(selectedOrder.variants.receiptDataUrl)}
+                        className="flex-1 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative h-32 flex items-center justify-center cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                      >
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm pointer-events-none">Deposit (50%)</p>
+                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-2 mt-4 hover:scale-105 transition-transform" alt="Deposit Receipt" />
                       </div>
                     )}
 
                     {/* Final Receipt (Remaining Balance) */}
                     {selectedOrder.variants?.finalReceiptUrl && (
-                      <div className="w-full bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative group min-h-[160px] flex items-center justify-center">
-                          <p className="absolute top-2 left-3 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">Final Receipt: Balance (50%)</p>
-                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-4" alt="Final Receipt" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <a 
-                                 href={selectedOrder.variants.finalReceiptUrl} 
-                                 target="_blank"
-                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
-                              >
-                                 <Eye size={14} /> Full View
-                              </a>
-                          </div>
+                      <div 
+                        onClick={() => setFullscreenImage(selectedOrder.variants.finalReceiptUrl)}
+                        className="flex-1 bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative h-32 flex items-center justify-center cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
+                      >
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm pointer-events-none">Balance (50%)</p>
+                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-2 mt-4 hover:scale-105 transition-transform" alt="Final Receipt" />
                       </div>
                     )}
                   </div>
@@ -791,16 +1019,40 @@ export default function AdminDashboard() {
                    </p>
                  </div>
 
-                 <div className="flex gap-3 mt-auto pt-2">
+                 <div className="flex flex-col gap-3 mt-auto pt-2">
                     {selectedOrder.status === "PENDING_ADMIN" ? (
-                      <>
-                        <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
-                          Reject
-                        </button>
-                        <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
-                          Approve & Assign
-                        </button>
-                      </>
+                      showRejectModal ? (
+                         <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+                             <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Reason for Rejection</p>
+                             <textarea 
+                                value={rejectReason}
+                                onChange={e => setRejectReason(e.target.value)}
+                                placeholder="Why is this being rejected? (Customer will see this)"
+                                className="w-full text-sm p-3 rounded-xl border border-red-100 bg-white outline-none focus:ring-2 focus:ring-red-400 min-h-[80px] resize-none"
+                             />
+                             <div className="flex gap-2">
+                                <button onClick={() => setShowRejectModal(false)} className="flex-1 bg-white text-gray-500 py-2 rounded-xl font-bold border border-gray-200 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest">
+                                  Cancel
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectOrder(selectedOrder)}
+                                  disabled={!rejectReason.trim()} 
+                                  className="flex-1 bg-red-500 text-white py-2 rounded-xl font-black hover:bg-red-600 transition-all text-xs uppercase tracking-widest disabled:opacity-50"
+                                >
+                                  Confirm
+                                </button>
+                             </div>
+                         </div>
+                      ) : (
+                         <div className="flex gap-3">
+                            <button onClick={() => { setShowRejectModal(true); setRejectReason(""); }} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all uppercase text-xs tracking-widest">
+                              Reject
+                            </button>
+                            <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
+                              Approve & Assign
+                            </button>
+                         </div>
+                      )
                     ) : selectedOrder.status === "FINAL_PAYMENT_PENDING" ? (
                       <div className="flex gap-3 w-full">
                         <button 
@@ -810,12 +1062,26 @@ export default function AdminDashboard() {
                           Reject Receipt
                         </button>
                         <button 
-                          onClick={() => handleApproveFinalPayment(selectedOrder.id)} 
+                          onClick={() => handleApproveFinalPayment(selectedOrder)} 
                           className="flex-[2] bg-amber-400 text-[#1B2412] py-4 rounded-xl font-black hover:bg-amber-500 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
                         >
                           <ShieldCheck size={18} /> Approve Payment
                         </button>
                       </div>
+                    ) : selectedOrder.status === "COMPLETED" ? (
+                      <button
+                        onClick={() => handleDeliverOrder(selectedOrder.id)}
+                        className="w-full bg-teal-500 text-white py-3 rounded-xl font-black hover:bg-teal-600 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
+                      >
+                        <Truck size={16} /> Mark as Delivered
+                      </button>
+                    ) : selectedOrder.status === "COMPLETED_BY_SUPPLIER" ? (
+                      <button
+                        onClick={() => handleMarkAsCompleted(selectedOrder.id)}
+                        className="w-full bg-teal-500 text-white py-3 rounded-xl font-black hover:bg-teal-600 transition-all shadow-xl flex items-center justify-center gap-2 uppercase text-xs tracking-widest"
+                      >
+                        <CheckCircle size={16} /> Move to Completed
+                      </button>
                     ) : (
                       <div className="w-full py-3 rounded-xl text-[10px] font-black tracking-widest uppercase flex items-center justify-center border-2 bg-gray-100 text-gray-600 border-gray-200">
                         Status: {selectedOrder.status?.replace(/_/g, ' ')}
@@ -833,7 +1099,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[3rem] w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col">
             <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <h3 className="text-2xl font-black text-[#111] uppercase tracking-normal" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>Review Submission</h3>
+              <h3 className="text-2xl font-black text-[#111] uppercase tracking-widest" style={{ fontFamily: 'Impact, sans-serif', wordSpacing: '0.15em' }}>Review Submission</h3>
               <button onClick={() => setSelectedProduct(null)} className="text-gray-400 hover:text-gray-900 transition-colors">
                 <XCircle size={32} />
               </button>
@@ -1067,6 +1333,16 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullscreenImage(null)}>
+          <img src={fullscreenImage} className="max-w-full max-h-[95vh] object-contain cursor-default" onClick={(e) => e.stopPropagation()} alt="Fullscreen View" />
+          <button onClick={() => setFullscreenImage(null)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+            <XCircle size={36} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1074,7 +1350,10 @@ export default function AdminDashboard() {
 const STATUS_COLOR: Record<string, string> = {
   PENDING_ADMIN: "bg-yellow-100 text-yellow-700",
   ASSIGNED_TO_SUPPLIER: "bg-blue-100 text-blue-700",
-  REJECTED: "bg-red-100 text-red-700",
+  FINAL_PAYMENT_PENDING: "bg-amber-100 text-amber-700",
+  PRODUCTION_APPROVED_AND_PAID: "bg-emerald-100 text-emerald-700",
   COMPLETED_BY_SUPPLIER: "bg-green-100 text-green-700",
+  COMPLETED: "bg-teal-100 text-teal-700",
   DELIVERED: "bg-teal-100 text-teal-700",
+  REJECTED: "bg-red-100 text-red-700",
 };

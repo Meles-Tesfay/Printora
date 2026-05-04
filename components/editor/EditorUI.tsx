@@ -680,7 +680,7 @@ export default function EditorUI() {
         if (requestedTemplate) {
             let p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
             if (!p) p = PRODUCT_TEMPLATES.find(t => t.category === requestedTemplate || t.id.includes(requestedTemplate) || requestedTemplate.includes(t.category));
-            
+
             // If it's a reload, and we have a saved session for this exact product, we can use it.
             // But fundamentally, the product is the one requested in the URL.
             if (p) return p;
@@ -749,14 +749,14 @@ export default function EditorUI() {
             if (requestedTemplate && !isReload) return {};
 
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { 
-                try { 
+            if (sess) {
+                try {
                     const data = JSON.parse(sess);
                     // Ensure the saved session actually belongs to the product we are loading
                     if (data.productTemplateId === selectedProduct.id) {
-                        return data.viewStates || {}; 
+                        return data.viewStates || {};
                     }
-                } catch { } 
+                } catch { }
             }
         }
         return {};
@@ -772,15 +772,15 @@ export default function EditorUI() {
     const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(() => {
         if (typeof window !== 'undefined') {
             if (requestedTemplate && !isReload) return null;
-            
+
             const sess = sessionStorage.getItem('printora_canvas_session');
-            if (sess) { 
-                try { 
+            if (sess) {
+                try {
                     const data = JSON.parse(sess);
                     if (data.productTemplateId === selectedProduct.id) {
-                        return data.loadedTemplateId || null; 
+                        return data.loadedTemplateId || null;
                     }
-                } catch { } 
+                } catch { }
             }
         }
         return null;
@@ -798,21 +798,22 @@ export default function EditorUI() {
     const [supplierColors, setSupplierColors] = useState<{ name: string, hex: string }[] | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('telebirr');
     const [basePrice, setBasePrice] = useState(25);
+    const [bulkRules, setBulkRules] = useState<{threshold: number, value: number} | null>(null);
 
     const PAYMENT_METHODS = [
-        { id: 'telebirr', name: 'Telebirr', type: 'mobile', shortcode: '123456', icon: Smartphone },
-        { id: 'cbe-birr', name: 'CBE Birr', type: 'mobile', shortcode: '654321', icon: Smartphone },
-        { id: 'm-pesa', name: 'M-Pesa', type: 'mobile', shortcode: '987654', icon: Smartphone },
-        { id: 'cbe', name: 'Commercial Bank of Ethiopia', type: 'bank', account: '100021312323', icon: Building2 },
-        { id: 'abyssinia', name: 'Bank of Abyssinia', type: 'bank', account: '888999000', icon: Building2 },
-        { id: 'dashen', name: 'Dashen Bank', type: 'bank', account: '111222333', icon: Building2 },
+        { id: 'telebirr', name: 'Telebirr', type: 'mobile', shortcode: '123456', icon: Smartphone, image: '/telebirr.png' },
+        { id: 'cbe-birr', name: 'CBE Birr', type: 'mobile', shortcode: '654321', icon: Smartphone, image: '/cbe-birr.png' },
+        { id: 'm-pesa', name: 'M-Pesa', type: 'mobile', shortcode: '987654', icon: Smartphone, image: '/m-pesa.png' },
+        { id: 'cbe', name: 'Commercial Bank of Ethiopia', type: 'bank', account: '100021312323', icon: Building2, image: '/cbe.png' },
+        { id: 'abyssinia', name: 'Bank of Abyssinia', type: 'bank', account: '888999000', icon: Building2, image: '/abyssinia.png' },
+        { id: 'dashen', name: 'Dashen Bank', type: 'bank', account: '111222333', icon: Building2, image: '/dashen.png' },
     ];
 
     // Fetch supplier product details if customizing a specific supplier product
     useEffect(() => {
         if (!supplierProductId) return;
         (async () => {
-            const { data, error } = await supabase.from('supplier_products').select('available_colors, price').eq('id', supplierProductId).single();
+            const { data, error } = await supabase.from('supplier_products').select('available_colors, price, bulk_pricing').eq('id', supplierProductId).single();
             if (!error && data) {
                 if (data.available_colors?.length > 0) {
                     setSupplierColors(data.available_colors);
@@ -821,6 +822,13 @@ export default function EditorUI() {
                     if (!hasColor) setSelectedColor(data.available_colors[0].hex);
                 }
                 if (data.price) setBasePrice(data.price);
+                if (data.bulk_pricing) {
+                    try {
+                        setBulkRules(JSON.parse(data.bulk_pricing));
+                    } catch (e) {
+                        console.error("Failed to parse bulk pricing", e);
+                    }
+                }
             }
         })();
     }, [supplierProductId]);
@@ -870,7 +878,7 @@ export default function EditorUI() {
         if (requestedTemplate) {
             let p = PRODUCT_TEMPLATES.find(t => t.id === requestedTemplate);
             if (!p) p = PRODUCT_TEMPLATES.find(t => t.category === requestedTemplate || t.id.includes(requestedTemplate) || requestedTemplate.includes(t.category));
-            
+
             if (p && p.id !== selectedProduct.id) {
                 setSelectedProduct(p);
                 setSelectedColor(p.defaultColorHex);
@@ -901,6 +909,9 @@ export default function EditorUI() {
 
             // Restore color
             if (order.variants?.color) setSelectedColor(order.variants.color);
+            if (order.variants?.size) setOrderSize(order.variants.size);
+            if (order.variants?.quantity) setOrderQuantity(order.variants.quantity);
+            if (order.variants?.quality) setOrderQuality(order.variants.quality);
 
             // Rebuild viewStates from design_views (preferred) or design_data
             if (order.design_views && order.design_views.length > 0) {
@@ -969,11 +980,8 @@ export default function EditorUI() {
                 window.location.href = "/login";
                 return;
             }
-            if (dbOrderId) {
-                await handleSaveProduct();
-            } else {
-                setShowPaymentModal(true);
-            }
+            setShowPaymentModal(true);
+            setIsSaving(false);
         } catch (e) {
             console.error('Auth error', e);
             setIsSaving(false);
@@ -987,14 +995,16 @@ export default function EditorUI() {
             const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
             if (!mockupContainer) return '';
             const refRect = mockupContainer.getBoundingClientRect();
-            const W = Math.round(refRect.width);
-            const H = Math.round(refRect.height);
+            const scale = 3; // 3x resolution for high quality
+            const W = Math.round(refRect.width * scale);
+            const H = Math.round(refRect.height * scale);
             const offscreen = document.createElement('canvas');
             offscreen.width = W;
             offscreen.height = H;
             const ctx = offscreen.getContext('2d')!;
+            ctx.scale(scale, scale);
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, W, H);
+            ctx.fillRect(0, 0, refRect.width, refRect.height);
             // Draw SVG silhouettes (garment shape) from the live DOM
             const svgEls = mockupContainer.querySelectorAll<SVGSVGElement>('svg');
             for (const svgEl of svgEls) {
@@ -1592,7 +1602,6 @@ export default function EditorUI() {
                 <div className="absolute right-4 top-4 w-[320px] bg-white rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-100 z-30 overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
                         <h3 className="font-bold text-[15px] text-gray-800">Variants and layers</h3>
-                        <button className="text-gray-400 hover:text-gray-700"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="p-5 flex-1 min-h-[150px] bg-white">
                         <h4 className="font-bold text-[13px] text-gray-800 mb-4">Variants</h4>
@@ -1746,12 +1755,16 @@ export default function EditorUI() {
                                             key={method.id}
                                             onClick={() => setSelectedPaymentMethod(method.id)}
                                             className={`flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left ${selectedPaymentMethod === method.id
-                                                    ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]'
-                                                    : 'border-gray-100 hover:border-gray-200 bg-white'
+                                                ? 'border-[#ccff00] bg-[#ccff00]/5 ring-1 ring-[#ccff00]'
+                                                : 'border-gray-100 hover:border-gray-200 bg-white'
                                                 }`}
                                         >
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedPaymentMethod === method.id ? 'bg-[#ccff00] text-[#1B2412]' : 'bg-gray-50 text-gray-400'}`}>
-                                                <method.icon size={24} />
+                                            <div className={`w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center ${selectedPaymentMethod === method.id ? 'bg-[#ccff00] text-[#1B2412]' : 'bg-gray-50 text-gray-400'}`}>
+                                                {method.image ? (
+                                                    <img src={method.image} alt={method.name} className="w-full h-full object-contain p-1" />
+                                                ) : (
+                                                    <method.icon size={24} />
+                                                )}
                                             </div>
                                             <div className="flex-1">
                                                 <p className="text-sm font-black text-gray-900">{method.name}</p>
@@ -1769,8 +1782,16 @@ export default function EditorUI() {
                                 {/* Dynamic Payment Instructions */}
                                 {selectedPaymentMethod && (
                                     <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 text-[#ccff00]">
-                                            <CreditCard size={28} />
+                                        <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 overflow-hidden p-1">
+                                            {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.image ? (
+                                                <img
+                                                    src={PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.image}
+                                                    alt="Bank Logo"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            ) : (
+                                                <CreditCard size={28} className="text-[#ccff00]" />
+                                            )}
                                         </div>
                                         <p className="text-sm font-medium text-gray-500 mb-2">Transfer to the following {PAYMENT_METHODS.find(m => m.id === selectedPaymentMethod)?.type === 'mobile' ? 'shortcode' : 'account'}:</p>
                                         <div className="flex flex-col gap-1">
@@ -1851,51 +1872,76 @@ export default function EditorUI() {
                                 <h3 className="text-[11px] font-black text-[#ccff00] uppercase tracking-[0.2em] bg-[#1B2412] px-3 py-1.5 rounded-lg inline-block self-start mb-10">Order Summary</h3>
 
                                 <div className="space-y-10 flex-1">
-                                    {/* Pricing Breakdown */}
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center text-sm font-bold text-gray-500">
-                                            <span>Base Price</span>
-                                            <span className="text-gray-900">ETB {basePrice.toFixed(2)}</span>
-                                        </div>
-                                        {orderQuality === "Premium" && (
-                                            <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
-                                                <span>Premium Upgrade</span>
-                                                <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">+ETB 5.00</span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between items-center text-sm font-bold text-gray-500">
-                                            <span>Quantity</span>
-                                            <span className="text-gray-900">x {orderQuantity}</span>
-                                        </div>
-                                        <div className="h-px bg-gray-200 my-6" />
+                                    {(() => {
+                                        const isBulkDiscountApplied = bulkRules && orderQuantity >= bulkRules.threshold;
+                                        const discountPercentage = isBulkDiscountApplied ? bulkRules.value : 0;
+                                        const unitPrice = basePrice * (1 - discountPercentage / 100);
+                                        const premiumExtra = orderQuality === "Premium" ? 5 : 0;
+                                        const finalUnitPrice = unitPrice + premiumExtra;
+                                        const finalTotalPrice = finalUnitPrice * orderQuantity;
+                                        
+                                        return (
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-center text-sm font-bold text-gray-500">
+                                                    <span>Base Price</span>
+                                                    <span className="text-gray-900">
+                                                        {isBulkDiscountApplied ? (
+                                                            <>
+                                                                <span className="line-through text-gray-400 mr-2">ETB {basePrice.toFixed(2)}</span>
+                                                                <span>ETB {unitPrice.toFixed(2)}</span>
+                                                            </>
+                                                        ) : (
+                                                            `ETB ${basePrice.toFixed(2)}`
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                {isBulkDiscountApplied && (
+                                                    <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
+                                                        <span>Bulk Discount Applied</span>
+                                                        <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">{bulkRules.value}% Off!</span>
+                                                    </div>
+                                                )}
+                                                {orderQuality === "Premium" && (
+                                                    <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
+                                                        <span>Premium Upgrade</span>
+                                                        <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">+ETB 5.00</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between items-center text-sm font-bold text-gray-500">
+                                                    <span>Quantity</span>
+                                                    <span className="text-gray-900">x {orderQuantity}</span>
+                                                </div>
+                                                <div className="h-px bg-gray-200 my-6" />
 
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-end">
-                                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
-                                                <p className="text-3xl font-black text-gray-900">ETB {((basePrice + (orderQuality === "Premium" ? 5 : 0)) * orderQuantity).toFixed(2)}</p>
-                                            </div>
-                                            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex justify-between items-center mt-6">
-                                                <div>
-                                                    <p className="text-[10px] font-black text-[#3da85b] uppercase tracking-widest">Pay Now (50%)</p>
-                                                    <p className="text-xl font-black text-gray-900">ETB {(((basePrice + (orderQuality === "Premium" ? 5 : 0)) * orderQuantity) / 2).toFixed(2)}</p>
-                                                </div>
-                                                <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                                                    <ShoppingBag size={20} />
-                                                </div>
-                                            </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-end">
+                                                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
+                                                        <p className="text-3xl font-black text-gray-900">ETB {finalTotalPrice.toFixed(2)}</p>
+                                                    </div>
+                                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex justify-between items-center mt-6">
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-[#3da85b] uppercase tracking-widest">Pay Now (50%)</p>
+                                                            <p className="text-xl font-black text-gray-900">ETB {(finalTotalPrice / 2).toFixed(2)}</p>
+                                                        </div>
+                                                        <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                                            <ShoppingBag size={20} />
+                                                        </div>
+                                                    </div>
 
-                                            {/* Production Guarantee Note */}
-                                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-500 shadow-sm">
-                                                <div className="text-amber-600 mt-0.5 flex-shrink-0">
-                                                    <AlertCircle size={18} />
+                                                    {/* Production Guarantee Note */}
+                                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-500 shadow-sm">
+                                                        <div className="text-amber-600 mt-0.5 flex-shrink-0">
+                                                            <AlertCircle size={18} />
+                                                        </div>
+                                                        <p className="text-[13px] font-medium text-amber-900 leading-normal">
+                                                            <span className="font-black block mb-0.5 uppercase tracking-widest text-[11px] text-amber-700">Production Requirement</span>
+                                                            A <span className="font-black underline">50% deposit</span> is required to secure raw materials and initiate your custom production immediately.
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <p className="text-[13px] font-medium text-amber-900 leading-normal">
-                                                    <span className="font-black block mb-0.5 uppercase tracking-widest text-[11px] text-amber-700">Production Requirement</span>
-                                                    A <span className="font-black underline">50% deposit</span> is required to secure raw materials and initiate your custom production immediately.
-                                                </p>
                                             </div>
-                                        </div>
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 <button
