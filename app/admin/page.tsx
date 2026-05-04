@@ -28,6 +28,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     setActiveImageUrl(null);
@@ -212,15 +214,16 @@ export default function AdminDashboard() {
 
   // Reject order
   const handleRejectOrder = async (order: any) => {
-    const reason = prompt("Enter reason for rejection (the customer will see this):");
-    if (!reason) return;
-    const newVariants = { ...(order.variants || {}), admin_rejection_reason: reason };
+    if (!rejectReason.trim()) return;
+    const newVariants = { ...(order.variants || {}), admin_rejection_reason: rejectReason };
     const { error } = await supabase
       .from("custom_orders")
       .update({ status: "REJECTED", variants: newVariants })
       .eq("id", order.id);
     if (error) alert("Error: " + error.message);
     else {
+      setShowRejectModal(false);
+      setRejectReason("");
       setSelectedOrder(null);
       fetchAll();
     }
@@ -956,16 +959,40 @@ export default function AdminDashboard() {
                    </p>
                  </div>
 
-                 <div className="flex gap-3 mt-auto pt-2">
+                 <div className="flex flex-col gap-3 mt-auto pt-2">
                     {selectedOrder.status === "PENDING_ADMIN" ? (
-                      <>
-                        <button onClick={() => handleRejectOrder(selectedOrder)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
-                          Reject
-                        </button>
-                        <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
-                          Approve & Assign
-                        </button>
-                      </>
+                      showRejectModal ? (
+                         <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+                             <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Reason for Rejection</p>
+                             <textarea 
+                                value={rejectReason}
+                                onChange={e => setRejectReason(e.target.value)}
+                                placeholder="Why is this being rejected? (Customer will see this)"
+                                className="w-full text-sm p-3 rounded-xl border border-red-100 bg-white outline-none focus:ring-2 focus:ring-red-400 min-h-[80px] resize-none"
+                             />
+                             <div className="flex gap-2">
+                                <button onClick={() => setShowRejectModal(false)} className="flex-1 bg-white text-gray-500 py-2 rounded-xl font-bold border border-gray-200 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest">
+                                  Cancel
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectOrder(selectedOrder)}
+                                  disabled={!rejectReason.trim()} 
+                                  className="flex-1 bg-red-500 text-white py-2 rounded-xl font-black hover:bg-red-600 transition-all text-xs uppercase tracking-widest disabled:opacity-50"
+                                >
+                                  Confirm
+                                </button>
+                             </div>
+                         </div>
+                      ) : (
+                         <div className="flex gap-3">
+                            <button onClick={() => { setShowRejectModal(true); setRejectReason(""); }} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all uppercase text-xs tracking-widest">
+                              Reject
+                            </button>
+                            <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
+                              Approve & Assign
+                            </button>
+                         </div>
+                      )
                     ) : selectedOrder.status === "FINAL_PAYMENT_PENDING" ? (
                       <div className="flex gap-3 w-full">
                         <button 
