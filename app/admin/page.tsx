@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+
 import {
   ShoppingBag, CheckCircle, Clock, XCircle, BarChart3, Users,
-  User, Box, Truck, ArrowRight, ShieldCheck, AlertCircle,
+  User, Box, Truck, ShieldCheck, AlertCircle,
   Package, Palette, Loader2, LogOut, Eye, Download, Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -415,9 +415,7 @@ export default function AdminDashboard() {
         </nav>
 
         <div className="p-4 border-t border-gray-100 space-y-1">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-50 rounded-xl text-sm font-bold">
-            <ArrowRight size={16} /> View Site
-          </Link>
+
           <button onClick={handleSignOut} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-400/10 w-full rounded-xl text-sm font-bold transition-all">
             <LogOut size={16} /> Sign Out
           </button>
