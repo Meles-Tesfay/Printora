@@ -850,25 +850,36 @@ export default function AdminDashboard() {
             <div className="p-6 flex flex-col md:flex-row gap-6 max-h-[80vh] overflow-y-auto">
               {/* Left Column: Images */}
               <div className="w-full md:w-1/2 flex flex-col gap-4">
-                 {selectedOrder.mockup_image_url && (
-                   <div className="w-full h-64 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group">
-                     <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">Design Mockup</p>
-                     <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
-                   </div>
-                 )}
-                  <div className="flex flex-col gap-4">
+                 {/* Design Views */}
+                 <div className="grid grid-cols-2 gap-4">
+                     {selectedOrder.design_views && selectedOrder.design_views.length > 0 ? (
+                         selectedOrder.design_views.filter((v: any) => v.mockup_url).map((v: any) => (
+                             <div key={v.viewId} className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group">
+                                 <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">{v.viewName}</p>
+                                 <img src={v.mockup_url} className="w-full h-full object-contain p-2" alt={v.viewName} />
+                             </div>
+                         ))
+                     ) : selectedOrder.mockup_image_url ? (
+                         <div className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group col-span-2">
+                           <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">Design Mockup</p>
+                           <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
+                         </div>
+                     ) : null}
+                 </div>
+                  
+                  <div className="flex flex-row gap-4 mt-2">
                     {/* Initial Receipt (Deposit) */}
                     {selectedOrder.variants?.receiptDataUrl && (
-                      <div className="w-full bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group min-h-[160px] flex items-center justify-center">
-                          <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">1st Receipt: Deposit (50%)</p>
-                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-4" alt="Deposit Receipt" />
+                      <div className="flex-1 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group h-32 flex items-center justify-center">
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm">Deposit (50%)</p>
+                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-2 mt-4" alt="Deposit Receipt" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <a 
                                  href={selectedOrder.variants.receiptDataUrl} 
                                  target="_blank"
-                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
+                                 className="bg-white text-[#111] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 text-[10px] uppercase tracking-wider shadow-xl transition-all"
                               >
-                                 <Eye size={14} /> Full View
+                                 <Eye size={12} /> View
                               </a>
                           </div>
                       </div>
@@ -876,16 +887,16 @@ export default function AdminDashboard() {
 
                     {/* Final Receipt (Remaining Balance) */}
                     {selectedOrder.variants?.finalReceiptUrl && (
-                      <div className="w-full bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative group min-h-[160px] flex items-center justify-center">
-                          <p className="absolute top-2 left-3 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">Final Receipt: Balance (50%)</p>
-                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-4" alt="Final Receipt" />
+                      <div className="flex-1 bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative group h-32 flex items-center justify-center">
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm">Balance (50%)</p>
+                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-2 mt-4" alt="Final Receipt" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <a 
                                  href={selectedOrder.variants.finalReceiptUrl} 
                                  target="_blank"
-                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
+                                 className="bg-white text-[#111] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 text-[10px] uppercase tracking-wider shadow-xl transition-all"
                               >
-                                 <Eye size={14} /> Full View
+                                 <Eye size={12} /> View
                               </a>
                           </div>
                       </div>
