@@ -68,18 +68,22 @@ export default function LoginPage() {
     }
   };
   return (
-    <div className="min-h-screen w-full flex flex-row-reverse bg-[#f5f3e7] font-sans">
+    <div className="min-h-screen w-full flex bg-[#f5f3e7] font-sans">
 
-      {/* Right Column - Image & Marketing */}
+      {/* Left Column - Image & Marketing */}
       <div className="hidden lg:flex flex-col relative w-[48%] xl:w-[45%] bg-zinc-900 flex-shrink-0 min-h-screen overflow-hidden">
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 z-0 bg-[#111111] overflow-hidden">
           {/* Bound the image to the left so it doesn't expose the background wrapper */}
-          <img src="/pointer-guy-new.png" alt="Background" className="w-[120%] lg:w-[125%] max-w-none h-full object-cover object-center absolute -left-4 z-0" />
+          <img 
+            src="/pointer-guy-new.png" 
+            alt="Background" 
+            className="w-[120%] lg:w-[125%] max-w-none h-full object-cover object-center absolute -left-4 z-0 scale-x-[-1]" 
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/40 to-transparent z-10"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10 w-full h-[50%] top-auto bottom-0"></div>
           {/* Fade seamlessly into the right column's background color without any opacity cutoff */}
-          <div className="absolute inset-y-0 left-0 w-32 md:w-48 bg-gradient-to-l from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
+          <div className="absolute inset-y-0 right-0 w-32 md:w-48 bg-gradient-to-r from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
         </div>
 
         {/* Content */}
