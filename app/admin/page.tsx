@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "products" | "suppliers" | "customers">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "rejected" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
       supabase
         .from("custom_orders")
         .select("*, customer:profiles(*), supplier_product:supplier_products(*, supplier:profiles(*))")
-        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"])
+        .in("status", ["PENDING_ADMIN", "ASSIGNED_TO_SUPPLIER", "SAMPLE_AWAITING_APPROVAL", "SAMPLE_REJECTED", "FINAL_PAYMENT_PENDING", "PRODUCTION_APPROVED_AND_PAID", "COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED", "REJECTED"])
         .order("created_at", { ascending: false }),
 
       // Products submitted by suppliers awaiting approval
@@ -398,6 +398,17 @@ export default function AdminDashboard() {
             )}
           </button>
           <button
+            onClick={() => setActiveTab("rejected")}
+            className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "rejected" ? "bg-red-500/10 text-red-600" : "text-gray-400 hover:bg-gray-50"}`}
+          >
+            <span className="flex items-center gap-3"><XCircle size={16} /> Rejected</span>
+            {pendingOrders.filter(o => o.status === "REJECTED").length > 0 && (
+              <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                {pendingOrders.filter(o => o.status === "REJECTED").length}
+              </span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveTab("products")}
             className={`flex items-center justify-between px-4 py-3 w-full rounded-xl transition-all text-sm font-bold ${activeTab === "products" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
           >
@@ -700,6 +711,57 @@ export default function AdminDashboard() {
                   <div className="p-16 text-center text-gray-400 italic font-medium">
                     <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
                     No completed orders awaiting delivery confirmation.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* === REJECTED TAB === */}
+        {activeTab === "rejected" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-red-50/30">
+                <h2 className="text-lg font-black text-[#111] uppercase tracking-tight">Rejected Designs</h2>
+                <XCircle size={18} className="text-red-500" />
+              </div>
+              <div className="p-4 space-y-3">
+                {pendingOrders.filter(o => o.status === "REJECTED").map((order) => (
+                  <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50/20 rounded-2xl border border-red-100 hover:bg-white hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-4 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-red-100">
+                        {order.mockup_image_url
+                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                          : <Box size={24} className="text-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-[#111] text-sm">{order.product_type}</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-100">
+                            <User size={9} /> {order.customer?.full_name || order.customer?.email || 'Unknown'}
+                          </span>
+                          <span className="text-[10px] font-black text-red-600 bg-white px-2 py-0.5 rounded-md shadow-sm border border-red-100 uppercase tracking-tighter">
+                            Awaiting Redesign
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button onClick={() => setSelectedOrder(order)} className="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-[#111] transition-all" title="View Details">
+                        <Eye size={16} />
+                      </button>
+                      <div className="bg-white border border-red-200 text-red-500 px-4 py-2.5 rounded-xl text-xs font-black italic">
+                        {order.variants?.admin_rejection_reason ? `"${order.variants.admin_rejection_reason}"` : "No reason provided"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {pendingOrders.filter(o => o.status === "REJECTED").length === 0 && (
+                  <div className="p-16 text-center text-gray-400 italic font-medium">
+                    <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                    No rejected orders.
                   </div>
                 )}
               </div>
