@@ -112,10 +112,10 @@ export default function SignupPage() {
 
           {/* Subtext */}
           <p className="mt-8 text-[15.5px] xl:text-[17px] font-medium leading-[1.6] opacity-95 max-w-md drop-shadow-lg">
-            Phone cases are year-round profit-makers that smartphone users can't get enough of.
+            Ignite your brand's potential. High-margin phone cases are the ultimate profit engines that never go out of style.
           </p>
           <p className="mt-4 text-[15.5px] xl:text-[17px] font-medium leading-[1.6] opacity-95 max-w-md drop-shadow-lg">
-            Add your designs to popular cases, like the new Samsung Galaxy S24 options, and plug them as the perfect add-on to any order.
+            Dominate the market with premium quality. Launch your designs on the latest Samsung Galaxy S24 series and turn your vision into a powerhouse business.
           </p>
 
         </div>
