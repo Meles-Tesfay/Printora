@@ -118,16 +118,6 @@ export default function SignupPage() {
             Add your designs to popular cases, like the new Samsung Galaxy S24 options, and plug them as the perfect add-on to any order.
           </p>
 
-          {/* Bottom Chat Icon */}
-          <div className="mt-auto pb-10">
-            <div className="w-14 h-14 bg-[#454c30] border border-white/20 rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-[#525a3a] transition-colors">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="13" x2="15" y2="13"></line>
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
 
