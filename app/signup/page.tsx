@@ -96,7 +96,7 @@ export default function SignupPage() {
       <div className="hidden lg:flex flex-col relative w-[48%] xl:w-[45%] bg-zinc-900 flex-shrink-0 min-h-screen overflow-hidden">
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 z-0 bg-white overflow-hidden">
-          <img src="/pointer-guy.jpg" alt="Background" className="w-[110%] max-w-none h-full object-cover object-right absolute left-0 md:left-2 lg:left-6 xl:left-8 2xl:left-12 z-0" />
+          <img src="/pointer-guy-new.png" alt="Background" className="w-[120%] lg:w-[125%] max-w-none h-full object-cover object-center absolute -left-4 z-0" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/80 z-10"></div>
           <div className="absolute inset-y-0 left-0 w-24 md:w-40 bg-gradient-to-l from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
         </div>
