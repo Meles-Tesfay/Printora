@@ -909,6 +909,9 @@ export default function EditorUI() {
 
             // Restore color
             if (order.variants?.color) setSelectedColor(order.variants.color);
+            if (order.variants?.size) setOrderSize(order.variants.size);
+            if (order.variants?.quantity) setOrderQuantity(order.variants.quantity);
+            if (order.variants?.quality) setOrderQuality(order.variants.quality);
 
             // Rebuild viewStates from design_views (preferred) or design_data
             if (order.design_views && order.design_views.length > 0) {
@@ -977,12 +980,8 @@ export default function EditorUI() {
                 window.location.href = "/login";
                 return;
             }
-            if (dbOrderId) {
-                await handleSaveProduct();
-            } else {
-                setShowPaymentModal(true);
-                setIsSaving(false);
-            }
+            setShowPaymentModal(true);
+            setIsSaving(false);
         } catch (e) {
             console.error('Auth error', e);
             setIsSaving(false);
