@@ -380,6 +380,12 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                     </div>
                 </div>
                 <p className="text-xs text-gray-500 font-bold mt-4 leading-relaxed max-w-2xl">{cfg.description}</p>
+                {order.status === "REJECTED" && order.variants?.admin_rejection_reason && (
+                    <div className="mt-4 bg-red-100/50 p-4 rounded-xl border border-red-200">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-1">Reason for Rejection</p>
+                        <p className="font-bold text-sm text-red-800 italic">"{order.variants.admin_rejection_reason}"</p>
+                    </div>
+                )}
             </div>
 
             {/* Progress Stepper */}

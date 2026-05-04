@@ -211,14 +211,19 @@ export default function AdminDashboard() {
   };
 
   // Reject order
-  const handleRejectOrder = async (id: string) => {
-    if (!confirm("Reject this order?")) return;
+  const handleRejectOrder = async (order: any) => {
+    const reason = prompt("Enter reason for rejection (the customer will see this):");
+    if (!reason) return;
+    const newVariants = { ...(order.variants || {}), admin_rejection_reason: reason };
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "REJECTED" })
-      .eq("id", id);
+      .update({ status: "REJECTED", variants: newVariants })
+      .eq("id", order.id);
     if (error) alert("Error: " + error.message);
-    else fetchAll();
+    else {
+      setSelectedOrder(null);
+      fetchAll();
+    }
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -954,7 +959,7 @@ export default function AdminDashboard() {
                  <div className="flex gap-3 mt-auto pt-2">
                     {selectedOrder.status === "PENDING_ADMIN" ? (
                       <>
-                        <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
+                        <button onClick={() => handleRejectOrder(selectedOrder)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
                           Reject
                         </button>
                         <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
