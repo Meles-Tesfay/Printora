@@ -42,51 +42,28 @@ function ProductsPageContent() {
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(5000);
   const [sortBy, setSortBy] = useState<string>("newest");
-  const [isSortOpen, setIsSortOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchParams = useSearchParams();
 
   const carouselItems = useMemo(() => [
     {
-      title: "YOUR STYLE. YOUR PRINT.",
-      subtitle: "Premium custom T-shirts — bold designs printed on superior fabric, wash after wash.",
-      buttonText: "Shop T-Shirts",
-      href: "/products?category=T-shirts",
-      bg: "linear-gradient(135deg, #1b2412 0%, #2d3f1a 50%, #1a2a10 100%)",
-      accent: "#9DF542",
-      image: "/mug.png",
-      imagePos: "object-center"
+      title: "Design Your Identity",
+      subtitle: "Transform your ideas into premium custom apparel with our expert printing service.",
+      buttonText: "Start Designing",
+      image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop",
     },
     {
-      title: "WEAR THE HOODIE LIFE.",
-      subtitle: "Men's custom hoodies — thick fleece, vivid chest prints, designed exactly the way you want.",
-      buttonText: "Shop Hoodies",
-      href: "/products?category=Hoodies",
-      bg: "linear-gradient(135deg, #1a1030 0%, #2d1b5e 50%, #3b2080 100%)",
-      accent: "#A78BFA",
-      image: "/i2.jpg",
-      imagePos: "object-center"
+      title: "Precision Printing",
+      subtitle: "State-of-the-art technology for vivid, long-lasting prints on every product.",
+      buttonText: "Browse Collection",
+      image: "https://images.unsplash.com/photo-1562157873-818bc0726f68?q=80&w=1200&auto=format&fit=crop",
     },
     {
-      title: "SHE WEARS HER BRAND.",
-      subtitle: "Women's custom apparel — fitted tees & hoodies that carry your design with style and precision.",
-      buttonText: "Shop Women's",
-      href: "/products?category=T-shirts",
-      bg: "linear-gradient(135deg, #2a0a18 0%, #5c1430 50%, #7d1a42 100%)",
-      accent: "#FB7185",
-      image: "/u1.jpg",
-      imagePos: "object-[center_20%]"
-    },
-    {
-      title: "MERCH THAT MOVES PEOPLE.",
-      subtitle: "From tote bags and mugs to phone cases — every product is a canvas for your design.",
-      buttonText: "Browse All",
-      href: "/products",
-      bg: "linear-gradient(135deg, #0a1f30 0%, #0e3a5c 50%, #0f4878 100%)",
-      accent: "#38BDF8",
-      image: "/p1.jpg",
-      imagePos: "object-center"
-    },
+      title: "Global Customization",
+      subtitle: "Personalize every detail and ship your brand to customers worldwide.",
+      buttonText: "Get Started",
+      image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop",
+    }
   ], []);
 
   useEffect(() => {
@@ -108,11 +85,11 @@ function ProductsPageContent() {
       });
   }, []);
 
-  // Auto-scroll logic — slow crossfade every 7 seconds
+  // Auto-scroll logic
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
-    }, 7000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [carouselItems.length]);
 
@@ -187,71 +164,68 @@ function ProductsPageContent() {
   return (
     <div className="min-h-screen bg-[#fafbfa] font-sans text-[#1c211f]">
       
-      {/* Hero Carousel — crossfade, no images */}
-      <div className="relative overflow-hidden w-full h-[220px] md:h-[280px]">
-
-        {/* Slides — stacked, fading in/out */}
-        {carouselItems.map((item, idx) => (
-          <div
-            key={idx}
-            className="absolute inset-0 transition-opacity duration-[1800ms] ease-in-out"
-            style={{ opacity: currentSlide === idx ? 1 : 0, zIndex: currentSlide === idx ? 1 : 0, background: item.bg }}
-          >
-            {/* Bottom fade into page */}
-            <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#fafbfa] to-transparent pointer-events-none" />
-
-            {/* Promotional image in the absolute right remaining space */}
-            <div className="absolute right-0 top-0 h-full w-1/2 md:w-[60%] lg:w-[65%] hidden md:block" style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%)', maskImage: 'linear-gradient(to right, transparent, black 15%)' }}>
-                <img src={item.image} alt={item.title} className={`w-full h-full object-cover opacity-90 transition-transform duration-[10000ms] hover:scale-105 ${item.imagePos || 'object-center'}`} />
-            </div>
-
-            {/* Text content */}
-            <div className="relative z-10 h-full flex items-center px-10 md:px-20 lg:px-28 md:w-1/2 lg:w-[45%]">
-              <div className="max-w-xl space-y-4">
-
-                {/* ONE unified bold Impact heading across all slides */}
-                <h2
-                  className="text-4xl md:text-5xl lg:text-[58px] text-white leading-[1.0] drop-shadow-lg"
-                  style={{ fontFamily: 'Impact, "Arial Black", "Segoe UI Black", sans-serif', letterSpacing: '0.01em' }}
-                >
-                  {item.title}
-                </h2>
-                <p className="text-white/90 text-[15px] md:text-[17px] font-medium leading-relaxed max-w-md drop-shadow-sm">
-                  {item.subtitle}
-                </p>
-
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Back to Home */}
-        <Link
-          href="/"
-          className="absolute top-6 left-6 z-40 w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white/40 transition-all shadow-lg"
+      {/* Expanded Carousel Section - Full Width */}
+      <div className="relative group overflow-hidden w-full">
+        {/* Back to Home Button (Arrow only) */}
+        <Link 
+          href="/" 
+          className="absolute top-6 left-6 z-40 w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white/40 transition-all shadow-lg group-hover:scale-110"
           title="Back to Home"
         >
           <ChevronLeft size={20} />
         </Link>
 
+        {/* My Orders Button */}
+        <Link 
+          href="/orders" 
+          className="absolute top-6 right-6 z-40 px-5 h-10 flex items-center justify-center bg-white border border-gray-200 text-[#1c211f] rounded-full hover:bg-gray-50 transition-all shadow-lg font-black text-xs uppercase tracking-widest group-hover:scale-105"
+        >
+          <ShoppingBag size={16} className="mr-2 text-[#3da85b]" />
+          My Orders
+        </Link>
 
+        <div 
+          className="flex h-[350px] md:h-[450px] transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {carouselItems.map((item, idx) => (
+              <div key={idx} className="min-w-full h-full relative flex items-center px-12 md:px-24">
+                <img 
+                  src={item.image} 
+                  alt={item.title} 
+                  className="absolute inset-0 w-full h-full object-cover z-0" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10"></div>
+                
+                <div className="relative z-20 max-w-xl space-y-5">
+                  <h2 className="text-4xl md:text-5xl lg:text-7xl font-black text-white leading-[1.1] drop-shadow-md">
+                    {item.title}
+                  </h2>
+                  <p className="text-white/90 text-base md:text-lg font-medium drop-shadow-sm max-w-md">
+                    {item.subtitle}
+                  </p>
+                  <div className="pt-2">
+                    <button className="bg-[#3da85b] text-white px-8 py-3.5 rounded-full text-[14px] font-bold hover:bg-[#34944d] transition-all active:scale-95 shadow-lg border border-[#3da85b]/50">
+                      {item.buttonText}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        {/* Dot indicators */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-          {carouselItems.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className="h-1.5 rounded-full transition-all duration-500 cursor-pointer focus:outline-none"
-              style={{
-                width: currentSlide === idx ? 32 : 8,
-                backgroundColor: currentSlide === idx ? item.accent : "rgba(255,255,255,0.5)",
-              }}
-            />
-          ))}
-        </div>
+          {/* Bottom Fade Gradient to blend into the page */}
+          <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#fafbfa] to-transparent pointer-events-none z-20"></div>
 
-
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+            {carouselItems.map((_, idx) => (
+              <div 
+                key={idx}
+                onClick={() => setCurrentSlide(idx)}
+                className={`cursor-pointer h-1.5 rounded-full transition-all duration-300 ${currentSlide === idx ? 'bg-[#3da85b] w-8' : 'bg-white/50 w-2 hover:bg-white/80'}`}
+              />
+            ))}
+          </div>
       </div>
 
       {/* Main Layout with Sidebar */}
@@ -392,41 +366,17 @@ function ProductsPageContent() {
                   className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#3da85b]/20 focus:border-[#3da85b] transition-all"
                 />
               </div>
-              <div className="relative">
-                <button 
-                  onClick={() => setIsSortOpen(!isSortOpen)}
-                  className="w-full sm:w-[170px] appearance-none bg-gray-50 border border-gray-100 rounded-xl py-2 pl-4 pr-10 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-[#3da85b]/20 text-left relative"
+              <div className="relative group/sort">
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="appearance-none bg-gray-50 border border-gray-100 rounded-xl py-2 pl-4 pr-10 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-[#3da85b]/20"
                 >
-                  {sortBy === 'newest' ? 'Sort: Newest' : sortBy === 'price-low' ? 'Price: Low to High' : 'Price: High to Low'}
-                  <ChevronDown size={14} className={`absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {isSortOpen && (
-                  <>
-                    {/* Invisible backdrop to dismiss dropdown */}
-                    <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)}></div>
-                    <div className="absolute right-0 sm:left-0 mt-2 w-[170px] bg-white border border-gray-100 rounded-[14px] shadow-[0_10px_40px_rgb(0,0,0,0.06)] z-50 overflow-hidden text-sm font-bold py-1.5 transform origin-top-right transition-all animate-in fade-in slide-in-from-top-2">
-                       <button 
-                          onClick={() => { setSortBy('newest'); setIsSortOpen(false); }} 
-                          className={`w-full text-left px-4 py-2.5 transition-colors ${sortBy === 'newest' ? 'text-[#3da85b] bg-[#3da85b]/[0.04]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
-                       >
-                          Sort: Newest
-                       </button>
-                       <button 
-                          onClick={() => { setSortBy('price-low'); setIsSortOpen(false); }} 
-                          className={`w-full text-left px-4 py-2.5 transition-colors ${sortBy === 'price-low' ? 'text-[#3da85b] bg-[#3da85b]/[0.04]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
-                       >
-                          Price: Low to High
-                       </button>
-                       <button 
-                          onClick={() => { setSortBy('price-high'); setIsSortOpen(false); }} 
-                          className={`w-full text-left px-4 py-2.5 transition-colors ${sortBy === 'price-high' ? 'text-[#3da85b] bg-[#3da85b]/[0.04]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
-                       >
-                          Price: High to Low
-                       </button>
-                    </div>
-                  </>
-                )}
+                  <option value="newest">Sort: Newest</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>

@@ -2,19 +2,20 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { User, ShoppingBag } from 'lucide-react';
+import { User, ShoppingBag, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    full_name: '',
     email: '',
     password: '',
-    phone: '',
+    phone_number: '',
     location: '',
+    company_name: '',
     role: 'CUSTOMER'
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleGoogleSignUp = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -32,7 +33,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { firstName, lastName, email, password, phone, location, role } = formData;
+    const { full_name, email, password, phone_number, location, company_name, role } = formData;
 
     // 1. Sign up the user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -52,9 +53,10 @@ export default function SignupPage() {
         .insert({
           id: authData.user.id,
           email: email,
-          full_name: `${firstName} ${lastName}`,
-          phone: phone,
+          full_name: full_name,
+          phone_number: phone_number,
           location: location,
+          company_name: role === 'SUPPLIER' ? company_name : null,
           role: role
         });
 
@@ -145,27 +147,16 @@ export default function SignupPage() {
           </div>
 
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex flex-col gap-1.5 flex-1">
-                <label className="text-[14px] font-bold text-gray-800">First name</label>
-                <input 
-                  type="text" 
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-1.5 flex-1">
-                <label className="text-[14px] font-bold text-gray-800">Last name</label>
-                <input 
-                  type="text" 
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
-                  required
-                />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[14px] font-bold text-gray-800">Full Name</label>
+              <input 
+                type="text" 
+                value={formData.full_name}
+                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                placeholder="Jane Doe"
+                className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                required
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -184,8 +175,8 @@ export default function SignupPage() {
                 <label className="text-[14px] font-bold text-gray-800">Phone number</label>
                 <input 
                   type="tel" 
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
                   className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
                   required
                 />
@@ -202,18 +193,36 @@ export default function SignupPage() {
               </div>
             </div>
 
+            {formData.role === 'SUPPLIER' && (
+              <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-[14px] font-bold text-gray-800">Company Name</label>
+                <input 
+                  type="text" 
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({...formData, company_name: e.target.value})}
+                  placeholder="e.g. Acme Printing Co."
+                  className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900" 
+                  required={formData.role === 'SUPPLIER'}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5 relative">
               <label className="text-[14px] font-bold text-gray-800">Password</label>
               <div className="relative">
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   className="w-full bg-white border border-gray-300 shadow-sm rounded-md px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#A1FF4C] focus:border-transparent text-gray-900 pr-12" 
                   required
                 />
-                <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 transition-colors">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>

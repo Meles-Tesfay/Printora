@@ -12,6 +12,9 @@ export default function AuthCallbackPage() {
     const [step, setStep] = useState<"loading" | "pick-role" | "saving" | "done">("loading");
     const [selectedRole, setSelectedRole] = useState<Role>("CUSTOMER");
     const [user, setUser] = useState<any>(null);
+    const [phone_number, setPhoneNumber] = useState("");
+    const [location, setLocation] = useState("");
+    const [company_name, setCompanyName] = useState("");
     const [error, setError] = useState("");
 
     const redirectByRole = (role: string) => {
@@ -78,6 +81,9 @@ export default function AuthCallbackPage() {
             email: user.email,
             full_name: fullName,
             role: selectedRole,
+            phone_number: phone_number,
+            location: location,
+            company_name: selectedRole === "SUPPLIER" ? company_name : null,
         });
 
         if (insertError) {
@@ -207,10 +213,51 @@ export default function AuthCallbackPage() {
                     </button>
                 </div>
 
+                {/* Additional Info Fields */}
+                <div className="space-y-4 mb-8 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5">Phone Number</label>
+                        <input
+                            type="tel"
+                            value={phone_number}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="+1 (555) 000-0000"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#A1FF4D] transition-all"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                            {selectedRole === "SUPPLIER" ? "Production Facility Location" : "Primary Shipping Location"}
+                        </label>
+                        <input
+                            type="text"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            placeholder="123 Output St, City, Country"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#A1FF4D] transition-all"
+                            required
+                        />
+                    </div>
+                    {selectedRole === "SUPPLIER" && (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="block text-sm font-bold text-gray-700 mb-1.5">Supplier Company Name</label>
+                            <input
+                                type="text"
+                                value={company_name}
+                                onChange={(e) => setCompanyName(e.target.value)}
+                                placeholder="My Print Shop LLC"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#A1FF4D] transition-all"
+                                required={selectedRole === "SUPPLIER"}
+                            />
+                        </div>
+                    )}
+                </div>
+
                 <button
                     onClick={handleRoleSelect}
-                    disabled={step === "saving"}
-                    className="w-full bg-[#A1FF4C] hover:bg-[#8ee53f] text-[#1B2412] py-4 rounded-xl font-black text-lg shadow-lg hover:shadow-[#A1FF4C]/30 transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+                    disabled={step === "saving" || !phone_number || !location || (selectedRole === "SUPPLIER" && !company_name)}
+                    className="w-full bg-[#A1FF4C] hover:bg-[#8ee53f] text-[#1B2412] py-4 rounded-xl font-black text-lg shadow-lg hover:shadow-[#A1FF4C]/30 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {step === "saving" ? (
                         <><Loader2 size={20} className="animate-spin" /> Saving…</>
