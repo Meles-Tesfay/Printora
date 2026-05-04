@@ -855,15 +855,22 @@ export default function AdminDashboard() {
                  <div className="grid grid-cols-2 gap-4">
                      {selectedOrder.design_views && selectedOrder.design_views.length > 0 ? (
                          selectedOrder.design_views.filter((v: any) => v.mockup_url).map((v: any) => (
-                             <div key={v.viewId} className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group">
-                                 <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">{v.viewName}</p>
-                                 <img src={v.mockup_url} className="w-full h-full object-contain p-2" alt={v.viewName} />
+                             <div 
+                                key={v.viewId} 
+                                onClick={() => setFullscreenImage(v.mockup_url)}
+                                className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                             >
+                                 <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">{v.viewName}</p>
+                                 <img src={v.mockup_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt={v.viewName} />
                              </div>
                          ))
                      ) : selectedOrder.mockup_image_url ? (
-                         <div className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group col-span-2">
-                           <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">Design Mockup</p>
-                           <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
+                         <div 
+                            onClick={() => setFullscreenImage(selectedOrder.mockup_image_url)}
+                            className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group col-span-2 cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                         >
+                           <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">Design Mockup</p>
+                           <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt="Design" />
                          </div>
                      ) : null}
                  </div>
