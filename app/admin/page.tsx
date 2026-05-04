@@ -27,6 +27,9 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     setActiveImageUrl(null);
@@ -210,14 +213,20 @@ export default function AdminDashboard() {
   };
 
   // Reject order
-  const handleRejectOrder = async (id: string) => {
-    if (!confirm("Reject this order?")) return;
+  const handleRejectOrder = async (order: any) => {
+    if (!rejectReason.trim()) return;
+    const newVariants = { ...(order.variants || {}), admin_rejection_reason: rejectReason };
     const { error } = await supabase
       .from("custom_orders")
-      .update({ status: "REJECTED" })
-      .eq("id", id);
+      .update({ status: "REJECTED", variants: newVariants })
+      .eq("id", order.id);
     if (error) alert("Error: " + error.message);
-    else fetchAll();
+    else {
+      setShowRejectModal(false);
+      setRejectReason("");
+      setSelectedOrder(null);
+      fetchAll();
+    }
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -848,44 +857,50 @@ export default function AdminDashboard() {
             <div className="p-6 flex flex-col md:flex-row gap-6 max-h-[80vh] overflow-y-auto">
               {/* Left Column: Images */}
               <div className="w-full md:w-1/2 flex flex-col gap-4">
-                 {selectedOrder.mockup_image_url && (
-                   <div className="w-full h-64 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group">
-                     <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">Design Mockup</p>
-                     <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2" alt="Design" />
-                   </div>
-                 )}
-                  <div className="flex flex-col gap-4">
+                 {/* Design Views */}
+                 <div className="grid grid-cols-2 gap-4">
+                     {selectedOrder.design_views && selectedOrder.design_views.length > 0 ? (
+                         selectedOrder.design_views.filter((v: any) => v.mockup_url).map((v: any) => (
+                             <div 
+                                key={v.viewId} 
+                                onClick={() => setFullscreenImage(v.mockup_url)}
+                                className="w-full h-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                             >
+                                 <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">{v.viewName}</p>
+                                 <img src={v.mockup_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt={v.viewName} />
+                             </div>
+                         ))
+                     ) : selectedOrder.mockup_image_url ? (
+                         <div 
+                            onClick={() => setFullscreenImage(selectedOrder.mockup_image_url)}
+                            className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group col-span-2 cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                         >
+                           <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">Design Mockup</p>
+                           <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt="Design" />
+                         </div>
+                     ) : null}
+                 </div>
+                  
+                  <div className="flex flex-row gap-4 mt-2">
                     {/* Initial Receipt (Deposit) */}
                     {selectedOrder.variants?.receiptDataUrl && (
-                      <div className="w-full bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group min-h-[160px] flex items-center justify-center">
-                          <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">1st Receipt: Deposit (50%)</p>
-                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-4" alt="Deposit Receipt" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <a 
-                                 href={selectedOrder.variants.receiptDataUrl} 
-                                 target="_blank"
-                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
-                              >
-                                 <Eye size={14} /> Full View
-                              </a>
-                          </div>
+                      <div 
+                        onClick={() => setFullscreenImage(selectedOrder.variants.receiptDataUrl)}
+                        className="flex-1 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative h-32 flex items-center justify-center cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                      >
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm pointer-events-none">Deposit (50%)</p>
+                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-2 mt-4 hover:scale-105 transition-transform" alt="Deposit Receipt" />
                       </div>
                     )}
 
                     {/* Final Receipt (Remaining Balance) */}
                     {selectedOrder.variants?.finalReceiptUrl && (
-                      <div className="w-full bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative group min-h-[160px] flex items-center justify-center">
-                          <p className="absolute top-2 left-3 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">Final Receipt: Balance (50%)</p>
-                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-4" alt="Final Receipt" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <a 
-                                 href={selectedOrder.variants.finalReceiptUrl} 
-                                 target="_blank"
-                                 className="bg-white text-[#111] px-4 py-2 rounded-xl font-black flex items-center gap-2 text-xs uppercase tracking-wider shadow-xl transition-all"
-                              >
-                                 <Eye size={14} /> Full View
-                              </a>
-                          </div>
+                      <div 
+                        onClick={() => setFullscreenImage(selectedOrder.variants.finalReceiptUrl)}
+                        className="flex-1 bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative h-32 flex items-center justify-center cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
+                      >
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm pointer-events-none">Balance (50%)</p>
+                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-2 mt-4 hover:scale-105 transition-transform" alt="Final Receipt" />
                       </div>
                     )}
                   </div>
@@ -942,16 +957,40 @@ export default function AdminDashboard() {
                    </p>
                  </div>
 
-                 <div className="flex gap-3 mt-auto pt-2">
+                 <div className="flex flex-col gap-3 mt-auto pt-2">
                     {selectedOrder.status === "PENDING_ADMIN" ? (
-                      <>
-                        <button onClick={() => handleRejectOrder(selectedOrder.id)} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all">
-                          Reject
-                        </button>
-                        <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
-                          Approve & Assign
-                        </button>
-                      </>
+                      showRejectModal ? (
+                         <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+                             <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Reason for Rejection</p>
+                             <textarea 
+                                value={rejectReason}
+                                onChange={e => setRejectReason(e.target.value)}
+                                placeholder="Why is this being rejected? (Customer will see this)"
+                                className="w-full text-sm p-3 rounded-xl border border-red-100 bg-white outline-none focus:ring-2 focus:ring-red-400 min-h-[80px] resize-none"
+                             />
+                             <div className="flex gap-2">
+                                <button onClick={() => setShowRejectModal(false)} className="flex-1 bg-white text-gray-500 py-2 rounded-xl font-bold border border-gray-200 hover:bg-gray-50 transition-all text-xs uppercase tracking-widest">
+                                  Cancel
+                                </button>
+                                <button 
+                                  onClick={() => handleRejectOrder(selectedOrder)}
+                                  disabled={!rejectReason.trim()} 
+                                  className="flex-1 bg-red-500 text-white py-2 rounded-xl font-black hover:bg-red-600 transition-all text-xs uppercase tracking-widest disabled:opacity-50"
+                                >
+                                  Confirm
+                                </button>
+                             </div>
+                         </div>
+                      ) : (
+                         <div className="flex gap-3">
+                            <button onClick={() => { setShowRejectModal(true); setRejectReason(""); }} className="flex-1 bg-red-50 text-red-500 py-3 rounded-xl font-black border-2 border-red-100 hover:bg-red-500 hover:text-white transition-all uppercase text-xs tracking-widest">
+                              Reject
+                            </button>
+                            <button onClick={() => handleApproveOrder(selectedOrder)} className="flex-[2] bg-[#ccff00] text-[#111] py-3 rounded-xl font-black hover:scale-105 active:scale-95 transition-all shadow-lg uppercase text-xs tracking-widest">
+                              Approve & Assign
+                            </button>
+                         </div>
+                      )
                     ) : selectedOrder.status === "FINAL_PAYMENT_PENDING" ? (
                       <div className="flex gap-3 w-full">
                         <button 
@@ -1230,6 +1269,16 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullscreenImage(null)}>
+          <img src={fullscreenImage} className="max-w-full max-h-[95vh] object-contain cursor-default" onClick={(e) => e.stopPropagation()} alt="Fullscreen View" />
+          <button onClick={() => setFullscreenImage(null)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+            <XCircle size={36} />
+          </button>
         </div>
       )}
     </div>

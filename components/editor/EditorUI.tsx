@@ -798,6 +798,7 @@ export default function EditorUI() {
     const [supplierColors, setSupplierColors] = useState<{ name: string, hex: string }[] | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('telebirr');
     const [basePrice, setBasePrice] = useState(25);
+    const [bulkRules, setBulkRules] = useState<{threshold: number, value: number} | null>(null);
 
     const PAYMENT_METHODS = [
         { id: 'telebirr', name: 'Telebirr', type: 'mobile', shortcode: '123456', icon: Smartphone, image: '/telebirr.png' },
@@ -812,7 +813,7 @@ export default function EditorUI() {
     useEffect(() => {
         if (!supplierProductId) return;
         (async () => {
-            const { data, error } = await supabase.from('supplier_products').select('available_colors, price').eq('id', supplierProductId).single();
+            const { data, error } = await supabase.from('supplier_products').select('available_colors, price, bulk_pricing').eq('id', supplierProductId).single();
             if (!error && data) {
                 if (data.available_colors?.length > 0) {
                     setSupplierColors(data.available_colors);
@@ -821,6 +822,13 @@ export default function EditorUI() {
                     if (!hasColor) setSelectedColor(data.available_colors[0].hex);
                 }
                 if (data.price) setBasePrice(data.price);
+                if (data.bulk_pricing) {
+                    try {
+                        setBulkRules(JSON.parse(data.bulk_pricing));
+                    } catch (e) {
+                        console.error("Failed to parse bulk pricing", e);
+                    }
+                }
             }
         })();
     }, [supplierProductId]);
@@ -973,6 +981,7 @@ export default function EditorUI() {
                 await handleSaveProduct();
             } else {
                 setShowPaymentModal(true);
+                setIsSaving(false);
             }
         } catch (e) {
             console.error('Auth error', e);
@@ -987,14 +996,16 @@ export default function EditorUI() {
             const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
             if (!mockupContainer) return '';
             const refRect = mockupContainer.getBoundingClientRect();
-            const W = Math.round(refRect.width);
-            const H = Math.round(refRect.height);
+            const scale = 3; // 3x resolution for high quality
+            const W = Math.round(refRect.width * scale);
+            const H = Math.round(refRect.height * scale);
             const offscreen = document.createElement('canvas');
             offscreen.width = W;
             offscreen.height = H;
             const ctx = offscreen.getContext('2d')!;
+            ctx.scale(scale, scale);
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, W, H);
+            ctx.fillRect(0, 0, refRect.width, refRect.height);
             // Draw SVG silhouettes (garment shape) from the live DOM
             const svgEls = mockupContainer.querySelectorAll<SVGSVGElement>('svg');
             for (const svgEl of svgEls) {
@@ -1862,51 +1873,76 @@ export default function EditorUI() {
                                 <h3 className="text-[11px] font-black text-[#ccff00] uppercase tracking-[0.2em] bg-[#1B2412] px-3 py-1.5 rounded-lg inline-block self-start mb-10">Order Summary</h3>
 
                                 <div className="space-y-10 flex-1">
-                                    {/* Pricing Breakdown */}
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center text-sm font-bold text-gray-500">
-                                            <span>Base Price</span>
-                                            <span className="text-gray-900">ETB {basePrice.toFixed(2)}</span>
-                                        </div>
-                                        {orderQuality === "Premium" && (
-                                            <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
-                                                <span>Premium Upgrade</span>
-                                                <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">+ETB 5.00</span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between items-center text-sm font-bold text-gray-500">
-                                            <span>Quantity</span>
-                                            <span className="text-gray-900">x {orderQuantity}</span>
-                                        </div>
-                                        <div className="h-px bg-gray-200 my-6" />
+                                    {(() => {
+                                        const isBulkDiscountApplied = bulkRules && orderQuantity >= bulkRules.threshold;
+                                        const discountPercentage = isBulkDiscountApplied ? bulkRules.value : 0;
+                                        const unitPrice = basePrice * (1 - discountPercentage / 100);
+                                        const premiumExtra = orderQuality === "Premium" ? 5 : 0;
+                                        const finalUnitPrice = unitPrice + premiumExtra;
+                                        const finalTotalPrice = finalUnitPrice * orderQuantity;
+                                        
+                                        return (
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-center text-sm font-bold text-gray-500">
+                                                    <span>Base Price</span>
+                                                    <span className="text-gray-900">
+                                                        {isBulkDiscountApplied ? (
+                                                            <>
+                                                                <span className="line-through text-gray-400 mr-2">ETB {basePrice.toFixed(2)}</span>
+                                                                <span>ETB {unitPrice.toFixed(2)}</span>
+                                                            </>
+                                                        ) : (
+                                                            `ETB ${basePrice.toFixed(2)}`
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                {isBulkDiscountApplied && (
+                                                    <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
+                                                        <span>Bulk Discount Applied</span>
+                                                        <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">{bulkRules.value}% Off!</span>
+                                                    </div>
+                                                )}
+                                                {orderQuality === "Premium" && (
+                                                    <div className="flex justify-between items-center text-sm font-bold text-[#ccff00]">
+                                                        <span>Premium Upgrade</span>
+                                                        <span className="bg-[#1B2412] px-2 py-0.5 rounded-md text-[10px]">+ETB 5.00</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex justify-between items-center text-sm font-bold text-gray-500">
+                                                    <span>Quantity</span>
+                                                    <span className="text-gray-900">x {orderQuantity}</span>
+                                                </div>
+                                                <div className="h-px bg-gray-200 my-6" />
 
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-end">
-                                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
-                                                <p className="text-3xl font-black text-gray-900">ETB {((basePrice + (orderQuality === "Premium" ? 5 : 0)) * orderQuantity).toFixed(2)}</p>
-                                            </div>
-                                            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex justify-between items-center mt-6">
-                                                <div>
-                                                    <p className="text-[10px] font-black text-[#3da85b] uppercase tracking-widest">Pay Now (50%)</p>
-                                                    <p className="text-xl font-black text-gray-900">ETB {(((basePrice + (orderQuality === "Premium" ? 5 : 0)) * orderQuantity) / 2).toFixed(2)}</p>
-                                                </div>
-                                                <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                                                    <ShoppingBag size={20} />
-                                                </div>
-                                            </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-end">
+                                                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Total Price</p>
+                                                        <p className="text-3xl font-black text-gray-900">ETB {finalTotalPrice.toFixed(2)}</p>
+                                                    </div>
+                                                    <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex justify-between items-center mt-6">
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-[#3da85b] uppercase tracking-widest">Pay Now (50%)</p>
+                                                            <p className="text-xl font-black text-gray-900">ETB {(finalTotalPrice / 2).toFixed(2)}</p>
+                                                        </div>
+                                                        <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                                            <ShoppingBag size={20} />
+                                                        </div>
+                                                    </div>
 
-                                            {/* Production Guarantee Note */}
-                                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-500 shadow-sm">
-                                                <div className="text-amber-600 mt-0.5 flex-shrink-0">
-                                                    <AlertCircle size={18} />
+                                                    {/* Production Guarantee Note */}
+                                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-500 shadow-sm">
+                                                        <div className="text-amber-600 mt-0.5 flex-shrink-0">
+                                                            <AlertCircle size={18} />
+                                                        </div>
+                                                        <p className="text-[13px] font-medium text-amber-900 leading-normal">
+                                                            <span className="font-black block mb-0.5 uppercase tracking-widest text-[11px] text-amber-700">Production Requirement</span>
+                                                            A <span className="font-black underline">50% deposit</span> is required to secure raw materials and initiate your custom production immediately.
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <p className="text-[13px] font-medium text-amber-900 leading-normal">
-                                                    <span className="font-black block mb-0.5 uppercase tracking-widest text-[11px] text-amber-700">Production Requirement</span>
-                                                    A <span className="font-black underline">50% deposit</span> is required to secure raw materials and initiate your custom production immediately.
-                                                </p>
                                             </div>
-                                        </div>
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 <button

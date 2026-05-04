@@ -32,7 +32,8 @@ const INITIAL_FORM = {
   long_description: "",
   product_type: "T-Shirt",
   price: "",
-  bulk_pricing: "",
+  bulk_threshold: "",
+  bulk_discount: "",
   image_url: "",
   hover_image_url: "",
   detail_images: "",
@@ -104,7 +105,7 @@ export default function SupplierDashboard() {
   const fetchOrders = async (uid: string) => {
     const { data, error } = await supabase
       .from("custom_orders")
-      .select("*, supplier_product:supplier_products(price)")
+      .select("*, supplier_product:supplier_products(price, bulk_pricing)")
       .eq("supplier_id", uid)
       .order("created_at", { ascending: false });
 
@@ -280,13 +281,24 @@ export default function SupplierDashboard() {
       return;
     }
     setEditingProductId(p.id);
+    let bulk_threshold = "";
+    let bulk_discount = "";
+    if (p.bulk_pricing) {
+        try {
+            const bp = JSON.parse(p.bulk_pricing);
+            bulk_threshold = bp.threshold?.toString() || "";
+            bulk_discount = bp.value?.toString() || "";
+        } catch(e) {}
+    }
+
     setForm({
       name: p.name,
       description: p.description || "",
       long_description: p.long_description || "",
       product_type: p.product_type,
       price: p.price?.toString() || "",
-      bulk_pricing: p.bulk_pricing || "",
+      bulk_threshold,
+      bulk_discount,
       image_url: p.image_url || "",
       hover_image_url: p.hover_image_url || "",
       detail_images: (p.detail_images || []).join(', '),
@@ -317,6 +329,14 @@ export default function SupplierDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    let bulk_pricing = "";
+    if (form.bulk_threshold && form.bulk_discount) {
+        bulk_pricing = JSON.stringify({
+            threshold: parseInt(form.bulk_threshold) || 0,
+            value: parseFloat(form.bulk_discount) || 0
+        });
+    }
+
     const payload = {
       supplier_id: user.id,
       name: form.name,
@@ -324,7 +344,7 @@ export default function SupplierDashboard() {
       long_description: form.long_description,
       product_type: form.product_type,
       price: parseFloat(form.price) || 0,
-      bulk_pricing: form.bulk_pricing,
+      bulk_pricing,
       image_url: form.image_url,
       hover_image_url: form.hover_image_url,
       detail_images: form.detail_images ? form.detail_images.split(',').map(s => s.trim()).filter(Boolean) : [],
@@ -350,7 +370,7 @@ export default function SupplierDashboard() {
     } else {
       setEditingProductId(null);
       setActiveTab('my-products');
-      setForm({ name: "", description: "", long_description: "", product_type: "T-Shirt", price: "", bulk_pricing: "", image_url: "", hover_image_url: "", detail_images: "", turnaround_time: "2-4 Business Days", quality: "Premium", tags: [], available_colors: [], available_sizes: [] });
+      setForm({ name: "", description: "", long_description: "", product_type: "T-Shirt", price: "", bulk_threshold: "", bulk_discount: "", image_url: "", hover_image_url: "", detail_images: "", turnaround_time: "2-4 Business Days", quality: "Premium", tags: [], available_colors: [], available_sizes: [] });
       fetchProducts(user.id);
     }
     setFormLoading(false);
@@ -765,6 +785,20 @@ export default function SupplierDashboard() {
                     <input type="text" value={form.turnaround_time} onChange={e => setForm(f => ({ ...f, turnaround_time: e.target.value }))} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-[#A1FF4C]" />
                   </div>
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Bulk Discount Threshold (Min Items)</label>
+                    <input type="number" value={form.bulk_threshold} onChange={e => setForm(f => ({ ...f, bulk_threshold: e.target.value }))} placeholder="e.g. 10" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-[#A1FF4C]" />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Bulk Discount Value (%)</label>
+                    <div className="relative">
+                      <input type="number" value={form.bulk_discount} onChange={e => setForm(f => ({ ...f, bulk_discount: e.target.value }))} placeholder="e.g. 15" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-[#A1FF4C]" />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Colors & Sizes Section */}
@@ -1067,6 +1101,24 @@ export default function SupplierDashboard() {
         const activeMockup  = activeViewData?.mockup_url || selectedOrder.mockup_image_url;
         const layers = extractLayers(activeDesign);
 
+        const supplierProduct = selectedOrder.supplier_product || {};
+        const basePrice = supplierProduct.price || 600;
+        let unitPrice = basePrice;
+        const qty = selectedOrder.variants?.quantity || 1;
+        let bulkDiscountPercentage = 0;
+        
+        if (supplierProduct.bulk_pricing) {
+            try {
+                const bp = typeof supplierProduct.bulk_pricing === 'string' ? JSON.parse(supplierProduct.bulk_pricing) : supplierProduct.bulk_pricing;
+                if (bp && qty >= bp.threshold) {
+                    bulkDiscountPercentage = bp.value;
+                    unitPrice = basePrice * (1 - bp.value / 100);
+                }
+            } catch(e) {}
+        }
+        
+        const totalValue = unitPrice * qty;
+
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white w-full max-w-6xl rounded-[2rem] shadow-2xl my-4 overflow-hidden flex flex-col">
@@ -1211,17 +1263,32 @@ export default function SupplierDashboard() {
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-gray-500">Unit Price</span>
-                          <span className="text-sm font-black text-gray-800">{(selectedOrder.supplier_product?.price || 600).toLocaleString()} ብር</span>
+                          <span className="text-sm font-black text-gray-800">
+                            {bulkDiscountPercentage > 0 ? (
+                                <>
+                                    <span className="line-through text-gray-400 mr-2">{basePrice.toLocaleString()} ብር</span>
+                                    <span>{unitPrice.toLocaleString()} ብር</span>
+                                </>
+                            ) : (
+                                `${basePrice.toLocaleString()} ብር`
+                            )}
+                          </span>
                         </div>
+                        {bulkDiscountPercentage > 0 && (
+                            <div className="flex justify-between items-center text-xs font-bold text-emerald-600">
+                                <span>Bulk Discount Applied</span>
+                                <span>{bulkDiscountPercentage}% Off</span>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-gray-500">Total Value</span>
-                          <span className="text-sm font-black text-gray-800">{((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ብር</span>
+                          <span className="text-sm font-black text-gray-800">{totalValue.toLocaleString()} ብር</span>
                         </div>
                         <div className="h-px bg-gray-200 my-1" />
                         <div className="flex justify-between items-center pt-1">
                           <span className="text-xs font-black text-emerald-600 uppercase">Your Payout (100%)</span>
                           <span className="text-xl font-black text-emerald-600">
-                            {((selectedOrder.supplier_product?.price || 600) * (selectedOrder.variants?.quantity || 1)).toLocaleString()} ብር
+                            {totalValue.toLocaleString()} ብር
                           </span>
                         </div>
                         <div className="mt-4 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-center gap-3">
