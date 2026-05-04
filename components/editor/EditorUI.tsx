@@ -996,14 +996,16 @@ export default function EditorUI() {
             const mockupContainer = (captureArea?.firstElementChild as HTMLElement) ?? captureArea;
             if (!mockupContainer) return '';
             const refRect = mockupContainer.getBoundingClientRect();
-            const W = Math.round(refRect.width);
-            const H = Math.round(refRect.height);
+            const scale = 3; // 3x resolution for high quality
+            const W = Math.round(refRect.width * scale);
+            const H = Math.round(refRect.height * scale);
             const offscreen = document.createElement('canvas');
             offscreen.width = W;
             offscreen.height = H;
             const ctx = offscreen.getContext('2d')!;
+            ctx.scale(scale, scale);
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, W, H);
+            ctx.fillRect(0, 0, refRect.width, refRect.height);
             // Draw SVG silhouettes (garment shape) from the live DOM
             const svgEls = mockupContainer.querySelectorAll<SVGSVGElement>('svg');
             for (const svgEl of svgEls) {
