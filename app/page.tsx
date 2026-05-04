@@ -195,9 +195,12 @@ export default function Home() {
                     >
                       Get started for free
                     </Link>
-                    <button className="rounded-md px-10 h-14 text-[17px] font-extrabold font-sans border-[3px] border-[#2B3220] text-[#2B3220] transition-colors hover:bg-[#2B3220] hover:text-[#9DF542] w-full sm:w-auto flex items-center justify-center">
+                    <Link
+                      href="/how-it-works"
+                      className="rounded-md px-10 h-14 text-[17px] font-extrabold font-sans border-[3px] border-[#2B3220] text-[#2B3220] transition-colors hover:bg-[#2B3220] hover:text-[#9DF542] w-full sm:w-auto flex items-center justify-center"
+                    >
                       How it works
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1633,6 +1636,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
     </div>
   );
 }
