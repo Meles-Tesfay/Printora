@@ -110,10 +110,10 @@ export default function LoginPage() {
               <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-[#2DC1DB] to-[#A1FF4C]"></div>
 
               <p className="text-[14.5px] xl:text-[15.5px] font-medium leading-[1.7] text-gray-100 mb-4 opacity-100 drop-shadow-md">
-                Ignite your brand's potential. High-margin phone cases are the ultimate profit engines that never go out of style.
+                Phone cases are year-round profit-makers that smartphone users can't get enough of.
               </p>
               <p className="text-[14.5px] xl:text-[15.5px] font-medium leading-[1.7] text-gray-100 opacity-100 drop-shadow-md">
-                Dominate the market with premium quality. Launch your designs on the latest <span className="text-white font-bold bg-white/20 px-1.5 py-0.5 rounded ml-0.5 shadow-sm">Samsung Galaxy S24</span> series and turn your vision into a powerhouse business.
+                Add your designs to popular cases, like the new <span className="text-white font-bold bg-white/20 px-1.5 py-0.5 rounded ml-0.5 shadow-sm">Samsung Galaxy S24</span> options, and plug them as the perfect add-on to any order.
               </p>
             </div>
           </div>
