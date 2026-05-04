@@ -213,9 +213,7 @@ function OrdersContent() {
                         <Link href="/" className="text-gray-500 hover:text-gray-900 transition-colors p-2">
                             <Home size={18} />
                         </Link>
-                        <Link href="/editor" className="bg-[#A1FF4D] text-[#1B2412] px-4 py-2 rounded-xl font-black text-xs hover:bg-[#8ee53f] transition-all flex items-center gap-1.5">
-                            <PenTool size={13} /> New Design
-                        </Link>
+
                         <button onClick={handleSignOut} className="text-gray-400 hover:text-red-500 transition-colors p-2">
                             <LogOut size={16} />
                         </button>
@@ -312,12 +310,7 @@ function OrdersContent() {
                                 );
                             })}
 
-                            <Link
-                                href="/editor"
-                                className="flex items-center justify-center gap-2 w-full p-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-[#A1FF4D] hover:text-[#2B3220] hover:bg-[#A1FF4D]/5 transition-all font-bold text-sm"
-                            >
-                                <PenTool size={14} /> New Design
-                            </Link>
+
                         </div>
 
                         {/* Order Detail (right) */}
