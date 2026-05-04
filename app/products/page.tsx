@@ -258,117 +258,118 @@ function ProductsPageContent() {
       <main className="max-w-[1600px] mx-auto px-6 md:px-12 py-12 flex flex-col lg:flex-row gap-10">
         
         {/* Sidebar */}
-        <aside className="w-full lg:w-[280px] flex-shrink-0">
-          <div className="lg:sticky lg:top-12 flex flex-col lg:h-[calc(100vh-6rem)] space-y-8">
-            
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 overflow-y-auto max-h-full scrollbar-hide">
-              <div className="flex items-center gap-2 mb-6 text-[#1c211f]">
-                <Filter size={20} className="text-[#3da85b]" />
-                <h2 className="text-lg font-black tracking-tight">Filters</h2>
+        <aside className="w-full lg:w-[280px] flex-shrink-0 space-y-8">
+          
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-6 text-[#1c211f]">
+              <Filter size={20} className="text-[#3da85b]" />
+              <h2 className="text-lg font-black tracking-tight">Filters</h2>
+            </div>
+
+            {/* Categories in Sidebar */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Product Type</h3>
+              <div className="space-y-1">
+                <label className="flex items-center justify-between group cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-gray-300 text-[#3da85b] focus:ring-[#3da85b] cursor-pointer" 
+                      checked={selectedCategories.length === 0}
+                      onChange={() => setSelectedCategories([])}
+                    />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-[#1c211f]">All Products</span>
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{supplierProducts.length}</span>
+                </label>
+                {categories.map((cat, idx) => {
+                  const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  const catNorm = normalize(cat.name);
+                  const catSingular = catNorm.endsWith('s') ? catNorm.slice(0, -1) : catNorm;
+                  
+                  const count = supplierProducts.filter(p => {
+                    if (!p.product_type) return false;
+                    const typeNorm = normalize(p.product_type);
+                    return typeNorm.includes(catNorm) || typeNorm.includes(catSingular) || catNorm.includes(typeNorm) || catSingular.includes(typeNorm);
+                  }).length;
+                  return (
+                    <label key={idx} className="flex items-center justify-between group cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded border-gray-300 text-[#3da85b] focus:ring-[#3da85b] cursor-pointer" 
+                          checked={selectedCategories.includes(cat.name)}
+                          onChange={() => {
+                            setSelectedCategories(prev => 
+                                prev.includes(cat.name) 
+                                    ? prev.filter(c => c !== cat.name) 
+                                    : [...prev, cat.name]
+                            );
+                          }}
+                        />
+                        <span className="text-sm font-medium text-gray-600 group-hover:text-[#1c211f]">{cat.name}</span>
+                      </div>
+                      {count > 0 && <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-full">{count}</span>}
+                    </label>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Categories in Sidebar */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Product Type</h3>
-                <div className="space-y-1">
-                  <label className="flex items-center justify-between group cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded border-gray-300 text-[#3da85b] focus:ring-[#3da85b] cursor-pointer" 
-                        checked={selectedCategories.length === 0}
-                        onChange={() => setSelectedCategories([])}
-                      />
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-[#1c211f]">All Products</span>
-                    </div>
-                    <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{supplierProducts.length}</span>
-                  </label>
-                  {categories.map((cat, idx) => {
-                    const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const catNorm = normalize(cat.name);
-                    const catSingular = catNorm.endsWith('s') ? catNorm.slice(0, -1) : catNorm;
-                    
-                    const count = supplierProducts.filter(p => {
-                      if (!p.product_type) return false;
-                      const typeNorm = normalize(p.product_type);
-                      return typeNorm.includes(catNorm) || typeNorm.includes(catSingular) || catNorm.includes(typeNorm) || catSingular.includes(typeNorm);
-                    }).length;
-                    return (
-                      <label key={idx} className="flex items-center justify-between group cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <input 
-                            type="checkbox" 
-                            className="w-4 h-4 rounded border-gray-300 text-[#3da85b] focus:ring-[#3da85b] cursor-pointer" 
-                            checked={selectedCategories.includes(cat.name)}
-                            onChange={() => {
-                              setSelectedCategories(prev => 
-                                  prev.includes(cat.name) 
-                                      ? prev.filter(c => c !== cat.name) 
-                                      : [...prev, cat.name]
-                              );
-                            }}
-                          />
-                          <span className="text-sm font-medium text-gray-600 group-hover:text-[#1c211f]">{cat.name}</span>
-                        </div>
-                        {count > 0 && <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-0.5 rounded-full">{count}</span>}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+            <hr className="my-6 border-gray-100" />
 
-              <hr className="my-6 border-gray-100" />
-
-              {/* Price Range */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price Range (ETB)</h3>
-                <div className="px-2 space-y-4">
-                  <input 
-                    type="range" 
-                    className="w-full accent-[#3da85b]" 
-                    min="0" 
-                    max="5000" 
-                    step="50"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  />
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-center gap-1">
-                      <span className="text-gray-400 text-[10px] font-bold">MIN</span>
-                      <input 
-                        type="number" 
-                        placeholder="0" 
-                        value={minPrice}
-                        onChange={(e) => setMinPrice(Number(e.target.value))}
-                        className="bg-transparent w-full text-sm font-bold text-gray-700 outline-none" 
-                      />
-                    </div>
-                    <span className="text-gray-300">-</span>
-                    <div className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-center gap-1">
-                      <span className="text-gray-400 text-[10px] font-bold">MAX</span>
-                      <input 
-                        type="number" 
-                        placeholder="5000" 
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(Number(e.target.value))}
-                        className="bg-transparent w-full text-sm font-bold text-gray-700 outline-none" 
-                      />
-                    </div>
+            {/* Price Range */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Price Range (ETB)</h3>
+              <div className="px-2 space-y-4">
+                <input 
+                  type="range" 
+                  className="w-full accent-[#3da85b]" 
+                  min="0" 
+                  max="5000" 
+                  step="50"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-center gap-1">
+                    <span className="text-gray-400 text-[10px] font-bold">MIN</span>
+                    <input 
+                      type="number" 
+                      placeholder="0" 
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(Number(e.target.value))}
+                      className="bg-transparent w-full text-sm font-bold text-gray-700 outline-none" 
+                    />
+                  </div>
+                  <span className="text-gray-300">-</span>
+                  <div className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-2 flex items-center gap-1">
+                    <span className="text-gray-400 text-[10px] font-bold">MAX</span>
+                    <input 
+                      type="number" 
+                      placeholder="5000" 
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(Number(e.target.value))}
+                      className="bg-transparent w-full text-sm font-bold text-gray-700 outline-none" 
+                    />
                   </div>
                 </div>
               </div>
             </div>
+
+
             
-            <div className="bg-[#3f566a] rounded-3xl p-6 text-white shadow-xl relative overflow-hidden mt-auto">
-               <div className="relative z-10 space-y-3">
-                 <h3 className="font-black text-xl leading-tight">Supplier<br/>Discounts</h3>
-                 <p className="text-white/70 text-sm">Get up to 20% off on bulk orders.</p>
-                 <button className="bg-white text-[#3f566a] px-4 py-2 rounded-xl text-xs font-bold mt-2 shadow-lg w-full hover:bg-gray-50 transition-colors">
-                   Learn More
-                 </button>
-               </div>
-               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-            </div>
+          </div>
+          
+          <div className="bg-[#3f566a] rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+             <div className="relative z-10 space-y-3">
+               <h3 className="font-black text-xl leading-tight">Supplier<br/>Discounts</h3>
+               <p className="text-white/70 text-sm">Get up to 20% off on bulk orders.</p>
+               <button className="bg-white text-[#3f566a] px-4 py-2 rounded-xl text-xs font-bold mt-2 shadow-lg w-full hover:bg-gray-50 transition-colors">
+                 Learn More
+               </button>
+             </div>
+             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
           </div>
         </aside>
 
