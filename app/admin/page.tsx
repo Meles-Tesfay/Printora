@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"orders" | "processing" | "receipts" | "completed" | "products" | "suppliers" | "customers">("orders");
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   useEffect(() => {
     setActiveImageUrl(null);
@@ -870,35 +871,23 @@ export default function AdminDashboard() {
                   <div className="flex flex-row gap-4 mt-2">
                     {/* Initial Receipt (Deposit) */}
                     {selectedOrder.variants?.receiptDataUrl && (
-                      <div className="flex-1 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group h-32 flex items-center justify-center">
-                          <p className="absolute top-2 left-2 text-[8px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm">Deposit (50%)</p>
-                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-2 mt-4" alt="Deposit Receipt" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <a 
-                                 href={selectedOrder.variants.receiptDataUrl} 
-                                 target="_blank"
-                                 className="bg-white text-[#111] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 text-[10px] uppercase tracking-wider shadow-xl transition-all"
-                              >
-                                 <Eye size={12} /> View
-                              </a>
-                          </div>
+                      <div 
+                        onClick={() => setFullscreenImage(selectedOrder.variants.receiptDataUrl)}
+                        className="flex-1 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative h-32 flex items-center justify-center cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
+                      >
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-gray-400 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm pointer-events-none">Deposit (50%)</p>
+                          <img src={selectedOrder.variants.receiptDataUrl} className="max-w-full max-h-full object-contain p-2 mt-4 hover:scale-105 transition-transform" alt="Deposit Receipt" />
                       </div>
                     )}
 
                     {/* Final Receipt (Remaining Balance) */}
                     {selectedOrder.variants?.finalReceiptUrl && (
-                      <div className="flex-1 bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative group h-32 flex items-center justify-center">
-                          <p className="absolute top-2 left-2 text-[8px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm">Balance (50%)</p>
-                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-2 mt-4" alt="Final Receipt" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <a 
-                                 href={selectedOrder.variants.finalReceiptUrl} 
-                                 target="_blank"
-                                 className="bg-white text-[#111] px-3 py-1.5 rounded-lg font-black flex items-center gap-1.5 text-[10px] uppercase tracking-wider shadow-xl transition-all"
-                              >
-                                 <Eye size={12} /> View
-                              </a>
-                          </div>
+                      <div 
+                        onClick={() => setFullscreenImage(selectedOrder.variants.finalReceiptUrl)}
+                        className="flex-1 bg-amber-50 rounded-2xl overflow-hidden border border-amber-100 relative h-32 flex items-center justify-center cursor-pointer hover:border-amber-300 hover:shadow-md transition-all"
+                      >
+                          <p className="absolute top-2 left-2 text-[8px] font-black text-amber-600 uppercase tracking-widest z-10 bg-white/80 px-1.5 py-0.5 rounded-sm backdrop-blur-sm pointer-events-none">Balance (50%)</p>
+                          <img src={selectedOrder.variants.finalReceiptUrl} className="max-w-full max-h-full object-contain p-2 mt-4 hover:scale-105 transition-transform" alt="Final Receipt" />
                       </div>
                     )}
                   </div>
@@ -1243,6 +1232,16 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-pointer" onClick={() => setFullscreenImage(null)}>
+          <img src={fullscreenImage} className="max-w-full max-h-[95vh] object-contain cursor-default" onClick={(e) => e.stopPropagation()} alt="Fullscreen View" />
+          <button onClick={() => setFullscreenImage(null)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors">
+            <XCircle size={36} />
+          </button>
         </div>
       )}
     </div>
