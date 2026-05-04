@@ -39,6 +39,15 @@ export default function SignupPage() {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: full_name,
+          role: role,
+          phone_number: phone_number,
+          location: location,
+          company_name: role === 'SUPPLIER' ? company_name : null,
+        }
+      }
     });
 
     if (authError) {
@@ -47,8 +56,19 @@ export default function SignupPage() {
     }
 
     if (authData.user) {
-      // 2. Create the profile in the profiles table
-      const { error: profileError } = await supabase
+      // If email confirmation is enabled, authData.session will be null.
+      // In this case, the client-side insert will ALWAYS fail due to RLS.
+      // We must rely on the database trigger 'on_auth_user_created' to create the profile.
+      if (!authData.session) {
+        // This only happens if 'Confirm Email' is ENABLED in Supabase.
+        alert("Account created! Please check your email to confirm your account. Once confirmed, you can log in.");
+        window.location.href = "/login";
+        return;
+      }
+
+      // If we reach here, 'Confirm Email' is DISABLED and the user is logged in automatically.
+      // 2. Try to create the profile in the profiles table (Client-side fallback)
+      await supabase
         .from('profiles')
         .insert({
           id: authData.user.id,
@@ -60,14 +80,14 @@ export default function SignupPage() {
           role: role
         });
 
-      if (profileError) {
-        console.error("Error creating profile:", profileError.message);
-        alert("Account created, but profile setup failed: " + profileError.message);
+      // 3. Seamless redirect to the website
+      if (role === 'SUPPLIER') {
+        window.location.href = "/supplier";
       } else {
-        alert("Registration successful! Please check your email for confirmation.");
-        window.location.href = "/login";
+        window.location.href = "/";
       }
     }
+
   };
   return (
     <div className="min-h-screen w-full flex flex-row-reverse bg-[#f5f3e7] font-sans">
