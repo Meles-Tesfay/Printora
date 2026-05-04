@@ -22,7 +22,13 @@ export default function LoginPage() {
     });
 
     if (error) {
-      alert(error.message);
+      if (error.message.toLowerCase().includes("confirmed")) {
+        alert("Account not confirmed. Please check your email (including spam) for a confirmation link.");
+      } else if (error.message === "Invalid login credentials") {
+        alert("Invalid email or password. If you just signed up, please make sure you confirmed your email address.");
+      } else {
+        alert(error.message);
+      }
     } else {
       window.location.href = "/";
     }

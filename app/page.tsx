@@ -1136,6 +1136,7 @@ export default function Home() {
               </div>
 
               {/* Large Title */}
+<<<<<<< HEAD
               <h2
                 className="text-[60px] md:text-[88px] lg:text-[104px] font-black text-[#111] leading-[1.0] tracking-normal mb-10 md:mb-16 uppercase"
                 style={{
@@ -1150,6 +1151,10 @@ export default function Home() {
                 OWN YOUR
                 <br />
                 BRAND
+=======
+              <h2 className="text-[60px] md:text-[88px] lg:text-[104px] font-black text-[#111] leading-[1.0] tracking-widest mb-10 md:mb-16 uppercase" style={{ fontFamily: 'Impact, sans-serif', fontStretch: 'condensed' }}>
+                OWN YOUR<br />MERCH,<br />OWN YOUR<br />BRAND
+>>>>>>> 8308db1 (Fix: Resolve RLS issues, fix signup redirect logic, and cleanup page.tsx conflict markers)
               </h2>
 
               {/* Footer */}
@@ -1379,6 +1384,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
+<<<<<<< HEAD
       <footer className="bg-[#111] text-white overflow-hidden">
         {/* Main footer grid */}
         <div className="max-w-[1400px] mx-auto px-6 lg:px-16 pt-20 pb-16">
@@ -1637,6 +1643,9 @@ export default function Home() {
         </div>
       </footer>
 
+=======
+      <Footer />
+>>>>>>> 8308db1 (Fix: Resolve RLS issues, fix signup redirect logic, and cleanup page.tsx conflict markers)
     </div>
   );
 }
