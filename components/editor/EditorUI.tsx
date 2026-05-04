@@ -981,6 +981,7 @@ export default function EditorUI() {
                 await handleSaveProduct();
             } else {
                 setShowPaymentModal(true);
+                setIsSaving(false);
             }
         } catch (e) {
             console.error('Auth error', e);
