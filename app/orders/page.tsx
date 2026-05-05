@@ -880,9 +880,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                                     onRefresh();
                                                                 }}
                                                                 disabled={isDeclining || !declineMessage.trim()}
-                                                                className="w-full bg-red-500 text-white py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all disabled:opacity-50"
+                                                                className="w-full bg-red-500 text-white py-5 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                                             >
-                                                                {isDeclining ? 'Submitting...' : 'Confirm Rejection'}
+                                                                {isDeclining ? <><Loader2 size={16} className="animate-spin" /> Submitting...</> : 'Confirm Rejection'}
                                                             </button>
                                                         </div>
                                                     )}
@@ -931,9 +931,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                                                         onRefresh();
                                                                     }}
                                                                     disabled={isSubmitting}
-                                                                    className="w-full mt-8 bg-[#A1FF4D] text-[#1B2412] py-6 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-[#A1FF4D]/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                                                                    className="w-full mt-8 bg-[#A1FF4D] text-[#1B2412] py-6 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-[#A1FF4D]/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                                                 >
-                                                                    {isSubmitting ? 'Verifying...' : 'Approve & Start Production'}
+                                                                    {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Verifying...</> : 'Approve & Start Production'}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -1124,9 +1124,9 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                                         }
                                     }}
                                     disabled={submittingFeedback || rating === 0}
-                                    className="w-full bg-teal-500 text-white py-3 rounded-xl font-black text-sm hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
+                                    className="w-full bg-teal-500 text-white py-3 rounded-xl font-black text-sm hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
-                                    {submittingFeedback ? "Submitting..." : "Submit Feedback"}
+                                    {submittingFeedback ? <><Loader2 size={16} className="animate-spin" /> Submitting...</> : "Submit Feedback"}
                                 </button>
                             </div>
                         )

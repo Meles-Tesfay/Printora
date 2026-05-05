@@ -736,7 +736,7 @@ export default function SupplierDashboard() {
 
                     <div className="text-right px-6">
                       <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Base Price</p>
-                      <p className="text-xl font-black text-[#2B3220] whitespace-nowrap">{product.price} <span className="text-[10px] opacity-60">ብር</span></p>
+                      <p className="text-xl font-black text-[#2B3220] whitespace-nowrap">{product.price} <span className="text-[10px] opacity-60">ETB</span></p>
                     </div>
 
                     {/* Actions */}
@@ -812,7 +812,7 @@ export default function SupplierDashboard() {
                     <label className="text-[11px] font-black text-[#1B2412] uppercase block mb-2 tracking-widest">Base Payout (ETB)</label>
                     <div className="relative">
                       <input required type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="600" className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-black outline-none focus:border-[#A1FF4C]" />
-                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">ብር</span>
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400">ETB</span>
                     </div>
                   </div>
                   <div>
@@ -1313,11 +1313,11 @@ export default function SupplierDashboard() {
                           <span className="text-sm font-black text-gray-800">
                             {bulkDiscountPercentage > 0 ? (
                                 <>
-                                    <span className="line-through text-gray-400 mr-2">{basePrice.toLocaleString()} ብር</span>
-                                    <span>{unitPrice.toLocaleString()} ብር</span>
+                                    <span className="line-through text-gray-400 mr-2">{basePrice.toLocaleString()} ETB</span>
+                                    <span>{unitPrice.toLocaleString()} ETB</span>
                                 </>
                             ) : (
-                                `${basePrice.toLocaleString()} ብር`
+                                `${basePrice.toLocaleString()} ETB`
                             )}
                           </span>
                         </div>
@@ -1329,13 +1329,13 @@ export default function SupplierDashboard() {
                         )}
                         <div className="flex justify-between items-center">
                           <span className="text-xs font-bold text-gray-500">Total Value</span>
-                          <span className="text-sm font-black text-gray-800">{totalValue.toLocaleString()} ብር</span>
+                          <span className="text-sm font-black text-gray-800">{totalValue.toLocaleString()} ETB</span>
                         </div>
                         <div className="h-px bg-gray-200 my-1" />
                         <div className="flex justify-between items-center pt-1">
                           <span className="text-xs font-black text-emerald-600 uppercase">Your Payout (100%)</span>
                           <span className="text-xl font-black text-emerald-600">
-                            {totalValue.toLocaleString()} ብር
+                            {totalValue.toLocaleString()} ETB
                           </span>
                         </div>
                         <div className="mt-4 bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex items-center gap-3">

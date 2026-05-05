@@ -472,7 +472,7 @@ function ProductsPageContent() {
                     {product.description || "Customized premium quality product, perfect for your unique designs."}
                   </p>
                   <div className="flex items-center justify-between pt-1">
-                    <p className="text-[20px] font-black text-[#3da85b] tracking-tight">ብር {product.price}</p>
+                    <p className="text-[20px] font-black text-[#3da85b] tracking-tight">ETB {product.price}</p>
                     <div className="flex items-center gap-1.5">
                       <div className="flex -space-x-1.5">
                         <div className="w-3.5 h-3.5 rounded-full bg-[#1c211f] border-2 border-white"></div>

@@ -290,7 +290,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="text-[10px] text-gray-500 font-black uppercase tracking-wider">Lowest Price</div>
-                  <div className="font-black text-[13px]">From ብር {product.price}</div>
+                  <div className="font-black text-[13px]">From ETB {product.price}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-[10px] text-gray-500 font-black uppercase tracking-wider">Fastest Delivery</div>
