@@ -19,7 +19,6 @@ import Navbar from "@/components/Navbar";
 export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } =
@@ -1636,10 +1635,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-<<<<<<< HEAD
-=======
->>>>>>> 0211d2c (Update product images and add social links)
->>>>>>> d65cf00 (Update product images and add social links)
+
     </div>
   );
 }
