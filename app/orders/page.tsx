@@ -10,6 +10,7 @@ import {
     Sparkles, ShieldCheck, User, Star, ShoppingBag,
     AlertCircle, Image as ImageIcon, ChevronLeft, ChevronRight, Menu
 } from "lucide-react";
+import { getPrimaryMockup } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, {
     label: string;
@@ -331,8 +332,8 @@ function OrdersContent() {
                                                 /* Icon-rail mode — thumbnail + status dot */
                                                 <div className="flex flex-col items-center gap-1.5">
                                                     <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 flex items-center justify-center">
-                                                        {order.mockup_image_url
-                                                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-0.5" alt="Design" />
+                                                        {getPrimaryMockup(order)
+                                                            ? <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-0.5" alt="Design" />
                                                             : <Package size={18} className="text-gray-300" />}
                                                     </div>
                                                     <div className={`w-2 h-2 rounded-full ${isSelected ? "bg-[#A1FF4D]" : "bg-gray-200"}`} />
@@ -341,8 +342,8 @@ function OrdersContent() {
                                                 /* Full card mode */
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
-                                                        {order.mockup_image_url
-                                                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-0.5" alt="Design" />
+                                                        {getPrimaryMockup(order)
+                                                            ? <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-0.5" alt="Design" />
                                                             : <div className="w-full h-full flex items-center justify-center text-gray-200"><Package size={20} /></div>}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
@@ -549,11 +550,12 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                             {(() => {
                                 // Gather all unique views up to 4
                                 const allViews = [];
-                                if (order.mockup_image_url) {
-                                    allViews.push({ mockup_url: order.mockup_image_url, viewName: 'Primary View' });
+                                const primary = getPrimaryMockup(order);
+                                if (primary) {
+                                    allViews.push({ mockup_url: primary, viewName: 'Primary View' });
                                 }
                                 if (order.design_views) {
-                                    const others = order.design_views.filter((v: any) => v.mockup_url !== order.mockup_image_url);
+                                    const others = order.design_views.filter((v: any) => v.mockup_url !== primary);
                                     allViews.push(...others);
                                 }
                                 
