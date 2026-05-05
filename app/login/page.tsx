@@ -22,7 +22,13 @@ export default function LoginPage() {
     });
 
     if (error) {
-      alert(error.message);
+      if (error.message.toLowerCase().includes("confirmed")) {
+        alert("Account not confirmed. Please check your email (including spam) for a confirmation link.");
+      } else if (error.message === "Invalid login credentials") {
+        alert("Invalid email or password. If you just signed up, please make sure you confirmed your email address.");
+      } else {
+        alert(error.message);
+      }
     } else {
       window.location.href = "/";
     }
@@ -69,7 +75,11 @@ export default function LoginPage() {
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 z-0 bg-[#111111] overflow-hidden">
           {/* Bound the image to the left so it doesn't expose the background wrapper */}
-          <img src="/pointer-guy.jpg" alt="Background" className="w-[120%] lg:w-[125%] max-w-none h-full object-cover object-[80%_center] absolute -left-4 z-0" />
+          <img 
+            src="/pointer-guy-new.png" 
+            alt="Background" 
+            className="w-[120%] lg:w-[125%] max-w-none h-full object-cover object-center absolute -left-4 z-0 scale-x-[-1]" 
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/40 to-transparent z-10"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent z-10 w-full h-[50%] top-auto bottom-0"></div>
           {/* Fade seamlessly into the right column's background color without any opacity cutoff */}
@@ -108,16 +118,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Bottom Chat Icon */}
-          <div className="mt-12 flex items-center justify-between">
-            <div className="w-14 h-14 bg-[#A1FF4C] text-black border-2 border-transparent rounded-[18px] flex items-center justify-center cursor-pointer shadow-[0_8px_20px_rgba(161,255,76,0.3)] hover:bg-[#8ee53f] hover:-translate-y-1 transition-all duration-300">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="13" x2="15" y2="13"></line>
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
 
