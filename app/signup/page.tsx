@@ -39,6 +39,15 @@ export default function SignupPage() {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: full_name,
+          role: role,
+          phone_number: phone_number,
+          location: location,
+          company_name: role === 'SUPPLIER' ? company_name : null,
+        }
+      }
     });
 
     if (authError) {
@@ -47,8 +56,19 @@ export default function SignupPage() {
     }
 
     if (authData.user) {
-      // 2. Create the profile in the profiles table
-      const { error: profileError } = await supabase
+      // If email confirmation is enabled, authData.session will be null.
+      // In this case, the client-side insert will ALWAYS fail due to RLS.
+      // We must rely on the database trigger 'on_auth_user_created' to create the profile.
+      if (!authData.session) {
+        // This only happens if 'Confirm Email' is ENABLED in Supabase.
+        alert("Account created! Please check your email to confirm your account. Once confirmed, you can log in.");
+        window.location.href = "/login";
+        return;
+      }
+
+      // If we reach here, 'Confirm Email' is DISABLED and the user is logged in automatically.
+      // 2. Try to create the profile in the profiles table (Client-side fallback)
+      await supabase
         .from('profiles')
         .insert({
           id: authData.user.id,
@@ -60,14 +80,14 @@ export default function SignupPage() {
           role: role
         });
 
-      if (profileError) {
-        console.error("Error creating profile:", profileError.message);
-        alert("Account created, but profile setup failed: " + profileError.message);
+      // 3. Seamless redirect to the website
+      if (role === 'SUPPLIER') {
+        window.location.href = "/supplier";
       } else {
-        alert("Registration successful! Please check your email for confirmation.");
-        window.location.href = "/login";
+        window.location.href = "/";
       }
     }
+
   };
   return (
     <div className="min-h-screen w-full flex flex-row-reverse bg-[#f5f3e7] font-sans">
@@ -76,7 +96,7 @@ export default function SignupPage() {
       <div className="hidden lg:flex flex-col relative w-[48%] xl:w-[45%] bg-zinc-900 flex-shrink-0 min-h-screen overflow-hidden">
         {/* Background Image Placeholder */}
         <div className="absolute inset-0 z-0 bg-white overflow-hidden">
-          <img src="/pointer-guy.jpg" alt="Background" className="w-[110%] max-w-none h-full object-cover object-right absolute left-0 md:left-2 lg:left-6 xl:left-8 2xl:left-12 z-0" />
+          <img src="/pointer-guy-new.png" alt="Background" className="w-[120%] lg:w-[125%] max-w-none h-full object-cover object-center absolute -left-4 z-0" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/80 z-10"></div>
           <div className="absolute inset-y-0 left-0 w-24 md:w-40 bg-gradient-to-l from-transparent to-[#f5f3e7] z-20 pointer-events-none"></div>
         </div>
@@ -98,16 +118,6 @@ export default function SignupPage() {
             Add your designs to popular cases, like the new Samsung Galaxy S24 options, and plug them as the perfect add-on to any order.
           </p>
 
-          {/* Bottom Chat Icon */}
-          <div className="mt-auto pb-10">
-            <div className="w-14 h-14 bg-[#454c30] border border-white/20 rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-[#525a3a] transition-colors">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="13" x2="15" y2="13"></line>
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
 
