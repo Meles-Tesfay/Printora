@@ -19,3 +19,16 @@ export function isDarkColor(hex: string) {
   const b = parseInt(color.substring(4, 6), 16);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.4;
 }
+
+export function getPrimaryMockup(order: any): string | null {
+  if (!order) return null;
+  if (order.design_views && Array.isArray(order.design_views) && order.design_views.length > 0) {
+    // Try to find the Front view first
+    const frontView = order.design_views.find((v: any) => v.viewName?.toLowerCase().includes('front'));
+    if (frontView && frontView.mockup_url) return frontView.mockup_url;
+    
+    // Otherwise, just return the first view's mockup
+    if (order.design_views[0].mockup_url) return order.design_views[0].mockup_url;
+  }
+  return order.mockup_image_url || null;
+}

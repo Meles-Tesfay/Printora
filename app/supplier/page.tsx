@@ -9,6 +9,7 @@ import {
   Package, Upload, Loader2, ChevronDown, UploadCloud, X, Trash2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmModal, AlertModal } from "@/components/ui/AppModal";
 
 const PRODUCT_TYPES = ["T-Shirt", "Hoodie", "Mug", "Hat", "Phone Case", "Sweater", "Tote Bag", "Poster"];
 const PRESET_COLORS = [
@@ -62,6 +63,19 @@ export default function SupplierDashboard() {
 
   // Form state initialized with INITIAL_FORM
   const [form, setForm] = useState(INITIAL_FORM);
+
+  // ── Custom modal state (replaces all native confirm/alert) ──────────────
+  type ModalAction = (() => Promise<void>) | (() => void);
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; variant?: any; onConfirm: ModalAction }>(
+    { open: false, title: "", message: "", onConfirm: () => {} }
+  );
+  const [alertModal, setAlertModal] = useState<{ open: boolean; title?: string; message: string; variant?: "error" | "info" | "success" }>(
+    { open: false, message: "" }
+  );
+  const showConfirm = (title: string, message: string, onConfirm: ModalAction, confirmLabel = "Confirm", variant: any = "info") =>
+    setConfirmModal({ open: true, title, message, confirmLabel, variant, onConfirm });
+  const showAlert = (message: string, title?: string, variant: "error" | "info" | "success" = "error") =>
+    setAlertModal({ open: true, message, title, variant });
 
   useEffect(() => {
     initPage();
@@ -154,7 +168,7 @@ export default function SupplierDashboard() {
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      alert('Error uploading image. Please try again.');
+      showAlert('Error uploading image. Please try again.', 'Upload Failed');
       return null;
     }
 
@@ -277,7 +291,11 @@ export default function SupplierDashboard() {
 
   const handleEditProduct = (p: any) => {
     if (p.status === "APPROVED") {
-      alert("⚠️ This product is already APPROVED and Live. \n\nTo ensure consistency for active customer orders, approved products cannot be edited directly. \n\nIf you need to update information or images, please contact the admin team.");
+      showAlert(
+        "This product is already APPROVED and Live.\n\nTo ensure consistency for active customer orders, approved products cannot be edited directly. If you need to update information or images, please contact the admin team.",
+        "Product is Live",
+        "info"
+      );
       return;
     }
     setEditingProductId(p.id);
@@ -311,14 +329,21 @@ export default function SupplierDashboard() {
     setActiveTab("add-product");
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-    const { error } = await supabase.from("supplier_products").delete().eq("id", id);
-    if (error) alert("Error deleting product: " + error.message);
-    else {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) fetchProducts(user.id);
-    }
+  const handleDeleteProduct = (id: string) => {
+    showConfirm(
+      "Delete Product",
+      "Are you sure you want to delete this product? This action cannot be undone.",
+      async () => {
+        const { error } = await supabase.from("supplier_products").delete().eq("id", id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) fetchProducts(user.id);
+        }
+      },
+      "Delete", "danger"
+    );
   };
 
   const handleSubmitProduct = async (e: React.FormEvent) => {
@@ -366,7 +391,7 @@ export default function SupplierDashboard() {
     }
 
     if (error) {
-      alert("Error submitting product: " + error.message);
+      showAlert(error.message, "Error submitting product");
     } else {
       setEditingProductId(null);
       setActiveTab('my-products');
@@ -380,10 +405,9 @@ export default function SupplierDashboard() {
     if (!selectedOrder || !proofUrl.trim()) return;
     setFulfillLoading(true);
 
-    const qty = selectedOrder.variants?.quantity || 1;
     let nextStatus = "COMPLETED_BY_SUPPLIER";
 
-    if (qty > 1 && ["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(selectedOrder.status)) {
+    if (["ASSIGNED_TO_SUPPLIER", "SAMPLE_REJECTED"].includes(selectedOrder.status)) {
       nextStatus = "SAMPLE_AWAITING_APPROVAL";
     }
 
@@ -392,7 +416,7 @@ export default function SupplierDashboard() {
       .update({ status: nextStatus, supplier_proof_image_url: proofUrl.trim() })
       .eq("id", selectedOrder.id);
     setFulfillLoading(false);
-    if (error) alert("Error: " + error.message);
+    if (error) showAlert(error.message, "Error");
     else {
       setSelectedOrder(null);
       setProofUrl('');
@@ -554,7 +578,7 @@ export default function SupplierDashboard() {
               onClick={() => setActiveTab("orders")}
               className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "orders" ? "bg-[#1B2412] text-[#A1FF4D]" : "text-gray-400 hover:bg-gray-50"}`}
             >
-              <span className="flex items-center gap-3"><ShoppingBag size={16} /> Fulfillments</span>
+              <span className="flex items-center gap-3"><ShoppingBag size={16} /> New Order</span>
               {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").length > 0 && (
                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${activeTab === "orders" ? "bg-[#A1FF4D] text-[#1B2412]" : "bg-gray-200 text-gray-600"}`}>
                   {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").length}
@@ -601,9 +625,9 @@ export default function SupplierDashboard() {
               className={`flex items-center justify-between px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "completed" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
             >
               <span className="flex items-center gap-3"><CheckCircle size={16} /> Completed</span>
-              {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").length > 0 && (
+              {orders.filter(o => ["COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"].includes(o.status)).length > 0 && (
                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[18px] text-center ${activeTab === "completed" ? "bg-[#1B2412] text-[#A1FF4D]" : "bg-emerald-100 text-emerald-700"}`}>
-                  {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").length}
+                  {orders.filter(o => ["COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"].includes(o.status)).length}
                 </span>
               )}
             </button>
@@ -1082,18 +1106,30 @@ export default function SupplierDashboard() {
               </h2>
             </div>
             <div className="space-y-4">
-              {orders.filter(o => o.status === "COMPLETED_BY_SUPPLIER").map(order => (
+              {orders.filter(o => ["COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"].includes(o.status)).length === 0 && (
+                <div className="p-16 text-center border-2 border-dashed border-gray-100 rounded-[3rem] bg-white">
+                  <CheckCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                  <p className="text-sm font-black text-gray-400 uppercase tracking-widest">No completed orders yet</p>
+                </div>
+              )}
+              {orders.filter(o => ["COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"].includes(o.status)).map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 flex items-center gap-6 opacity-75 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
-                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain" />
+                    <img src={order.mockup_image_url || order.supplier_proof_image_url} alt="Order" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</p>
                     <h3 className="font-black text-[#1B2412] text-lg uppercase tracking-tight">Order #{order.id.slice(0, 8)}</h3>
-                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mt-1">✓ Fulfullment Complete</p>
+                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mt-1">
+                      {order.status === "DELIVERED" ? "✓ Delivered to Customer" : "✓ Fulfillment Complete"}
+                    </p>
                   </div>
                   <div className="pr-4">
-                    <div className="px-6 py-2 rounded-full border border-emerald-100 text-emerald-600 font-black text-[10px] uppercase tracking-widest bg-emerald-50">Delivered</div>
+                    {order.status === "DELIVERED" ? (
+                      <div className="px-6 py-2 rounded-full border border-teal-200 text-teal-600 font-black text-[10px] uppercase tracking-widest bg-teal-50">Delivered</div>
+                    ) : (
+                      <div className="px-6 py-2 rounded-full border border-emerald-100 text-emerald-600 font-black text-[10px] uppercase tracking-widest bg-emerald-50">Completed</div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1401,6 +1437,23 @@ export default function SupplierDashboard() {
           </div>
         );
       })()}
+      {/* ── Custom Modals ───────────────────────────────────────── */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+        onConfirm={() => confirmModal.onConfirm()}
+        onCancel={() => setConfirmModal(m => ({ ...m, open: false }))}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+        onClose={() => setAlertModal(m => ({ ...m, open: false }))}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
     Sparkles, ShieldCheck, User, Star, ShoppingBag
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { getPrimaryMockup } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, {
     label: string;
@@ -248,8 +249,8 @@ function OrdersContent() {
                                         <div className="flex items-center gap-3">
                                             {/* Mockup thumb */}
                                             <div className="w-14 h-14 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
-                                                {order.mockup_image_url ? (
-                                                    <img src={order.mockup_image_url} className="w-full h-full object-contain p-0.5" alt="Design" />
+                                                {getPrimaryMockup(order) ? (
+                                                    <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-0.5" alt="Design" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-200">
                                                         <Package size={20} />
@@ -385,8 +386,8 @@ function OrderDetail({ order, onRefresh }: { order: any, onRefresh: () => void }
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* 1. Mockup Column (4/12) */}
                     <div className="lg:col-span-4 bg-gray-50 rounded-[2.5rem] aspect-square flex items-center justify-center p-8 border border-gray-100 shadow-inner group">
-                        {order.mockup_image_url ? (
-                            <img src={order.mockup_image_url} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Your design" />
+                        {getPrimaryMockup(order) ? (
+                            <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" alt="Your design" />
                         ) : (
                             <div className="text-gray-200 flex flex-col items-center gap-4">
                                 <Package size={60} />

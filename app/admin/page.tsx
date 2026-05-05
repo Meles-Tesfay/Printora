@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { getPrimaryMockup } from "@/lib/utils";
+import { ConfirmModal, AlertModal, PromptModal } from "@/components/ui/AppModal";
 
 export default function AdminDashboard() {
   const [adminProfile, setAdminProfile] = useState<any>(null);
@@ -30,6 +32,25 @@ export default function AdminDashboard() {
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+
+  // ── Custom modal state (replaces all native confirm/alert/prompt) ──────────
+  type ModalAction = (() => Promise<void>) | (() => void);
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; title: string; message: string; confirmLabel?: string; variant?: any; onConfirm: ModalAction }>(
+    { open: false, title: "", message: "", onConfirm: () => {} }
+  );
+  const [alertModal, setAlertModal] = useState<{ open: boolean; title?: string; message: string; variant?: "error" | "info" | "success" }>(
+    { open: false, message: "" }
+  );
+  const [promptModal, setPromptModal] = useState<{ open: boolean; title: string; message?: string; placeholder?: string; onConfirm: (v: string) => void }>(
+    { open: false, title: "", onConfirm: () => {} }
+  );
+
+  const showConfirm = (title: string, message: string, onConfirm: ModalAction, confirmLabel = "Confirm", variant: any = "info") =>
+    setConfirmModal({ open: true, title, message, confirmLabel, variant, onConfirm });
+  const showAlert = (message: string, title?: string, variant: "error" | "info" | "success" = "error") =>
+    setAlertModal({ open: true, message, title, variant });
+  const showPrompt = (title: string, onConfirm: (v: string) => void, message?: string, placeholder?: string) =>
+    setPromptModal({ open: true, title, message, placeholder, onConfirm });
 
   useEffect(() => {
     setActiveImageUrl(null);
@@ -132,84 +153,77 @@ export default function AdminDashboard() {
 
   // Approve a customer order: auto-assign to the supplier of the chosen product
   const handleApproveOrder = async (order: any) => {
-    // If order has a linked supplier_product, auto-assign its supplier
     let supplierId = order.supplier_product?.supplier_id || order.supplier_id || null;
 
-    // If no supplier is linked, let admin pick one from the list
     if (!supplierId) {
       if (suppliers.length === 0) {
-        alert("No suppliers registered yet. Please add a supplier first.");
+        showAlert("No suppliers registered yet. Please add a supplier first.", "No Suppliers Found");
         return;
       }
-      const options = suppliers.map((s: any, i: number) => `${i + 1}. ${s.full_name} (${s.email})`).join("\n");
-      const choice = prompt(`Assign to which supplier? Enter number:\n\n${options}`);
-      if (!choice) return;
-      const idx = parseInt(choice) - 1;
-      if (idx < 0 || idx >= suppliers.length) { alert("Invalid selection."); return; }
-      supplierId = suppliers[idx].id;
+      // Build a supplier-picker prompt
+      const names = suppliers.map((s: any, i: number) => `${i + 1}. ${s.full_name} (${s.email})`).join("\n");
+      showPrompt(
+        "Assign to Supplier",
+        async (choice) => {
+          const idx = parseInt(choice) - 1;
+          if (idx < 0 || idx >= suppliers.length) { showAlert("Invalid selection. Please enter a valid number."); return; }
+          supplierId = suppliers[idx].id;
+          const { error } = await supabase.from("custom_orders").update({ status: "ASSIGNED_TO_SUPPLIER", supplier_id: supplierId }).eq("id", order.id);
+          if (error) showAlert(error.message, "Error");
+          else { setSelectedOrder(null); fetchAll(); }
+        },
+        `Which supplier?\n\n${names}`,
+        "Enter number (e.g. 1)"
+      );
+      return;
     }
 
-    const { error } = await supabase
-      .from("custom_orders")
-      .update({
-        status: "ASSIGNED_TO_SUPPLIER",
-        supplier_id: supplierId,
-      })
-      .eq("id", order.id);
-
-    if (error) alert("Error: " + error.message);
-    else {
-      setSelectedOrder(null);
-      fetchAll();
-    }
+    showConfirm(
+      "Approve Order",
+      `Assign this order to the linked supplier and move it to production?`,
+      async () => {
+        const { error } = await supabase.from("custom_orders").update({ status: "ASSIGNED_TO_SUPPLIER", supplier_id: supplierId }).eq("id", order.id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else { setSelectedOrder(null); fetchAll(); }
+      },
+      "Approve & Assign", "success"
+    );
   };
 
   const handleApproveFinalPayment = async (order: any) => {
     const qty = order.variants?.quantity || 1;
     const isBulk = qty > 1;
-    // Flow A (qty==1): Final payment → COMPLETED (skip production phase)
-    // Flow B (qty>1):  Final payment → PRODUCTION_APPROVED_AND_PAID (full production run)
     const nextStatus = isBulk ? "PRODUCTION_APPROVED_AND_PAID" : "COMPLETED";
-    const confirmMsg = isBulk
-      ? "Confirm payment receipt is valid? This will hand the order off for FULL PRODUCTION."
-      : "Confirm payment receipt is valid? This single-item order will move directly to COMPLETED.";
-    if (!confirm(confirmMsg)) return;
-    const { error } = await supabase
-      .from("custom_orders")
-      .update({ status: nextStatus })
-      .eq("id", order.id);
-
-    if (error) alert("Error: " + error.message);
-    else {
-      setSelectedOrder(null);
-      fetchAll();
-    }
+    const msg = isBulk
+      ? "Confirm the payment receipt is valid. This will start FULL PRODUCTION for this bulk order."
+      : "Confirm the payment receipt is valid. This single-item order will move directly to Completed.";
+    showConfirm(
+      "Approve Final Payment",
+      msg,
+      async () => {
+        const { error } = await supabase.from("custom_orders").update({ status: nextStatus }).eq("id", order.id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else { setSelectedOrder(null); fetchAll(); }
+      },
+      "Approve Payment", "success"
+    );
   };
 
-  const handleRejectFinalPayment = async (orderId: string, currentVariants: any) => {
-    const reason = prompt("Why are you rejecting this receipt? (Customer will see this)");
-    if (!reason) return;
-
-    const newVariants = { 
-      ...currentVariants, 
-      finalReceiptRejected: true,
-      finalReceiptRejectionReason: reason,
-      finalReceiptUrl: null // Clear the invalid receipt
-    };
-
-    const { error } = await supabase
-      .from("custom_orders")
-      .update({ 
-        status: "SAMPLE_AWAITING_APPROVAL", // Move back to awaiting approval so they can re-upload
-        variants: newVariants 
-      })
-      .eq("id", orderId);
-
-    if (error) alert("Error: " + error.message);
-    else {
-      setSelectedOrder(null);
-      fetchAll();
-    }
+  const handleRejectFinalPayment = (orderId: string, currentVariants: any) => {
+    showPrompt(
+      "Reject Payment Receipt",
+      async (reason) => {
+        const newVariants = { ...currentVariants, finalReceiptRejected: true, finalReceiptRejectionReason: reason, finalReceiptUrl: null };
+        const { error } = await supabase.from("custom_orders").update({ status: "SAMPLE_AWAITING_APPROVAL", variants: newVariants }).eq("id", orderId);
+        setPromptModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else { setSelectedOrder(null); fetchAll(); }
+      },
+      "Why are you rejecting this receipt? The customer will see this reason.",
+      "Enter rejection reason…"
+    );
   };
 
   // Reject order
@@ -220,7 +234,7 @@ export default function AdminDashboard() {
       .from("custom_orders")
       .update({ status: "REJECTED", variants: newVariants })
       .eq("id", order.id);
-    if (error) alert("Error: " + error.message);
+    if (error) showAlert(error.message, "Error");
     else {
       setShowRejectModal(false);
       setRejectReason("");
@@ -229,37 +243,48 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteOrder = async (id: string) => {
-    if (!confirm("Are you sure you want to completely delete this order? This cannot be undone.")) return;
-    const { error } = await supabase.from("custom_orders").delete().eq("id", id);
-    if (error) {
-      alert("Error deleting order: " + error.message);
-    } else {
-      setAllOrders(prev => prev.filter(o => o.id !== id));
-      setPendingOrders(prev => prev.filter(o => o.id !== id));
-    }
+  const handleDeleteOrder = (id: string) => {
+    showConfirm(
+      "Delete Order",
+      "Are you sure you want to permanently delete this order? This action cannot be undone.",
+      async () => {
+        const { error } = await supabase.from("custom_orders").delete().eq("id", id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else { setAllOrders(prev => prev.filter(o => o.id !== id)); setPendingOrders(prev => prev.filter(o => o.id !== id)); }
+      },
+      "Delete Permanently", "danger"
+    );
   };
 
   // Supplier finished → move to Completed tab (awaiting final delivery confirmation)
-  const handleMarkAsCompleted = async (id: string) => {
-    if (!confirm("Move this order to Completed? It will appear in the Completed tab for delivery.")) return;
-    const { error } = await supabase
-      .from("custom_orders")
-      .update({ status: "COMPLETED" })
-      .eq("id", id);
-    if (error) alert("Error: " + error.message);
-    else fetchAll();
+  const handleMarkAsCompleted = (id: string) => {
+    showConfirm(
+      "Move to Completed",
+      "Move this order to Completed? It will appear in the Completed tab awaiting delivery confirmation.",
+      async () => {
+        const { error } = await supabase.from("custom_orders").update({ status: "COMPLETED" }).eq("id", id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else fetchAll();
+      },
+      "Move to Completed", "info"
+    );
   };
 
   // Final step — physically delivered to customer, enables feedback
-  const handleDeliverOrder = async (id: string) => {
-    if (!confirm("Mark this order as DELIVERED? The customer will be able to leave feedback.")) return;
-    const { error } = await supabase
-      .from("custom_orders")
-      .update({ status: "DELIVERED" })
-      .eq("id", id);
-    if (error) alert("Error: " + error.message);
-    else fetchAll();
+  const handleDeliverOrder = (id: string) => {
+    showConfirm(
+      "Mark as Delivered",
+      "Confirm this order has been physically handed to the customer. They will be able to leave feedback after this.",
+      async () => {
+        const { error } = await supabase.from("custom_orders").update({ status: "DELIVERED" }).eq("id", id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else fetchAll();
+      },
+      "Mark Delivered", "success"
+    );
   };
 
   // Approve a supplier product → it appears on landing page
@@ -276,7 +301,7 @@ export default function AdminDashboard() {
       })
       .eq("id", id);
       
-    if (error) alert("Error: " + error.message);
+    if (error) showAlert(error.message, "Error");
     else { 
       setSelectedProduct(null); 
       setAdminTags([]);
@@ -285,14 +310,18 @@ export default function AdminDashboard() {
   };
 
   // Reject supplier product
-  const handleRejectProduct = async (id: string) => {
-    if (!confirm("Reject this product?")) return;
-    const { error } = await supabase
-      .from("supplier_products")
-      .update({ status: "REJECTED" })
-      .eq("id", id);
-    if (error) alert("Error: " + error.message);
-    else fetchAll();
+  const handleRejectProduct = (id: string) => {
+    showConfirm(
+      "Reject Product",
+      "Are you sure you want to reject this supplier product? It will not appear on the platform.",
+      async () => {
+        const { error } = await supabase.from("supplier_products").update({ status: "REJECTED" }).eq("id", id);
+        setConfirmModal(m => ({ ...m, open: false }));
+        if (error) showAlert(error.message, "Error");
+        else fetchAll();
+      },
+      "Reject Product", "danger"
+    );
   };
 
   const handleSignOut = async () => {
@@ -486,8 +515,8 @@ export default function AdminDashboard() {
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50/60 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-lg transition-all">
                     <div className="flex items-center gap-4 mb-3 sm:mb-0">
                       <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
-                        {order.mockup_image_url
-                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                        {getPrimaryMockup(order)
+                          ? <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-1" alt="Design" />
                           : <Box size={24} className="text-gray-300" />
                         }
                       </div>
@@ -610,8 +639,8 @@ export default function AdminDashboard() {
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 hover:shadow-lg transition-all">
                     <div className="flex items-center gap-4 mb-3 sm:mb-0">
                       <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100">
-                        {order.mockup_image_url
-                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                        {getPrimaryMockup(order)
+                          ? <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-1" alt="Design" />
                           : <Box size={24} className="text-gray-300" />
                         }
                       </div>
@@ -667,8 +696,8 @@ export default function AdminDashboard() {
                     <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-teal-50/20 rounded-2xl border border-teal-100 hover:bg-white hover:shadow-lg transition-all">
                       <div className="flex items-center gap-4 mb-3 sm:mb-0">
                         <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-teal-100">
-                          {order.mockup_image_url
-                            ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                          {getPrimaryMockup(order)
+                            ? <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-1" alt="Design" />
                             : <Box size={24} className="text-gray-300" />
                           }
                         </div>
@@ -731,8 +760,8 @@ export default function AdminDashboard() {
                   <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-red-50/20 rounded-2xl border border-red-100 hover:bg-white hover:shadow-lg transition-all">
                     <div className="flex items-center gap-4 mb-3 sm:mb-0">
                       <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-red-100">
-                        {order.mockup_image_url
-                          ? <img src={order.mockup_image_url} className="w-full h-full object-contain p-1" alt="Design" />
+                        {getPrimaryMockup(order)
+                          ? <img src={getPrimaryMockup(order)!} className="w-full h-full object-contain p-1" alt="Design" />
                           : <Box size={24} className="text-gray-300" />
                         }
                       </div>
@@ -932,13 +961,13 @@ export default function AdminDashboard() {
                                  <img src={v.mockup_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt={v.viewName} />
                              </div>
                          ))
-                     ) : selectedOrder.mockup_image_url ? (
+                     ) : getPrimaryMockup(selectedOrder) ? (
                          <div 
-                            onClick={() => setFullscreenImage(selectedOrder.mockup_image_url)}
+                            onClick={() => setFullscreenImage(getPrimaryMockup(selectedOrder)!)}
                             className="w-full h-48 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative group col-span-2 cursor-pointer hover:border-gray-300 hover:shadow-md transition-all"
                          >
                            <p className="absolute top-2 left-3 text-[10px] font-black text-gray-400 uppercase tracking-widest z-10 pointer-events-none">Design Mockup</p>
-                           <img src={selectedOrder.mockup_image_url} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt="Design" />
+                           <img src={getPrimaryMockup(selectedOrder)!} className="w-full h-full object-contain p-2 hover:scale-105 transition-transform" alt="Design" />
                          </div>
                      ) : null}
                  </div>
@@ -1343,6 +1372,31 @@ export default function AdminDashboard() {
           </button>
         </div>
       )}
+      {/* ── Custom Modals ─────────────────────────────────────────── */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.confirmLabel}
+        variant={confirmModal.variant}
+        onConfirm={() => confirmModal.onConfirm()}
+        onCancel={() => setConfirmModal(m => ({ ...m, open: false }))}
+      />
+      <AlertModal
+        open={alertModal.open}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+        onClose={() => setAlertModal(m => ({ ...m, open: false }))}
+      />
+      <PromptModal
+        open={promptModal.open}
+        title={promptModal.title}
+        message={promptModal.message}
+        placeholder={promptModal.placeholder}
+        onConfirm={(v) => { promptModal.onConfirm(v); setPromptModal(m => ({ ...m, open: false })); }}
+        onCancel={() => setPromptModal(m => ({ ...m, open: false }))}
+      />
     </div>
   );
 }
