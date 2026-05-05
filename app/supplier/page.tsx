@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmModal, AlertModal } from "@/components/ui/AppModal";
+import { getPrimaryMockup } from "@/lib/utils";
 
 const PRODUCT_TYPES = ["T-Shirt", "Hoodie", "Mug", "Hat", "Phone Case", "Sweater", "Tote Bag", "Poster"];
 const PRESET_COLORS = [
@@ -917,7 +918,7 @@ export default function SupplierDashboard() {
               {orders.filter(o => o.status === "ASSIGNED_TO_SUPPLIER").map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all p-4 flex items-center gap-6 group">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
-                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                    <img src={getPrimaryMockup(order)!} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -962,7 +963,7 @@ export default function SupplierDashboard() {
                   
                   <div className="flex items-center gap-8 relative z-10">
                     <div className="w-32 h-32 bg-gray-50 rounded-[2rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-3 border border-gray-100">
-                        <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" />
+                        <img src={getPrimaryMockup(order)!} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
@@ -1023,7 +1024,7 @@ export default function SupplierDashboard() {
               {orders.filter(o => o.status === "SAMPLE_AWAITING_APPROVAL").map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 flex items-center gap-6 opacity-90 group hover:opacity-100 transition-all">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
-                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain" />
+                    <img src={getPrimaryMockup(order)!} alt="Order" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -1059,7 +1060,7 @@ export default function SupplierDashboard() {
               {orders.filter(o => o.status === "PRODUCTION_APPROVED_AND_PAID").map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-blue-100 shadow-sm hover:shadow-md transition-all p-4 flex items-center gap-6 group">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
-                    <img src={order.mockup_image_url} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                    <img src={getPrimaryMockup(order)!} alt="Order" className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -1115,7 +1116,7 @@ export default function SupplierDashboard() {
               {orders.filter(o => ["COMPLETED_BY_SUPPLIER", "COMPLETED", "DELIVERED"].includes(o.status)).map(order => (
                 <div key={order.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 flex items-center gap-6 opacity-75 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
                   <div className="w-28 h-28 bg-gray-50 rounded-[1.5rem] flex-shrink-0 overflow-hidden flex items-center justify-center p-2">
-                    <img src={order.mockup_image_url || order.supplier_proof_image_url} alt="Order" className="w-full h-full object-contain" />
+                    <img src={getPrimaryMockup(order) || order.supplier_proof_image_url} alt="Order" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{order.product_type}</p>
@@ -1144,7 +1145,7 @@ export default function SupplierDashboard() {
         const hasViews = views.length > 0;
         const activeViewData = hasViews ? views[Math.min(activeViewIdx, views.length - 1)] : null;
         const activeDesign  = activeViewData?.design || selectedOrder.design_data;
-        const activeMockup  = activeViewData?.mockup_url || selectedOrder.mockup_image_url;
+        const activeMockup  = activeViewData?.mockup_url || getPrimaryMockup(selectedOrder);
         const layers = extractLayers(activeDesign);
 
         const supplierProduct = selectedOrder.supplier_product || {};
