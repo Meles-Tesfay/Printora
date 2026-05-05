@@ -6,7 +6,8 @@ import { supabase } from "@/lib/supabase";
 import {
   ShoppingBag, Plus, LogOut, CheckCircle, Clock, XCircle,
   BarChart3, Box, Image as ImageIcon, User, Palette, Tag,
-  Package, Upload, Loader2, ChevronDown, UploadCloud, X, Trash2
+  Package, Upload, Loader2, ChevronDown, UploadCloud, X, Trash2,
+  Edit2, Lock, ShieldCheck, Layers, Timer, ShoppingBasket, CheckCircle2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmModal, AlertModal } from "@/components/ui/AppModal";
@@ -513,10 +514,10 @@ export default function SupplierDashboard() {
   };
 
   const stats = [
-    { label: "Total Products", value: products.length, icon: Box, color: "bg-blue-500" },
-    { label: "Approved", value: products.filter(p => p.status === "APPROVED").length, icon: CheckCircle, color: "bg-green-500" },
-    { label: "Pending", value: products.filter(p => p.status === "PENDING").length, icon: Clock, color: "bg-yellow-500" },
-    { label: "Assigned Orders", value: orders.length, icon: ShoppingBag, color: "bg-purple-500" },
+    { label: "Total Products", value: products.length, icon: Layers, color: "bg-[#1B2412]" },
+    { label: "Approved", value: products.filter(p => p.status === "APPROVED").length, icon: ShieldCheck, color: "bg-emerald-500" },
+    { label: "Pending", value: products.filter(p => p.status === "PENDING").length, icon: Timer, color: "bg-amber-500" },
+    { label: "Assigned Orders", value: orders.length, icon: ShoppingBasket, color: "bg-indigo-500" },
   ];
 
   const STATUS_STYLE: Record<string, string> = {
@@ -555,7 +556,7 @@ export default function SupplierDashboard() {
           </div>
         )}
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
           <button 
             onClick={() => setActiveTab("my-products")}
             className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-xl text-sm font-bold transition-all ${activeTab === "my-products" ? "bg-[#A1FF4D]/10 text-[#2B3220]" : "text-gray-400 hover:bg-gray-50"}`}
@@ -743,9 +744,14 @@ export default function SupplierDashboard() {
                     <div className="flex items-center gap-2 pr-2">
                       <button 
                         onClick={() => handleEditProduct(product)}
-                        className="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#1B2412] hover:text-[#A1FF4D] transition-all shadow-sm active:scale-90"
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm active:scale-90 ${
+                          product.status === 'APPROVED' 
+                            ? 'bg-amber-50 text-amber-500 hover:bg-amber-100' 
+                            : 'bg-gray-50 text-gray-400 hover:bg-[#1B2412] hover:text-[#A1FF4D]'
+                        }`}
+                        title={product.status === 'APPROVED' ? "Locked (Live Product)" : "Edit Product"}
                       >
-                        <Plus size={18} className="rotate-45" />
+                        {product.status === 'APPROVED' ? <Lock size={16} /> : <Edit2 size={16} />}
                       </button>
                       <button 
                         onClick={() => handleDeleteProduct(product.id)}
